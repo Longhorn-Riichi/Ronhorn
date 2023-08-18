@@ -236,6 +236,8 @@ class Utilities(commands.Cog):
                 game_style = "Yonma"
 
             ordered_players = sorted(zip(players, scores), key=lambda item: -item[1])
+            first_player, first_score = ordered_players[0]
+            ordered_players[0] = (first_player, first_score + 1000*riichi_sticks)
             total_score = sum(scores) + 1000*riichi_sticks
 
             if total_score != expected_total:
