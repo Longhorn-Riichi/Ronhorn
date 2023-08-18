@@ -33,6 +33,12 @@ class Utilities(commands.Cog):
         self.registry_lock = bot.registry_lock
         self.raw_scores_lock = bot.raw_scores_lock
 
+        # we assume that the manager cogs have already been loaded
+        self.yh_manager = bot.get_cog("YonmaHanchanLobbyManager")
+        self.yt_manager = bot.get_cog("YonmaTonpuuLobbyManager")
+        self.sh_manager = bot.get_cog("SanmaHanchanLobbyManager")
+        self.st_manager = bot.get_cog("SanmaTonpuuLobbyManager")
+
     """
     =====================================================
     SLASH COMMANDS
@@ -126,8 +132,8 @@ class Utilities(commands.Cog):
         Returns the response string.
         """
 
-        # Fetch Mahjong Soul details
-        res = await self.manager.call("searchAccountByEid", eids = [int(friend_id)])
+        # Fetch Mahjong Soul details using one of the lobby managers
+        res = await self.st_manager.manager.call("searchAccountByEid", eids = [int(friend_id)])
         # if no account found, then `res` won't have a `search_result` field, but it won't
         # have an `error`` field, either (i.e., it's not an error!).
         if not res.search_result:
