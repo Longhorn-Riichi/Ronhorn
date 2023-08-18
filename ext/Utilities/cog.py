@@ -7,8 +7,6 @@ from discord import app_commands, Interaction
 import logging
 from typing import *
 
-EXTENSION_NAME = "Utilities" # must be the same as class name...
-
 def assert_getenv(name: str) -> Any:
     value = getenv(name)
     assert value is not None, f"missing \"{name}\" in config.env"
@@ -25,13 +23,22 @@ REGISTRY_NAME_LENGTH: int  = 15
 
 class Utilities(commands.Cog):
     def __init__(self, bot: commands.Bot):
-        assert(isinstance(bot.spreadsheet, gspread.Spreadsheet))
+        assert(isinstance(bot.registry, gspread.Worksheet))
+        assert(isinstance(bot.raw_scores, gspread.Worksheet))
         assert(isinstance(bot.registry_lock, asyncio.Lock))
+        assert(isinstance(bot.raw_scores_lock, asyncio.Lock))
 
-        self.registry = bot.spreadsheet.worksheet("Registry")
+        self.registry = bot.registry
+        self.raw_scores = bot.raw_scores
         self.registry_lock = bot.registry_lock
-        self.raw_scores = bot.spreadsheet.worksheet("Raw Scores")
         self.raw_scores_lock = bot.raw_scores_lock
+
+        # we assume that the manager cogs have already been loaded
+        self.yh_manager = bot.get_cog("YonmaHanchanLobbyManager")
+        self.yt_manager = bot.get_cog("YonmaTonpuuLobbyManager")
+        self.sh_manager = bot.get_cog("SanmaHanchanLobbyManager")
+        self.st_manager = bot.get_cog("SanmaTonpuuLobbyManager")
+
 
     """
     =====================================================
@@ -126,8 +133,8 @@ class Utilities(commands.Cog):
         Returns the response string.
         """
 
-        # Fetch Mahjong Soul details
-        res = await self.manager.call("searchAccountByEid", eids = [int(friend_id)])
+        # Fetch Mahjong Soul details using one of the lobby managers
+        res = await self.st_manager.manager.call("searchAccountByEid", eids = [int(friend_id)])
         # if no account found, then `res` won't have a `search_result` field, but it won't
         # have an `error`` field, either (i.e., it's not an error!).
         if not res.search_result:
@@ -269,6 +276,6 @@ class Utilities(commands.Cog):
 
 
 async def setup(bot: commands.Bot):
+    logging.info(f"Loading extension `{Utilities.__name__}`...")
     instance = Utilities(bot)
     await bot.add_cog(instance, guild=discord.Object(id=GUILD_ID))
-    logging.info(f"Extension `{EXTENSION_NAME}` has been loaded")

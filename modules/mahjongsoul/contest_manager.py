@@ -20,12 +20,13 @@ class ContestManager(MajsoulChannel):
     """
     wraps around the `MajsoulChannel` class to provide additional functionalities for managing ONE specific contest on Discord
     """
-    def __init__(self, contest_unique_id: int, mjs_username: str, mjs_password: str, log_messages=False):
+    def __init__(self, contest_unique_id: int, mjs_username: str, mjs_password: str, game_type: str, log_messages=False):
         self.contest_unique_id = contest_unique_id
         self.mjs_username = mjs_username
         self.mjs_password = mjs_password
         self.contest = None # contest info; `CustomizedContest` protobuf
-        super().__init__(proto=liqi_combined_pb2, log_messages=log_messages)
+        self.logger = logging.getLogger(game_type)
+        super().__init__(proto=liqi_combined_pb2, log_messages=log_messages, logger_name=game_type)
         self.huge_ping_task: Optional[asyncio.Task] = None
     
     async def login_and_start_listening(self):
@@ -41,13 +42,13 @@ class ContestManager(MajsoulChannel):
             account = self.mjs_username,
             password = hmac.new(b"lailai", self.mjs_password.encode(), hashlib.sha256).hexdigest(),
             type = 0)
-        logging.info(f"`loginContestManager` with {self.mjs_username} successful!")
+        self.logger.info(f"`loginContestManager` with {self.mjs_username} successful!")
 
         res = await super().call(
             methodName = 'manageContest',
             unique_id = self.contest_unique_id)
         self.contest = res.contest
-        logging.info(f"`manageContest` for {self.contest.contest_name} successful!")
+        self.logger.info(f"`manageContest` for {self.contest.contest_name} successful!")
 
         self.huge_ping_task = asyncio.create_task(self.huge_ping())
 
@@ -55,7 +56,7 @@ class ContestManager(MajsoulChannel):
         # like `NotifyContestGameStart` and `NotifyContestGameEnd`
         await super().call(methodName = 'startManageGame')
         
-        logging.info(f"`startManageGame` successful!")
+        self.logger.info(f"`startManageGame` successful!")
     
     async def huge_ping(self, huge_ping_interval=14400):
         """
@@ -71,14 +72,14 @@ class ContestManager(MajsoulChannel):
                     await self.call(
                         "updateContestGameRule",
                         finish_time = int(ninety_days_later.timestamp()))
-                    logging.info(f"huge_ping'd.")
+                    self.logger.info(f"huge_ping'd.")
                 except GeneralMajsoulError:
                     # ignore mahjong soul errors not caught in wrapped `call()`
                     pass
                 
                 await asyncio.sleep(huge_ping_interval)
         except asyncio.CancelledError:
-            logging.info("`huge_ping` task cancelled")
+            self.logger.info("`huge_ping` task cancelled")
 
     async def connect_and_login(self):
         """
@@ -116,7 +117,7 @@ class ContestManager(MajsoulChannel):
                 the account may have been logged out elsewhere unintentionally,
                 e.g., from the web version of the tournament manager)
                 """
-                logging.info("Received `ERR_CONTEST_MGR_NOT_LOGIN`; now trying to log in again and resend the previous request.")
+                self.logger.info("Received `ERR_CONTEST_MGR_NOT_LOGIN`; now trying to log in again and resend the previous request.")
                 await self.reconnect_and_login()
                 return await super().call(methodName, **msgFields)
             else:
@@ -128,7 +129,7 @@ class ContestManager(MajsoulChannel):
             similar to above; try logging back in once and retrying the call.
             Do nothing if the retry still failed.
             """
-            logging.info("ConnectionClosed[Error]; now trying to log in again and resend the previous request.")
+            self.logger.info("ConnectionClosed[Error]; now trying to log in again and resend the previous request.")
             await self.reconnect_and_login()
             return await super().call(methodName, **msgFields)
 
