@@ -32,7 +32,9 @@ class GeneralMajsoulError(Exception):
 class MajsoulChannel():
     _RESPONSE_TIMEOUT_DURATION = 10
 
-    def __init__(self, proto, log_messages=True):
+    def __init__(self, proto, log_messages=True, logger_name="MajsoulChannel"):
+        self.logger = logging.getLogger(logger_name)
+
         self.websocket = None
         self.websocket_lock = asyncio.Lock()
 
@@ -87,7 +89,7 @@ class MajsoulChannel():
 
         self.websocket = await websockets.connect(self.uri)
 
-        logging.info(f'Connected to {self.uri}')
+        self.logger.info(f'Connected to {self.uri}')
 
         self.sustain_task = asyncio.create_task(self.sustain())
         self.listen_task = asyncio.create_task(self.listen())
@@ -102,7 +104,7 @@ class MajsoulChannel():
                 await self.websocket.ping()
                 await asyncio.sleep(ping_interval)
         except asyncio.CancelledError:
-            logging.info("`sustain` task cancelled")
+            self.logger.info("`sustain` task cancelled")
 
     async def subscribe(self, name, cb):
         async with self._subscriptions_lock:
@@ -122,7 +124,7 @@ class MajsoulChannel():
                 else:
                     logging.debug(f"Notification for {name} had no subscribers.")
         except asyncio.CancelledError:
-            logging.info("`eventloop` task cancelled")
+            self.logger.info("`eventloop` task cancelled")
 
     async def listen(self):
         '''
@@ -153,13 +155,13 @@ class MajsoulChannel():
                     # Never process the same message twice.
                     if (name, msg) != self.MostRecentNotify:
                         if self.log_messages:
-                            logging.info("Notification received.\nname\nmsg")
+                            self.logger.info("Notification received.\nname\nmsg")
                         self.MostRecentNotify = (name, msg)
 
                         await self.Notifications.put((name, msg))
                 elif msgType == MSG_TYPE_RESPONSE:
                     if self.log_messages:
-                        logging.info("Response received.")
+                        self.logger.info("Response received.")
                     msgIndex = int.from_bytes(message[1:3], 'little')
                     msgPayload = message[3:]
 
@@ -170,7 +172,7 @@ class MajsoulChannel():
                         resEvent = self.requests[msgIndex]
                         resEvent.set()
         except asyncio.CancelledError:
-            logging.info("`listen` task cancelled")
+            self.logger.info("`listen` task cancelled")
 
     async def close(self):
         await self.websocket.close()
@@ -278,7 +280,7 @@ class MajsoulChannel():
             raise GeneralMajsoulError(resMessage.error.code, ERRORS.get(resMessage.error.code, 'Unknown error'))
 
         if self.log_messages:
-            logging.info(resMessage)
+            self.logger.info(resMessage)
 
         return resMessage
 

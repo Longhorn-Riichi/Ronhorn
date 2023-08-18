@@ -32,7 +32,8 @@ class LobbyManager(commands.Cog):
         self.manager = ContestManager(
             contest_unique_id,
             mjs_username,
-            mjs_password)
+            mjs_password,
+            game_type)
         self.game_type = game_type
 
         assert(isinstance(bot.registry, gspread.Worksheet))
@@ -180,38 +181,49 @@ class LobbyManager(commands.Cog):
         
         return self.registry.cell(found_cell.row, MJS_NICKNAME_COL).value
 
+# need to make dummy classes so discord.py can distinguish between
+# different instances (as separate cogs)
+class YonmaHanchanLobbyManager(LobbyManager):
+    pass
+class YonmaTonpuuLobbyManager(LobbyManager):
+    pass
+class SanmaHanchanLobbyManager(LobbyManager):
+    pass
+class SanmaTonpuuLobbyManager(LobbyManager):
+    pass
+
 async def setup(bot: commands.Bot):
-    logging.info(f"Loading extension `{LobbyManager.__name__}`:")
+    logging.info(f"Loading extension `LobbyManagers`:")
     cog_instances: List[LobbyManager] = []
-    cog_instances.append(LobbyManager(
+    cog_instances.append(YonmaHanchanLobbyManager(
         bot=bot,
         contest_unique_id=int(assert_getenv("yh_contest_unique_id")),
         mjs_username=assert_getenv("mjs_yh_username"),
         mjs_password=assert_getenv("mjs_yh_password"),
         game_type="Yonma Hanchan"))
-    cog_instances.append(LobbyManager(
+    cog_instances.append(YonmaTonpuuLobbyManager(
         bot=bot,
         contest_unique_id=int(assert_getenv("yt_contest_unique_id")),
         mjs_username=assert_getenv("mjs_yt_username"),
         mjs_password=assert_getenv("mjs_yt_password"),
-        game_type="Yonma Tonnpuu"))
-    cog_instances.append(LobbyManager(
+        game_type="Yonma Tonpuu"))
+    cog_instances.append(SanmaHanchanLobbyManager(
         bot=bot,
         contest_unique_id=int(assert_getenv("sh_contest_unique_id")),
         mjs_username=assert_getenv("mjs_sh_username"),
         mjs_password=assert_getenv("mjs_sh_password"),
         game_type="Sanma Hanchan"))
-    cog_instances.append(LobbyManager(
+    cog_instances.append(SanmaTonpuuLobbyManager(
         bot=bot,
         contest_unique_id=int(assert_getenv("st_contest_unique_id")),
         mjs_username=assert_getenv("mjs_st_username"),
         mjs_password=assert_getenv("mjs_st_password"),
-        game_type="Sanma Tonnpuu"))
+        game_type="Sanma Tonpuu"))
     
     for cog_instance in cog_instances:
         logging.info(f"Loading cog instance `{cog_instance.game_type}`.")
         asyncio.create_task(cog_instance.async_setup())
         await bot.add_cog(
-            cog=cog_instance,
+            cog_instance,
             guild=discord.Object(id=GUILD_ID))
         
