@@ -50,7 +50,7 @@ class Utilities(commands.Cog):
     async def help(self, interaction: Interaction):
         await interaction.response.send_message(
             content=(
-                "How to play online club games:"
+                "How to play online club games:\n"
                 "1. Register your Mahjong Soul account with `/register`.\n"
                 "2. Choose the right lobby by Tournament ID:\n"
                 f"> 4P South: **{YH_TOURNAMENT_ID}**\n"
@@ -168,7 +168,7 @@ class Utilities(commands.Cog):
         friend_id="Find your friend ID in the Friends tab; this is separate from your username.")
     async def register(self, interaction: Interaction, name: str, friend_id: int):
         if len(name) > REGISTRY_NAME_LENGTH:
-            interaction.response.send_message(f"Please keep your preferred name within {REGISTRY_NAME_LENGTH} characters and `/register` again.", ephemeral=True)
+            await interaction.response.send_message(f"Please keep your preferred name within {REGISTRY_NAME_LENGTH} characters and `/register` again.", ephemeral=True)
             return
 
         await interaction.response.defer()
@@ -187,7 +187,7 @@ class Utilities(commands.Cog):
                 return f"\"{discord_name}\" is not a registered member."
             else:
                 self.registry.delete_row(found_cell.row)
-                return f"\"{discord_name}\" removed their registration."
+                return f"\"{discord_name}\"'s registration has been removed."
 
     @app_commands.command(name="unregister", description="Remove your registered information.")
     async def unregister(self, interaction: Interaction):
