@@ -55,6 +55,8 @@ bot.remove_command('help')
 # so they can be accessed by all extensions.
 gs_client = gspread.service_account(filename='gs_service_account.json')
 bot.spreadsheet = gs_client.open_by_url(getenv("spreadsheet_url"))
+bot.registry = bot.spreadsheet.worksheet("Registry")
+bot.raw_scores = bot.spreadsheet.worksheet("Raw Scores")
 bot.registry_lock = asyncio.Lock()
 bot.raw_scores_lock = asyncio.Lock()
 
