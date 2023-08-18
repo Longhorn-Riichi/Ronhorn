@@ -1,0 +1,15 @@
+# secrets
+config.env
+gs_service_account.json
+
+# generated local files
+Pipfile.lock
+**/__pycache__
+log.txt
+
+# may result from installing protobuf-cli with npm
+**/package.json
+**/package-lock.json
+**/node_modules
+
+# tests
