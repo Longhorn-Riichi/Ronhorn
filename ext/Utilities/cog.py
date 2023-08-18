@@ -253,11 +253,14 @@ class Utilities(commands.Cog):
                 self.raw_scores.append_row([timestamp, gamemode, "yes", *map(str, flatten(ordered_players))])
 
             player_score_strings = list(flatten(map(lambda p: (p[0].mention, str(p[1])), ordered_players)))
-            await interaction.followup.send(content="Successfully entered scores for a :\n"
-                                                    "- **1st**: {}: {}\n"
-                                                    "- **2nd**: {}: {}\n"
-                                                    "- **3rd**: {}: {}\n"
-                                                    "- **4th**: {}: {}".format(*player_score_strings))
+            score_printout = f"Successfully entered scores for a {gamemode} game:\n" \
+                              "- **1st**: {}: {}\n" \
+                              "- **2nd**: {}: {}\n" \
+                              "- **3rd**: {}: {}"
+            if player4 is not None:
+                score_printout += "\n- **4th**: {}: {}"
+
+            await interaction.followup.send(content=score_printout.format(*player_score_strings))
         except Exception as e:
             await interaction.followup.send(content="Error: " + str(e))
 
