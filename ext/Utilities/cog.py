@@ -39,6 +39,7 @@ class Utilities(commands.Cog):
         self.sh_manager = bot.get_cog("SanmaHanchanLobbyManager")
         self.st_manager = bot.get_cog("SanmaTonpuuLobbyManager")
 
+
     """
     =====================================================
     SLASH COMMANDS
@@ -202,6 +203,77 @@ class Utilities(commands.Cog):
         await interaction.response.defer()
         response = await self._unregister(server_member)
         await interaction.followup.send(content=response)
+
+    @app_commands.command(name="enter_scores", description=f"Enter scores for an IRL game, starting with the East player. Only usable by @{OFFICER_ROLE}.")
+    @app_commands.describe(game_type="Hanchan or tonpuu?",
+                           player1="The East player you want to record the score for.",
+                           score1="Score for player 1.",
+                           player2="The South player you want to record the score for.",
+                           score2="Score for player 2.",
+                           player3="The West player you want to record the score for.",
+                           score3="Score for player 3.",
+                           player4="The (optional) North player you want to record the score for.",
+                           score4="Score for player 4.",
+                           riichi_sticks="(optional) Number of riichi sticks left on the table.")
+    @app_commands.choices(game_type=[
+        app_commands.Choice(name="Hanchan", value="Hanchan"),
+        app_commands.Choice(name="Tonpuu", value="Tonpuu")
+    ])
+    @app_commands.checks.has_role(OFFICER_ROLE)
+    async def enter_scores(self, interaction: Interaction,
+                                  game_type: app_commands.Choice[str],
+                                  player1: discord.Member, score1: int,
+                                  player2: discord.Member, score2: int,
+                                  player3: discord.Member, score3: int,
+                                  player4: Optional[discord.Member] = None, score4: Optional[int] = None,
+                                  riichi_sticks: int = 0):
+        await interaction.response.defer()
+        try:
+            if player4 is None:
+                expected_total = 3*35000
+                players = [player1, player2, player3]
+                scores = [score1, score2, score3]
+                game_style = "Sanma"
+            else:
+                if score4 is None:
+                    return await interaction.followup.send(content=f"Error: must enter Player 4's score.")
+                expected_total = 4*25000
+                players = [player1, player2, player3, player4]
+                scores = [score1, score2, score3, score4]
+                game_style = "Yonma"
+
+            ordered_players = sorted(zip(players, scores), key=lambda item: -item[1])
+            first_player, first_score = ordered_players[0]
+            ordered_players[0] = (first_player, first_score + 1000*riichi_sticks)
+            total_score = sum(scores) + 1000*riichi_sticks
+
+            if total_score != expected_total:
+                riichi_stick_string = '' if riichi_sticks == 0 else f" (+ {riichi_sticks} riichi sticks)"
+                return await interaction.followup.send(content=f"Error: Entered scores add up to {'+'.join(map(str,scores))}{riichi_stick_string} = {total_score}, expected {expected_total}.")
+            if len(set(players)) < len(players):
+                return await interaction.followup.send(content=f"Error: duplicate player entered.")
+
+            # enter the scores into the sheet
+            import datetime
+            timestamp = str(datetime.datetime.now()).split(".")[0]
+            gamemode = f"{game_style} {game_type.value}"
+            flatten = lambda xss: (x for xs in xss for x in xs)
+            async with self.raw_scores_lock:
+                self.raw_scores.append_row([timestamp, gamemode, "yes", *map(str, flatten(ordered_players))])
+
+            player_score_strings = list(flatten(map(lambda p: (p[0].mention, str(p[1])), ordered_players)))
+            score_printout = f"Successfully entered scores for a {gamemode} game:\n" \
+                              "- **1st**: {}: {}\n" \
+                              "- **2nd**: {}: {}\n" \
+                              "- **3rd**: {}: {}"
+            if player4 is not None:
+                score_printout += "\n- **4th**: {}: {}"
+
+            await interaction.followup.send(content=score_printout.format(*player_score_strings))
+        except Exception as e:
+            await interaction.followup.send(content="Error: " + str(e))
+
+
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading extension `{Utilities.__name__}`...")
