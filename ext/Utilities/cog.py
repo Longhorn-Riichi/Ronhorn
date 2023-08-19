@@ -344,7 +344,7 @@ class Utilities(commands.Cog):
         import requests
         result = requests.get(url=f"https://5-data.amae-koromo.com/api/v2/pl4/search_player/{majsoul_name}").json()
         if len(result) == 0:
-            await interaction.followup.send(content=f"Error: could not find player {majsoul_name}")
+            return await interaction.followup.send(content=f"Error: could not find player {majsoul_name}")
         majsoul_id = result[0]["id"]
         await interaction.followup.send(content=f"https://amae-koromo.sapk.ch/player/{majsoul_id}")
 
