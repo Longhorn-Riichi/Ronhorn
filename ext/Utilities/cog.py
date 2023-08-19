@@ -1,11 +1,12 @@
 import asyncio
 import discord
 import gspread
+import logging
 from os import getenv
 from discord.ext import commands
 from discord import app_commands, Interaction
-import logging
 from typing import *
+from ext.LobbyManagers.cog import LobbyManager
 
 def assert_getenv(name: str) -> Any:
     value = getenv(name)
@@ -19,6 +20,10 @@ YH_TOURNAMENT_ID: str      = assert_getenv("yh_tournament_id")
 YT_TOURNAMENT_ID: str      = assert_getenv("yt_tournament_id")
 SH_TOURNAMENT_ID: str      = assert_getenv("sh_tournament_id")
 ST_TOURNAMENT_ID: str      = assert_getenv("st_tournament_id")
+YH_NAME: str               = assert_getenv("yh_name")
+YT_NAME: str               = assert_getenv("yt_name")
+SH_NAME: str               = assert_getenv("sh_name")
+ST_NAME: str               = assert_getenv("st_name")
 REGISTRY_NAME_LENGTH: int  = 15
 
 class Utilities(commands.Cog):
@@ -34,11 +39,26 @@ class Utilities(commands.Cog):
         self.raw_scores_lock = bot.raw_scores_lock
 
         # we assume that the manager cogs have already been loaded
-        self.yh_manager = bot.get_cog("YonmaHanchanLobbyManager")
-        self.yt_manager = bot.get_cog("YonmaTonpuuLobbyManager")
-        self.sh_manager = bot.get_cog("SanmaHanchanLobbyManager")
-        self.st_manager = bot.get_cog("SanmaTonpuuLobbyManager")
+        self.yh_cog = bot.get_cog("YonmaHanchanLobbyManager")
+        self.yt_cog = bot.get_cog("YonmaTonpuuLobbyManager")
+        self.sh_cog = bot.get_cog("SanmaHanchanLobbyManager")
+        self.st_cog = bot.get_cog("SanmaTonpuuLobbyManager")
 
+    """
+    =====================================================
+    HELPERS
+    =====================================================
+    """
+
+    def get_cog(self, lobby_name: str) -> LobbyManager:
+        if lobby_name == YH_NAME:
+            return self.yh_cog
+        if lobby_name == YT_NAME:
+            return self.yt_cog
+        if lobby_name == SH_NAME:
+            return self.sh_cog
+        if lobby_name == ST_NAME:
+            return self.st_cog
 
     """
     =====================================================
@@ -53,74 +73,87 @@ class Utilities(commands.Cog):
                 "How to play online club games:\n"
                 "1. Register your Mahjong Soul account with `/register`.\n"
                 "2. Choose the right lobby by Tournament ID:\n"
-                f"> 4P South: **{YH_TOURNAMENT_ID}**\n"
-                f"> 4P East: **{YT_TOURNAMENT_ID}**\n"
-                f"> 3P South: **{SH_TOURNAMENT_ID}**\n"
-                f"> 3P East: **{ST_TOURNAMENT_ID}**\n"
+                f"> {YH_NAME}: **{YH_TOURNAMENT_ID}**\n"
+                f"> {YT_NAME}: **{YT_TOURNAMENT_ID}**\n"
+                f"> {SH_NAME}: **{SH_TOURNAMENT_ID}**\n"
+                f"> {ST_NAME}: **{ST_TOURNAMENT_ID}**\n"
                 "3. On Mahjong Soul: Tournament Match -> Tournament Lobby -> Enter Tournament ID -> Prepare for match.\n"
                 "4. You can **follow** the lobbies for easier access.\n"
                 "Helpful commands for when people need to be AFK (do NOT abuse!):\n"
                 "`/terminate_own_game`, `/pause_own_game`, `/unpause_own_game`"),
             ephemeral=True)
 
-    """
     @app_commands.command(name="terminate_any_game", description=f"Terminate the game of the specified player. Only usable by @{OFFICER_ROLE}.")
-    @app_commands.describe(nickname="Specify the nickname of a player that's in the game you want to terminate.")
+    @app_commands.describe(
+        lobby="Which lobby is the game in?",
+        nickname="Mahjong Soul nickname of a player that's in the game you want to terminate.")
+    @app_commands.choices(lobby=[
+        app_commands.Choice(name=YH_NAME, value=YH_NAME),
+        app_commands.Choice(name=YT_NAME, value=YT_NAME),
+        app_commands.Choice(name=SH_NAME, value=SH_NAME),
+        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
     @app_commands.checks.has_role(OFFICER_ROLE)
-    async def terminate_any_game(self, interaction: Interaction, nickname: str):
-        await interaction.response.defer()
-        message = await self.manager.terminate_game(nickname)
-        await interaction.followup.send(content=message)
+    async def terminate_any_game(self, interaction: Interaction, lobby: app_commands.Choice[str], nickname: str):
+        await self.get_cog(lobby.value).terminate_any_game(interaction, nickname)
 
-    @app_commands.command(name="terminate_own_game", description=f"Terminate the game you are currently in. Usable by {PLAYER_ROLE}.")
-    @app_commands.checks.has_role(PLAYER_ROLE)
-    async def terminate_own_game(self, interaction: Interaction):
-        await interaction.response.defer()
-        player = self.look_up_player(interaction.user.name)
-        if player is None:
-            await interaction.followup.send(content="You are not a registered player; there shouldn't be an ongoing game for you.")
-            return
-        message = await self.manager.terminate_game(player.mjs_nickname)
-        await interaction.followup.send(content=message)
+    @app_commands.command(name="terminate_own_game", description=f"Terminate the game you are currently in.")
+    @app_commands.describe(
+        lobby="Which lobby is your game in?")
+    @app_commands.choices(lobby=[
+        app_commands.Choice(name=YH_NAME, value=YH_NAME),
+        app_commands.Choice(name=YT_NAME, value=YT_NAME),
+        app_commands.Choice(name=SH_NAME, value=SH_NAME),
+        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
+    async def terminate_own_game(self, interaction: Interaction, lobby: app_commands.Choice[str]):
+        await self.get_cog(lobby.value).terminate_own_game(interaction)
     
     @app_commands.command(name="pause_any_game", description=f"Pause the game of the specified player. Only usable by @{OFFICER_ROLE}.")
-    @app_commands.describe(nickname="Specify the nickname of a player that's in the game you want to pause.")
-    @app_commands.checks.has_role(ADMIN_ROLE)
-    async def pause_any_game(self, interaction: Interaction, nickname: str):
-        await interaction.response.defer()
-        message = await self.manager.pause_game(nickname)
-        await interaction.followup.send(content=message)
+    @app_commands.describe(
+        lobby="Which lobby is the game in?",
+        nickname="Mahjong Soul nickname of a player that's in the game you want to pause.")
+    @app_commands.choices(lobby=[
+        app_commands.Choice(name=YH_NAME, value=YH_NAME),
+        app_commands.Choice(name=YT_NAME, value=YT_NAME),
+        app_commands.Choice(name=SH_NAME, value=SH_NAME),
+        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
+    @app_commands.checks.has_role(OFFICER_ROLE)
+    async def pause_any_game(self, interaction: Interaction, lobby: app_commands.Choice[str], nickname: str):
+        await self.get_cog(lobby.value).pause_any_game(interaction, nickname)
 
-    @app_commands.command(name="pause_own_game", description=f"Pause the game you are currently in. Usable by {PLAYER_ROLE}.")
-    @app_commands.checks.has_role(PLAYER_ROLE)
-    async def pause_own_game(self, interaction: Interaction):
-        await interaction.response.defer()
-        player = self.look_up_player(interaction.user.name)
-        if player is None:
-            await interaction.followup.send(content="You are not a registered player; there shouldn't be an ongoing game for you.")
-            return
-        message = await self.manager.pause_game(player.mjs_nickname)
-        await interaction.followup.send(content=message)
+    @app_commands.command(name="pause_own_game", description=f"Pause the game you are currently in.")
+    @app_commands.describe(
+        lobby="Which lobby is your game in?")
+    @app_commands.choices(lobby=[
+        app_commands.Choice(name=YH_NAME, value=YH_NAME),
+        app_commands.Choice(name=YT_NAME, value=YT_NAME),
+        app_commands.Choice(name=SH_NAME, value=SH_NAME),
+        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
+    async def pause_own_game(self, interaction: Interaction, lobby: app_commands.Choice[str]):
+        await self.get_cog(lobby.value).pause_own_game(interaction)
     
     @app_commands.command(name="unpause_any_game", description=f"Unpause the paused game of the specified player. Only usable by @{OFFICER_ROLE}.")
-    @app_commands.describe(nickname="Specify the nickname of a player that's in the paused game you want to unpause.")
+    @app_commands.describe(
+        lobby="Which lobby is the game in?",
+        nickname="Mahjong Soul nickname of a player that's in the game you want to unpause.")
+    @app_commands.choices(lobby=[
+        app_commands.Choice(name=YH_NAME, value=YH_NAME),
+        app_commands.Choice(name=YT_NAME, value=YT_NAME),
+        app_commands.Choice(name=SH_NAME, value=SH_NAME),
+        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
     @app_commands.checks.has_role(OFFICER_ROLE)
-    async def unpause_any_game(self, interaction: Interaction, nickname: str):
-        await interaction.response.defer()
-        message = await self.manager.unpause_game(nickname)
-        await interaction.followup.send(content=message)
+    async def unpause_any_game(self, interaction: Interaction, lobby: app_commands.Choice[str], nickname: str):
+        await self.get_cog(lobby.value).unpause_any_game(interaction, nickname)
 
-    @app_commands.command(name="unpause_own_game", description=f"Unpause the paused game you were in. Usable by {PLAYER_ROLE}.")
-    @app_commands.checks.has_role(PLAYER_ROLE)
-    async def unpause_own_game(self, interaction: Interaction):
-        await interaction.response.defer()
-        player = self.look_up_player(interaction.user.name)
-        if player is None:
-            await interaction.followup.send(content="You are not a registered player; there shouldn't be an ongoing game for you.")
-            return
-        message = await self.manager.unpause_game(player.mjs_nickname)
-        await interaction.followup.send(content=message)
-    """
+    @app_commands.command(name="unpause_own_game", description=f"Unpause the paused game you were in.")
+    @app_commands.describe(
+        lobby="Which lobby is your game in?")
+    @app_commands.choices(lobby=[
+        app_commands.Choice(name=YH_NAME, value=YH_NAME),
+        app_commands.Choice(name=YT_NAME, value=YT_NAME),
+        app_commands.Choice(name=SH_NAME, value=SH_NAME),
+        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
+    async def unpause_own_game(self, interaction: Interaction, lobby: app_commands.Choice[str]):
+        await self.get_cog(lobby.value).unpause_own_game(interaction)
 
     # TODO: command to upgrade someone's membership to paid
     # TODO: command to get someone's registry information (by name or discord name)
@@ -134,7 +167,7 @@ class Utilities(commands.Cog):
         """
 
         # Fetch Mahjong Soul details using one of the lobby managers
-        res = await self.st_manager.manager.call("searchAccountByEid", eids = [int(friend_id)])
+        res = await self.st_cog.manager.call("searchAccountByEid", eids = [int(friend_id)])
         # if no account found, then `res` won't have a `search_result` field, but it won't
         # have an `error`` field, either (i.e., it's not an error!).
         if not res.search_result:
@@ -242,9 +275,6 @@ class Utilities(commands.Cog):
                 scores = [score1, score2, score3, score4]
                 game_style = "Yonma"
 
-            ordered_players = sorted(zip(players, scores), key=lambda item: -item[1])
-            first_player, first_score = ordered_players[0]
-            ordered_players[0] = (first_player, first_score + 1000*riichi_sticks)
             total_score = sum(scores) + 1000*riichi_sticks
 
             if total_score != expected_total:
@@ -252,6 +282,11 @@ class Utilities(commands.Cog):
                 return await interaction.followup.send(content=f"Error: Entered scores add up to {'+'.join(map(str,scores))}{riichi_stick_string} = {total_score}, expected {expected_total}.")
             if len(set(players)) < len(players):
                 return await interaction.followup.send(content=f"Error: duplicate player entered.")
+
+            # the input is now sanitized; add riichi sticks to the first place's total
+            ordered_players = sorted(zip(players, scores), key=lambda item: -item[1])
+            first_player, first_score = ordered_players[0]
+            ordered_players[0] = (first_player, first_score + 1000*riichi_sticks)
 
             # enter the scores into the sheet
             import datetime
