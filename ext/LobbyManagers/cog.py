@@ -200,25 +200,25 @@ async def setup(bot: commands.Bot):
         contest_unique_id=int(assert_getenv("yh_contest_unique_id")),
         mjs_username=assert_getenv("mjs_yh_username"),
         mjs_password=assert_getenv("mjs_yh_password"),
-        game_type="Yonma Hanchan"))
+        game_type=assert_getenv("yh_name")))
     cog_instances.append(YonmaTonpuuLobbyManager(
         bot=bot,
         contest_unique_id=int(assert_getenv("yt_contest_unique_id")),
         mjs_username=assert_getenv("mjs_yt_username"),
         mjs_password=assert_getenv("mjs_yt_password"),
-        game_type="Yonma Tonpuu"))
+        game_type=assert_getenv("yt_name")))
     cog_instances.append(SanmaHanchanLobbyManager(
         bot=bot,
         contest_unique_id=int(assert_getenv("sh_contest_unique_id")),
         mjs_username=assert_getenv("mjs_sh_username"),
         mjs_password=assert_getenv("mjs_sh_password"),
-        game_type="Sanma Hanchan"))
+        game_type=assert_getenv("sh_name")))
     cog_instances.append(SanmaTonpuuLobbyManager(
         bot=bot,
         contest_unique_id=int(assert_getenv("st_contest_unique_id")),
         mjs_username=assert_getenv("mjs_st_username"),
         mjs_password=assert_getenv("mjs_st_password"),
-        game_type="Sanma Tonpuu"))
+        game_type=assert_getenv("st_name")))
     
     for cog_instance in cog_instances:
         logging.info(f"Loading cog instance `{cog_instance.game_type}`.")
