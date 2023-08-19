@@ -254,12 +254,12 @@ class Utilities(commands.Cog):
     ])
     @app_commands.checks.has_role(OFFICER_ROLE)
     async def enter_scores(self, interaction: Interaction,
-                                  game_type: app_commands.Choice[str],
-                                  player1: discord.Member, score1: int,
-                                  player2: discord.Member, score2: int,
-                                  player3: discord.Member, score3: int,
-                                  player4: Optional[discord.Member] = None, score4: Optional[int] = None,
-                                  riichi_sticks: int = 0):
+                                 game_type: app_commands.Choice[str],
+                                 player1: discord.Member, score1: int,
+                                 player2: discord.Member, score2: int,
+                                 player3: discord.Member, score3: int,
+                                 player4: Optional[discord.Member] = None, score4: Optional[int] = None,
+                                 riichi_sticks: int = 0):
         await interaction.response.defer()
         try:
             if player4 is None:
@@ -308,6 +308,45 @@ class Utilities(commands.Cog):
         except Exception as e:
             await interaction.followup.send(content="Error: " + str(e))
 
+    @app_commands.command(name="update_membership", description=f"Update a player's membership type (paid or unpaid). Only usable by @{OFFICER_ROLE}.")
+    @app_commands.describe(server_member="The server member whose membership type you want to update",
+                           membership="Make them a paid or unpaid member?")
+    @app_commands.choices(membership=[
+        app_commands.Choice(name="Paid member", value="yes"),
+        app_commands.Choice(name="Unpaid member", value="no")
+    ])
+    @app_commands.checks.has_role(OFFICER_ROLE)
+    async def update_membership(self, interaction: Interaction,
+                                      server_member: discord.Member,
+                                      membership: app_commands.Choice[str]):
+        await interaction.response.defer(ephemeral=True)
+        try:
+            discord_name = server_member.name
+            async with self.registry_lock:
+                found_cell = self.registry.find(discord_name, in_column=2)
+                if found_cell is None:
+                    return await interaction.followup.send(content=f"Error: {discord_name} is not registered as a club member.")
+                self.registry.update_cell(row=found_cell.row, col=3, value=membership.value)
+            paid_unpaid = "paid" if membership.value == "yes" else "unpaid"
+            await interaction.followup.send(content=f"Successfully made {discord_name} a {paid_unpaid} member.")
+        except Exception as e:
+            await interaction.followup.send(content="Error: " + str(e))
+
+    @app_commands.command(name="nodocchi", description=f"Get a Nodocchi link for a given tenhou.net username.")
+    @app_commands.describe(tenhou_name="The tenhou.net username to lookup.")
+    async def nodocchi(self, interaction: Interaction, tenhou_name: str):
+        await interaction.response.send_message(content=f"https://nodocchi.moe/tenhoulog/#!&name={tenhou_name}")
+
+    @app_commands.command(name="amae_koromo", description=f"Get a Amae-Koromo link for a given Mahjong Soul username.")
+    @app_commands.describe(majsoul_name="The Mahjong Soul name to lookup.")
+    async def amae_koromo(self, interaction: Interaction, majsoul_name: str):
+        await interaction.response.defer()
+        import requests
+        result = requests.get(url=f"https://5-data.amae-koromo.com/api/v2/pl4/search_player/{majsoul_name}").json()
+        if len(result) == 0:
+            await interaction.followup.send(content=f"Error: could not find player {majsoul_name}")
+        majsoul_id = result[0]["id"]
+        await interaction.followup.send(content=f"https://amae-koromo.sapk.ch/player/{majsoul_id}")
 
 
 async def setup(bot: commands.Bot):
