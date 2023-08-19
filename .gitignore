@@ -6,6 +6,7 @@ gs_service_account.json
 Pipfile.lock
 **/__pycache__
 log.txt
+cached_games/*
 
 # may result from installing protobuf-cli with npm
 **/package.json
