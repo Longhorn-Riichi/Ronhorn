@@ -34,10 +34,14 @@ class InjusticeJudge(commands.Cog):
         app_commands.Choice(name="North", value=3)])
     async def injustice(self, interaction: Interaction, game_link: str, player: Optional[app_commands.Choice[int]]):
         await interaction.response.defer()
-        injustices = await analyze_game(game_link, player)
+        if player is not None:
+            injustices = await analyze_game(game_link, player.value)
+        else:
+            injustices = await analyze_game(game_link)
         if injustices == []:
             injustices = ["No injustices detected."]
-        await interaction.followup.send(content=f"Analyzing {game_link}:\n" + "\n".join(injustices), suppress_embeds=True)
+        as_player_string = "yourself" if player is None else player.name
+        await interaction.followup.send(content=f"Analyzing {game_link} for {as_player_string}:\n" + "\n".join(injustices), suppress_embeds=True)
 
 
 async def setup(bot: commands.Bot):
