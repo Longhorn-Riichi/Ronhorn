@@ -26,7 +26,7 @@ class InjusticeJudge(commands.Cog):
 
     @app_commands.command(name="injustice", description="Display the injustices in a given game.")
     @app_commands.describe(game_link="The game link to analyze (either Mahjong Soul or tenhou.net)",
-                           player="(optional) The seat to analyze the game from. Automatically determined using the link, and defaults to East.")
+                           player="(optional) The seat to analyze the game from. Determined using the link, but defaults to East.")
     @app_commands.choices(player=[
         app_commands.Choice(name="East", value=0),
         app_commands.Choice(name="South", value=1),
@@ -34,10 +34,10 @@ class InjusticeJudge(commands.Cog):
         app_commands.Choice(name="North", value=3)])
     async def injustice(self, interaction: Interaction, game_link: str, player: Optional[app_commands.Choice[int]]):
         await interaction.response.defer()
-        injustices = analyze_game(game_link, player)
+        injustices = await analyze_game(game_link, player)
         if injustices == []:
             injustices = ["No injustices detected."]
-        await interaction.followup.send(content=f"Analyzing {game_link}:\n" + "\n".join(injustices))
+        await interaction.followup.send(content=f"Analyzing {game_link}:\n" + "\n".join(injustices), suppress_embeds=True)
 
 
 async def setup(bot: commands.Bot):
