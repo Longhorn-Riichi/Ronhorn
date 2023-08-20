@@ -158,7 +158,7 @@ class Utilities(commands.Cog):
     # TODO: command to upgrade someone's membership to paid
     # TODO: command to get someone's registry information (by name or discord name)
         
-    async def _register(self, name: str, server_member: discord.Member, friend_id: int) -> str:
+    async def _register(self, name: str, server_member: discord.Member, friend_id: Optional[int]) -> str:
         """
         Add player to the registry, removing any existing registration first.
         Assumes input is already sanitized (e.g., `name` isn't 200 chars long)
@@ -166,14 +166,18 @@ class Utilities(commands.Cog):
         Returns the response string.
         """
 
-        # Fetch Mahjong Soul details using one of the lobby managers
-        res = await self.st_cog.manager.call("searchAccountByEid", eids = [int(friend_id)])
-        # if no account found, then `res` won't have a `search_result` field, but it won't
-        # have an `error`` field, either (i.e., it's not an error!).
-        if not res.search_result:
-            raise Exception(f"Couldn't find Mahjong Soul account for this friend ID: {friend_id}")
-        mahjongsoul_nickname = res.search_result[0].nickname
-        mahjongsoul_account_id = res.search_result[0].account_id
+        if friend_id is not None:
+            # Fetch Mahjong Soul details using one of the lobby managers
+            res = await self.st_cog.manager.call("searchAccountByEid", eids = [int(friend_id)])
+            # if no account found, then `res` won't have a `search_result` field, but it won't
+            # have an `error`` field, either (i.e., it's not an error!).
+            if not res.search_result:
+                raise Exception(f"Couldn't find Mahjong Soul account for this friend ID: {friend_id}")
+            mahjongsoul_nickname = res.search_result[0].nickname
+            mahjongsoul_account_id = res.search_result[0].account_id
+        else:
+            mahjongsoul_nickname = None
+            mahjongsoul_account_id = None
         discord_name = server_member.name
 
         async with self.registry_lock:
@@ -190,16 +194,15 @@ class Utilities(commands.Cog):
                     friend_id,
                     mahjongsoul_account_id]
             self.registry.append_row(data)
-            if cell_existed:
-                return f"\"{discord_name}\" updated registration with name \"{name}\" and Mahjong Soul account \"{mahjongsoul_nickname}\"."
-            else:
-                return f"\"{discord_name}\" registered with name \"{name}\" and Mahjong Soul account \"{mahjongsoul_nickname}\"."
+            register_string = "updated registration" if cell_existed else "registered"
+            mjsoul_string = f" and Mahjong Soul account \"{mahjongsoul_nickname}\"" if friend_id is not None else ""
+            return f"\"{discord_name}\" {register_string} with name \"{name}\"{mjsoul_string}."
     
     @app_commands.command(name="register", description="Register with your name and Mahjong Soul friend ID, or update your current registration.")
     @app_commands.describe(
         name=f"Your preferred, real-life name (no more than {REGISTRY_NAME_LENGTH} characters)",
-        friend_id="Find your friend ID in the Friends tab; this is separate from your username.")
-    async def register(self, interaction: Interaction, name: str, friend_id: int):
+        friend_id="(optional) Mahjong Soul friend ID. Find it in the Friends tab; this is not your username.")
+    async def register(self, interaction: Interaction, name: str, friend_id: Optional[int] = None):
         if len(name) > REGISTRY_NAME_LENGTH:
             await interaction.response.send_message(f"Please keep your preferred name within {REGISTRY_NAME_LENGTH} characters and `/register` again.", ephemeral=True)
             return
@@ -349,7 +352,82 @@ class Utilities(commands.Cog):
         await interaction.followup.send(content=f"https://amae-koromo.sapk.ch/player/{majsoul_id}")
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    # @app_commands.command(name="info", description=f"Look up a player's club info (e.g. Mahjong Soul ID).")
+    # @app_commands.describe(server_member="The player to lookup.")
+    # async def info(self, interaction: Interaction, server_member: discord.Member):
+    #     await interaction.response.defer()
+    #     try:
+    #         discord_name = server_member.name
+    #         discord_name = server_member.mention
+    #         found_cell = self.registry.find(discord_name, in_column=2)
+    #         if found_cell is None:
+    #             await interaction.followup.send(content=f"Error: {discord_name} is not registered as a club member.")
+    #         else
+    #             [name, _, paid_membership, majsoul_name, majsoul_friend_code, majsoul_id, *rest] = self.registry.row_values(found_cell.row)
+    #             paid_unpaid = "a paid" if paid_membership == "yes" else "an unpaid"
+    #             await interaction.followup.send(content=f"{server_member.mention} (MJS: {majsoul_name}, id {majsoul_id}) is {paid_unpaid} member of Longhorn Riichi.")
+
+        # except Exception as e:
+        #     await interaction.followup.send(content="Error: " + str(e))
+
+
+    # @app_commands.command(name="stats", description=f"Look up a player's club stats (e.g. leaderboard placement).")
+    # @app_commands.describe(server_member="The player to lookup.")
+    # async def stats(self, interaction: Interaction, server_member: discord.Member):
+    #     await interaction.response.defer()
+    #     try:
+    #         discord_name = server_member.name
+    #         discord_name = server_member.mention
+    #         found_cell = self.registry.find(discord_name, in_column=2)
+    #         if found_cell is None:
+    #             return await interaction.followup.send(content=f"Error: {discord_name} is not registered as a club member.")
+
+    #         majsoul_name, majsoul_id = 1, 1
+    #         num_games_played = 10
+    #         placement = 4
+    #         max_placement = 10
+    #         avg_yonma_placement = 2.5
+    #         avg_sanma_placement = 2
+    #         await interaction.followup.send(content=
+    #              f"{server_member.mention} ({majsoul_name}) (id {majsoul_id}) has played {num_games_played} games "
+    #             +f" and is currently number {placement} (out of {max_placement}) on the leaderboard.\n"
+    #             + " Average yonma placement is {:.2f}. Average scores:\n".format(avg_yonma_placement)
+    #             + " - (Yonma) 1st place: 42000 (25%% of games)\n"
+    #             + " - (Yonma) 2nd place: 32000 (25%% of games)\n"
+    #             + " - (Yonma) 3rd place: 22000 (25%% of games)\n"
+    #             + " - (Yonma) 4th place: 12000 (25%% of games)\n"
+    #             + " Average sanma placement is {:.2f}. Average scores:\n".format(avg_sanma_placement)
+    #             + " - (Sanma) 1st place: 52000 (33%% of games)\n"
+    #             + " - (Sanma) 2nd place: 32000 (33%% of games)\n"
+    #             + " - (Sanma) 3rd place: 12000 (33%% of games)")
+
+    #     except Exception as e:
+    #         await interaction.followup.send(content="Error: " + str(e))
+
+
+
 async def setup(bot: commands.Bot):
     logging.info(f"Loading extension `{Utilities.__name__}`...")
     instance = Utilities(bot)
     await bot.add_cog(instance, guild=discord.Object(id=GUILD_ID))
+
