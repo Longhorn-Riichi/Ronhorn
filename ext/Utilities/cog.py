@@ -8,6 +8,9 @@ from discord.ext import commands
 from discord import app_commands, Interaction
 from typing import *
 from ext.LobbyManagers.cog import LobbyManager
+from modules.InjusticeJudge.injustice_judge.fetch import parse_game_link
+from modules.InjusticeJudge.injustice_judge.utils import round_name
+from modules.InjusticeJudge.injustice_judge.constants import TRANSLATE
 
 def assert_getenv(name: str) -> str:
     value = getenv(name)
@@ -348,26 +351,59 @@ class Utilities(commands.Cog):
         majsoul_id = result[0]["id"]
         await interaction.followup.send(content=f"https://amae-koromo.sapk.ch/player/{majsoul_id}")
 
+    @app_commands.command(name="parse", description=f"Print out the results of a game.")
+    @app_commands.describe(link="Link to the game to describe (Mahjong Soul or tenhou.net).")
+    async def parse(self, interaction: Interaction, link: str):
+        await interaction.response.defer()
+        kyokus, game_metadata, player = await parse_game_link(link)
+        results = [(kyoku["round"], kyoku["honba"], kyoku["result"]) for kyoku in kyokus]
+        player_names = [f"**{name}**" for name in game_metadata["name"]]
+        game_scores = game_metadata["game_score"]
+        final_scores = game_metadata["final_score"]
+        num_players = len(player_names)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        ret = f"Result of game {link}:\n"
+        ret += ", ".join("{}: {} ({:+.1f})".format(p,g,f/1000.0) for p,g,f in sorted(zip(player_names, game_scores, final_scores), key=lambda z: -z[2]))
+        for rnd, honba, result in results:
+            result_name, score_deltas, *win_data = result
+            if result_name == "和了": # ron or tsumo
+                [winner, from_seat, _, point_string, *yaku] = win_data[0]
+                tsumo = winner == from_seat
+                if tsumo:
+                    result_string = f"{player_names[from_seat]} tsumoed"
+                else:
+                    result_string = f"{player_names[from_seat]} dealt into {player_names[winner]}"
+                if "符" in point_string:
+                    [fu, rest] = point_string.split("符")
+                    [han, rest] = rest.split("飜")
+                    [pts, _] = rest.split("点")
+                else: # e.g. "満貫12000点"
+                    fu = ""
+                    han = ""
+                    pts = "".join(c for c in point_string if c.isdigit() or c == "-")
+                    limit_name = point_string.split(pts[0])[0]
+                pts = "/".join(pts.split("-"))
+                if tsumo:
+                    num_players == 3
+                if tsumo:
+                    if "∀" in point_string:
+                        result_string += f" for {pts}∀ = {int(pts)*(num_players-1)} points"
+                    else:
+                        ko, oya = map(int, pts.split('/'))
+                        result_string += f" for {pts} = {ko+ko+oya if num_players == 4 else ko+oya} points"
+                else:
+                    result_string += f" for {pts} points"
+                if fu != "":
+                    result_string += f" ({han}/{fu})"
+                else:
+                    result_string += f" ({TRANSLATE[limit_name]})"
+                result_string += f" ({', '.join(map(lambda y: TRANSLATE[y.split('(')[0]], yaku))})"
+            elif result_name in ["流局", "全員聴牌", "流し満貫"]: # ryuukyoku / nagashi
+                result_string = f"{TRANSLATE[result_name]} ({', '.join(player_names[i] for i, delta in enumerate(score_deltas) if delta > 0)})"
+            elif result_name in ["九種九牌", "四家立直", "三家和了", "四槓散了", "四風連打"]: # draws
+                result_string = TRANSLATE[result_name]
+            ret += f"\n- {round_name(rnd, honba)}: {result_string}"
+        await interaction.followup.send(content=ret, suppress_embeds=True)
 
     # @app_commands.command(name="info", description=f"Look up a player's club info (e.g. Mahjong Soul ID).")
     # @app_commands.describe(server_member="The player to lookup.")
