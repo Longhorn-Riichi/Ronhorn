@@ -67,7 +67,7 @@ class Utilities(commands.Cog):
     =====================================================
     """
 
-    @app_commands.command(name="help", description="show helpful info about the club (only visible to you)")
+    @app_commands.command(name="help", description="show help about club online games")
     async def help(self, interaction: Interaction):
         await interaction.response.send_message(
             content=(
