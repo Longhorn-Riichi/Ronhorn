@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import gspread
 import logging
 from os import getenv
@@ -124,7 +125,7 @@ class LobbyManager(commands.Cog):
         await self.bot_channel.send(f"{self.game_type} game started! Players:\n{nicknames}.")
 
     async def on_NotifyContestGameEnd(self, _, msg):
-        record_list = await self.account_manager.get_game_results([msg.game_uuid])[0]
+        record_list = await self.account_manager.get_game_results([msg.game_uuid])
 
         if len(record_list) == 0:
             await self.bot_channel.send("A game concluded without a record (possibly due to being terminated early).")
@@ -136,7 +137,9 @@ class LobbyManager(commands.Cog):
         seat_player_dict = {a.seat: (a.account_id, a.nickname) for a in record.accounts}
 
         player_scores_rendered = ["Game concluded! Results:"] # to be newline-separated
-        raw_scores_row = [] # a list of values for a "Raw Scores" row
+
+        timestamp = str(datetime.datetime.now()).split(".")[0]
+        raw_scores_row = [timestamp, self.game_type, "no"] # a list of values for a "Raw Scores" row
         not_registered = [] # list of unregistered players in game, if any
 
         for p in record.result.players:
