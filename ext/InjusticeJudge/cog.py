@@ -5,7 +5,7 @@ from discord.ext import commands
 from discord import app_commands, Interaction
 from typing import *
 from modules.mahjongsoul.account_manager import AccountManager
-from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_tenhou, parse_majsoul
+from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_tenhou, parse_majsoul, save_cache
 from modules.InjusticeJudge.injustice_judge.injustices import evaluate_injustices
 from modules.pymjsoul.proto import liqi_combined_pb2 as proto
 
@@ -79,12 +79,9 @@ class InjusticeJudge(commands.Cog):
     async def fetch_majsoul(self, link: str):
         """
         NOTE:
-        basically the same as InjusticeJudge's `fetch_majsoul()`, with 2 differences;
-        1. Instead of logging in for each fetch, just fetch through the already logged-in
+        basically the same as InjusticeJudge's `fetch_majsoul()`, with 1 difference;
+        Instead of logging in for each fetch, just fetch through the already logged-in
         AccountManager.
-        2. save and read the Mahjong Soul game log cache from this extension's directory,
-        instead of the submodule's directory. This also means 2 GB total cache instead of
-        1 GB.
         """
         assert link.startswith("https://mahjongsoul.game.yo-star.com/?paipu="), "expected mahjong soul link starting with https://mahjongsoul.game.yo-star.com/?paipu="
         if not "_a" in link:
@@ -103,19 +100,9 @@ class InjusticeJudge(commands.Cog):
                 game_uuid=identifier,
                 client_version_string=self.account_manager.client_version_string)
 
-            """
-            NOTE: Here's this extension's own version of `save_cache()`
-            """
-            filename=f"game-{identifier}.log"
-            data=res.SerializeToString()
-            # make sure the cache directory exists
-            if not os.path.isdir("cached_games"):
-                os.mkdir("cached_games")
-            # make sure we have enough space
-            dir_size = sum(os.path.getsize(os.path.join(dirpath, f)) for dirpath, _, filenames in os.walk("cached_games") for f in filenames)
-            if dir_size < (1024 ** 3): # 1GB
-                with open(f"cached_games/{filename}", "wb") as file:
-                    file.write(data)
+            save_cache(
+                filename=f"game-{identifier}.log",
+                data=res.SerializeToString())
 
             return (res.head, res.data), next((acc.seat for acc in res.head.accounts if acc.account_id == ms_account_id), 0)
 
