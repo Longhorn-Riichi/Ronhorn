@@ -114,24 +114,13 @@ class LobbyManager(commands.Cog):
         message = await self.manager.unpause_game(mjs_nickname)
         await interaction.followup.send(content=message)
 
-    """
-    =====================================================
-    MAHJONG SOUL API STUFF
-    =====================================================
-    """
-
-    async def on_NotifyContestGameStart(self, _, msg):
-        nicknames = " | ".join([p.nickname or "AI" for p in msg.game_info.players])
-        await self.bot_channel.send(f"{self.game_type} game started! Players:\n{nicknames}.")
-
-    async def on_NotifyContestGameEnd(self, _, msg):
-        record_list = await self.account_manager.get_game_results([msg.game_uuid])
-
+    async def add_game_to_leaderboard(self, uuid):
+        record_list = await self.account_manager.get_game_results([uuid])
         if len(record_list) == 0:
-            await self.bot_channel.send("A game concluded without a record (possibly due to being terminated early).")
-            return
+            raise Exception("A game concluded without a record (possibly due to being terminated early).")
 
         record = record_list[0]
+
         # TODO: deal with ordering the scores; currently assumes the scores are ordered by
         #       total_point (this algorithm can be shared with manual score entering)
         seat_player_dict = {a.seat: (a.account_id, a.nickname) for a in record.accounts}
@@ -146,8 +135,7 @@ class LobbyManager(commands.Cog):
             player_account_id, player_nickname = seat_player_dict.get(p.seat, (0, "AI"))
 
             if player_account_id == 0:
-                asyncio.create_task(self.bot_channel.send(
-                    content='ERROR: a game ended with AI players. How???'))
+                player_scores_rendered.append("ERROR: a game ended with AI players. How???")
             
             raw_score = p.part_point_1
             async with self.registry_lock:
@@ -165,11 +153,27 @@ class LobbyManager(commands.Cog):
         for player_nickname in not_registered:
             player_scores_rendered.append(f"WARNING: Mahjong Soul player {player_nickname} is not registered! Modify spreadsheet after registration!")
 
-        asyncio.create_task(self.bot_channel.send(
-            content='\n'.join(player_scores_rendered)))
-
         async with self.raw_scores_lock:
             self.raw_scores.append_row(raw_scores_row)
+
+        return '\n'.join(player_scores_rendered)
+    """
+    =====================================================
+    MAHJONG SOUL API STUFF
+    =====================================================
+    """
+
+    async def on_NotifyContestGameStart(self, _, msg):
+        nicknames = " | ".join([p.nickname or "AI" for p in msg.game_info.players])
+        await self.bot_channel.send(f"{self.game_type} game started! Players:\n{nicknames}.")
+
+    async def on_NotifyContestGameEnd(self, _, msg):
+        try:
+            resp = self.add_game_to_leaderboard(msg.game_uuid)
+        except Exception as e:
+            return await self.bot_channel.send(content="Error: " + str(e))
+        await self.bot_channel.send(content=resp)
+
 
     """
     =====================================================

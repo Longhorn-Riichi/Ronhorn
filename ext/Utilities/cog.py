@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import discord
 import gspread
 import logging
@@ -293,7 +294,6 @@ class Utilities(commands.Cog):
             ordered_players[0] = (first_player, first_score + 1000*riichi_sticks)
 
             # enter the scores into the sheet
-            import datetime
             timestamp = str(datetime.datetime.now()).split(".")[0]
             gamemode = f"{game_style} {game_type.value}"
             flatten = lambda xss: (x for xs in xss for x in xs)
@@ -404,6 +404,27 @@ class Utilities(commands.Cog):
                 result_string = TRANSLATE[result_name]
             ret += f"\n- {round_name(rnd, honba)}: {result_string}"
         await interaction.followup.send(content=ret, suppress_embeds=True)
+
+    @app_commands.command(name="submit_game", description=f"Submit a Mahjong Soul club game to the leaderboard. Only usable by @{OFFICER_ROLE}.")
+    @app_commands.describe(lobby="Which lobby is the game in?",
+                           link="The Mahjong Soul club game link to submit.")
+    @app_commands.choices(lobby=[
+        app_commands.Choice(name=YH_NAME, value=YH_NAME),
+        app_commands.Choice(name=YT_NAME, value=YT_NAME),
+        app_commands.Choice(name=SH_NAME, value=SH_NAME),
+        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
+    @app_commands.checks.has_role(OFFICER_ROLE)
+    async def submit_game(self, interaction: Interaction, lobby: app_commands.Choice[str], link: str):
+        await interaction.response.defer(ephemeral=True)
+        # extract the uuid from the game link
+        if not link.startswith("https://mahjongsoul.game.yo-star.com/?paipu="):
+            return await interaction.followup.send(content="Error: expected mahjong soul link starting with \"https://mahjongsoul.game.yo-star.com/?paipu=\".")
+        uuid, *player_string = link.split("https://mahjongsoul.game.yo-star.com/?paipu=")[1].split("_a")
+        try:
+            resp = await self.get_cog(lobby.value).add_game_to_leaderboard(uuid)
+        except Exception as e:
+            return await interaction.followup.send(content="Error: " + str(e))
+        await interaction.followup.send(content=f"Successfully submitted {link} to the {lobby.value} leaderboard.\n" + resp, suppress_embeds=True)
 
     # @app_commands.command(name="info", description=f"Look up a player's club info (e.g. Mahjong Soul ID).")
     # @app_commands.describe(server_member="The player to lookup.")
