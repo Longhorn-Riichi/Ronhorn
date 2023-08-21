@@ -397,7 +397,19 @@ class Utilities(commands.Cog):
                     result_string += f" ({han}/{fu})"
                 else:
                     result_string += f" ({TRANSLATE[limit_name]})"
-                result_string += f" ({', '.join(map(lambda y: TRANSLATE[y.split('(')[0]], yaku))})"
+                def translate_yaku(y):
+                    [name, value] = y.split('(')
+                    value = int(value.split("飜")[0])
+                    winds = {0:"ton",1:"nan",2:"shaa",3:"pei"}
+                    if value > 1 and TRANSLATE[name] in {"dora", "kita"}:
+                        return f"{TRANSLATE[name]} {value}"
+                    elif TRANSLATE[name] == "round wind":
+                        return winds[rnd//4]
+                    elif TRANSLATE[name] == "seat wind":
+                        return winds[winner]
+                    else:
+                        return TRANSLATE[name]
+                result_string += f" ({', '.join(map(translate_yaku, yaku))})"
             elif result_name in ["流局", "全員聴牌", "流し満貫"]: # ryuukyoku / nagashi
                 result_string = f"{TRANSLATE[result_name]} ({', '.join(player_names[i] for i, delta in enumerate(score_deltas) if delta > 0)})"
             elif result_name in ["九種九牌", "四家立直", "三家和了", "四槓散了", "四風連打"]: # draws
