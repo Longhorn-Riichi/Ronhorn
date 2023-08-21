@@ -2,6 +2,7 @@ import asyncio
 import discord
 import gspread
 import logging
+import requests
 from os import getenv
 from discord.ext import commands
 from discord import app_commands, Interaction
@@ -338,7 +339,6 @@ class Utilities(commands.Cog):
     @app_commands.describe(majsoul_name="The Mahjong Soul name to lookup.")
     async def amae_koromo(self, interaction: Interaction, majsoul_name: str):
         await interaction.response.defer()
-        import requests
         result = requests.get(url=f"https://5-data.amae-koromo.com/api/v2/pl4/search_player/{majsoul_name}").json()
         if len(result) == 0:
             return await interaction.followup.send(content=f"Error: could not find player {majsoul_name}")

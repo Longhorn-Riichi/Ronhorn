@@ -152,7 +152,7 @@ async def setup_hook():
     # note that extensions should be loaded before the slash commands
     # are synched. Here we ensure that by only allowing manual synching
     # once the bot finishes loading (i.e., `setup_hook()` has been called)
-    bot.account_manager.connect_and_login()
+    await bot.account_manager.connect_and_login()
     for extension in EXTENSIONS:
         await bot.load_extension(extension)
 bot.setup_hook = setup_hook

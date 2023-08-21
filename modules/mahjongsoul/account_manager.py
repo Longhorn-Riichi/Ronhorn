@@ -1,3 +1,7 @@
+import hmac
+import hashlib
+import requests
+import uuid
 import asyncio
 from typing import *
 from modules.pymjsoul.channel import MajsoulChannel, GeneralMajsoulError
@@ -14,6 +18,7 @@ class AccountManager(MajsoulChannel):
     def __init__(self, mjs_username: str, mjs_password: str, log_messages=False, logger_name="Account Manager"):
         self.mjs_username = mjs_username
         self.mjs_password = mjs_password
+        self.client_version_string: Optional[str] = None # obtained in `login`, useful for certain calls like `fetchGameRecord`
         super().__init__(proto=liqi_combined_pb2, log_messages=log_messages, logger_name=logger_name)
         self.huge_ping_task: Optional[asyncio.Task] = None
     
@@ -25,17 +30,13 @@ class AccountManager(MajsoulChannel):
         reusing this method.
         NOTE: use `super().call()` to avoid infinite errors
         """
-        import hmac
-        import hashlib
-        import requests
-        import uuid
         # following sequence is inspired by `mahjong_soul_api`:
         # https://github.com/MahjongRepository/mahjong_soul_api/blob/master/example.py
         # ms_version example: 0.10.269.w
         ms_version = requests.get(url="https://game.maj-soul.com/1/version.json").json()["version"]
         self.logger.info(f"Fetched Mahjong Soul version: {ms_version}")
 
-        client_version_string = f"web-{ms_version[:-2]}"
+        self.client_version_string = f"web-{ms_version[:-2]}"
         client_device_info = {"is_browser": True}
         await super().call(
             "login",
@@ -43,7 +44,7 @@ class AccountManager(MajsoulChannel):
             password=hmac.new(b"lailai", self.mjs_password.encode(), hashlib.sha256).hexdigest(),
             device=client_device_info,
             random_key=str(uuid.uuid1()),
-            client_version_string=client_version_string)
+            client_version_string=self.client_version_string)
         
         self.logger.info(f"`login` with {self.mjs_username} successful!")
 

@@ -10,5 +10,6 @@ gspread = "*"
 protobuf = "*"
 websockets = "*"
 aiohttp = "*"
+requests = "*"
 
 [dev-packages]
