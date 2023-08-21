@@ -8,7 +8,7 @@ from discord import app_commands, Interaction
 from typing import *
 from modules.InjusticeJudge.injustice_judge import analyze_game
 
-def assert_getenv(name: str) -> Any:
+def assert_getenv(name: str) -> str:
     value = getenv(name)
     assert value is not None, f"missing \"{name}\" in config.env"
     return value

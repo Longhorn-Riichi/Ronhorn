@@ -1,10 +1,8 @@
 import hmac
 import hashlib
-import logging
 import asyncio
 import datetime
-from typing import Optional
-from os import getenv
+from typing import *
 from modules.pymjsoul.channel import MajsoulChannel, GeneralMajsoulError
 from modules.pymjsoul.proto import liqi_combined_pb2
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError
@@ -20,13 +18,12 @@ class ContestManager(MajsoulChannel):
     """
     wraps around the `MajsoulChannel` class to provide additional functionalities for managing ONE specific contest on Discord
     """
-    def __init__(self, contest_unique_id: int, mjs_username: str, mjs_password: str, game_type: str, log_messages=False):
+    def __init__(self, contest_unique_id: int, mjs_username: str, mjs_password: str, log_messages=False, logger_name="Contest Manager"):
         self.contest_unique_id = contest_unique_id
         self.mjs_username = mjs_username
         self.mjs_password = mjs_password
         self.contest = None # contest info; `CustomizedContest` protobuf
-        self.logger = logging.getLogger(game_type)
-        super().__init__(proto=liqi_combined_pb2, log_messages=log_messages, logger_name=game_type)
+        super().__init__(proto=liqi_combined_pb2, log_messages=log_messages, logger_name=logger_name)
         self.huge_ping_task: Optional[asyncio.Task] = None
     
     async def login_and_start_listening(self):
@@ -83,8 +80,7 @@ class ContestManager(MajsoulChannel):
 
     async def connect_and_login(self):
         """
-        Connect to the Chinese tournament manager server, login with username and password environment variables, start managing the specified contest, and start receiving the notifications for the games in that contest.
-        Caller is responsible for catching errors and acting on them.
+        Connect to the Chinese tournament manager server, login with username and password, start managing the specified contest, and start receiving the notifications for the games in that contest.
         """
         # Establish WSS connection
         await self.connect(MS_MANAGER_WSS_ENDPOINT)
@@ -143,17 +139,6 @@ class ContestManager(MajsoulChannel):
                 if player.nickname == nickname:
                     return game.game_uuid
     
-    # TODO: login to Lobby to directly do `fetchGameRecord`?
-    async def locate_completed_game(self, game_uuid: int):
-        """
-        locate and return a completed game's record
-        """
-        res = await self.call('fetchContestGameRecords')
-        for item in res.record_list:
-            if item.record.uuid == game_uuid:
-                return item.record
-        return None
-    
     async def terminate_game(self, nickname: str) -> str:
         """
         terminate the game that the specified player is in.
@@ -207,7 +192,7 @@ class ContestManager(MajsoulChannel):
 
         return f"{nickname}'s paused game has been unpaused."
 
-    async def start_game(self, account_ids: list[int]=[0, 0, 0, 0], random_position=False, open_live=True, ai_level=1) -> None:
+    async def start_game(self, account_ids: List[int]=[0, 0, 0, 0], tag: str="", random_position=False, open_live=True, ai_level=1) -> None:
         """
         start a tournament game. `account_ids` is a list of mahjong soul player
         ids, where 0 means adding a computer at the given seat.
@@ -230,7 +215,8 @@ class ContestManager(MajsoulChannel):
                 await self.call('lockGamePlayer', account_id=account_id)
         await self.call(
             methodName='createContestGame',
-            slots = playerList,
+            slots=playerList,
+            tag=tag,
             random_position=random_position,
             open_live=open_live,
             ai_level=ai_level)

@@ -1,7 +1,6 @@
 # bot.py
 import dotenv
 from os import getenv, execl
-from os.path import join, dirname
 import discord
 from discord import app_commands, Interaction
 from discord.ext import commands
@@ -21,13 +20,16 @@ logging.basicConfig(
     ]
 )
 
+def assert_getenv(name: str) -> str:
+    value = getenv(name)
+    assert value is not None, f"missing \"{name}\" in config.env"
+    return value
+
 # load environmental variables
 dotenv.load_dotenv("config.env")
 
-DISCORD_TOKEN = getenv("bot_token")
-if DISCORD_TOKEN is None:
-    raise Exception("Missing bot_token in config.env")
-EXTENSIONS_FILE = getenv("extensions_file")
+DISCORD_TOKEN = assert_getenv("bot_token")
+EXTENSIONS_FILE = assert_getenv("extensions_file")
 
 try:
     with open(EXTENSIONS_FILE, 'r') as f:
@@ -42,23 +44,22 @@ intents.message_content = True # necessary for commands to work
 bot = commands.Bot(
     command_prefix='$',
     intents=intents)
-async def setup_hook():
-    # note that extensions should be loaded before the slash commands
-    # are synched. Here we ensure that by only allowing manual synching
-    # once the bot finishes loading (i.e., `setup_hook()` also called)
-    for extension in EXTENSIONS:
-        await bot.load_extension(extension)
-bot.setup_hook = setup_hook
-bot.remove_command('help')
 
 # initialize the spreadsheet interface and save references in `bot`
 # so they can be accessed by all extensions.
 gs_client = gspread.service_account(filename='gs_service_account.json')
-bot.spreadsheet = gs_client.open_by_url(getenv("spreadsheet_url"))
+bot.spreadsheet = gs_client.open_by_url(assert_getenv("spreadsheet_url"))
 bot.registry = bot.spreadsheet.worksheet("Registry")
 bot.raw_scores = bot.spreadsheet.worksheet("Raw Scores")
 bot.registry_lock = asyncio.Lock()
 bot.raw_scores_lock = asyncio.Lock()
+
+# initialize an account manager to be shared with all extensions.
+# login must happen in `setup_hook()`, before loading extension
+from modules.mahjongsoul.account_manager import AccountManager
+bot.account_manager = AccountManager(
+    mjs_username=assert_getenv("mjs_sh_username"),
+    mjs_password=assert_getenv("mjs_sh_password"))
 
 # bot events
 @bot.event
@@ -146,5 +147,15 @@ async def on_app_command_error(interaction: Interaction, error: app_commands.App
     else:
         raise error
 bot.tree.on_error = on_app_command_error
+
+async def setup_hook():
+    # note that extensions should be loaded before the slash commands
+    # are synched. Here we ensure that by only allowing manual synching
+    # once the bot finishes loading (i.e., `setup_hook()` has been called)
+    bot.account_manager.connect_and_login()
+    for extension in EXTENSIONS:
+        await bot.load_extension(extension)
+bot.setup_hook = setup_hook
+bot.remove_command('help')
 
 bot.run(DISCORD_TOKEN, log_handler=None)

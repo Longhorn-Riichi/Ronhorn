@@ -14,3 +14,4 @@ cached_games/*
 **/node_modules
 
 # tests
+test_api.py

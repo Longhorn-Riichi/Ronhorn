@@ -7,9 +7,10 @@ from discord.ext import commands
 from discord import Interaction
 
 from modules.mahjongsoul.contest_manager import ContestManager
+from modules.mahjongsoul.account_manager import AccountManager
 from typing import *
 
-def assert_getenv(name: str) -> Any:
+def assert_getenv(name: str) -> str:
     value = getenv(name)
     assert value is not None, f"missing \"{name}\" in config.env"
     return value
@@ -29,22 +30,25 @@ class LobbyManager(commands.Cog):
     def __init__(self, bot: commands.Bot, contest_unique_id: int, mjs_username: str, mjs_password: str, game_type: str):
         self.bot = bot
         self.bot_channel: Optional[int] = None # fetched in `self.async_setup()`
+        self.game_type = game_type
         self.manager = ContestManager(
             contest_unique_id,
             mjs_username,
             mjs_password,
-            game_type)
-        self.game_type = game_type
+            False,
+            game_type)        
 
         assert(isinstance(bot.registry, gspread.Worksheet))
         assert(isinstance(bot.raw_scores, gspread.Worksheet))
         assert(isinstance(bot.registry_lock, asyncio.Lock))
         assert(isinstance(bot.raw_scores_lock, asyncio.Lock))
-
         self.registry = bot.registry
         self.raw_scores = bot.raw_scores
         self.registry_lock = bot.registry_lock
         self.raw_scores_lock = bot.raw_scores_lock
+
+        assert(isinstance(bot.account_manager, AccountManager))
+        self.account_manager = bot.account_manager
 
     async def async_setup(self):
         """
@@ -120,21 +124,18 @@ class LobbyManager(commands.Cog):
         await self.bot_channel.send(f"{self.game_type} game started! Players:\n{nicknames}.")
 
     async def on_NotifyContestGameEnd(self, _, msg):
-        # It takes some time for the results to register into the log
-        await asyncio.sleep(3)
+        record_list = await self.account_manager.get_game_results([msg.game_uuid])[0]
 
-        record = await self.manager.locate_completed_game(msg.game_uuid)
-
-        if record is None:
+        if len(record_list) == 0:
             await self.bot_channel.send("A game concluded without a record (possibly due to being terminated early).")
             return
 
+        record = record_list[0]
         # TODO: deal with ordering the scores; currently assumes the scores are ordered by
         #       total_point (this algorithm can be shared with manual score entering)
         seat_player_dict = {a.seat: (a.account_id, a.nickname) for a in record.accounts}
 
         player_scores_rendered = ["Game concluded! Results:"] # to be newline-separated
-        player_scores_rendered.append(f"DEBUG: {msg.unique_id=}, {msg.game_uuid=}")
         raw_scores_row = [] # a list of values for a "Raw Scores" row
         not_registered = [] # list of unregistered players in game, if any
 
