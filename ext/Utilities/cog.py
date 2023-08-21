@@ -2,13 +2,14 @@ import asyncio
 import discord
 import gspread
 import logging
+import requests
 from os import getenv
 from discord.ext import commands
 from discord import app_commands, Interaction
 from typing import *
 from ext.LobbyManagers.cog import LobbyManager
 
-def assert_getenv(name: str) -> Any:
+def assert_getenv(name: str) -> str:
     value = getenv(name)
     assert value is not None, f"missing \"{name}\" in config.env"
     return value
@@ -154,9 +155,6 @@ class Utilities(commands.Cog):
         app_commands.Choice(name=ST_NAME, value=ST_NAME)])
     async def unpause_own_game(self, interaction: Interaction, lobby: app_commands.Choice[str]):
         await self.get_cog(lobby.value).unpause_own_game(interaction)
-
-    # TODO: command to upgrade someone's membership to paid
-    # TODO: command to get someone's registry information (by name or discord name)
         
     async def _register(self, name: str, server_member: discord.Member, friend_id: Optional[int]) -> str:
         """
@@ -340,11 +338,10 @@ class Utilities(commands.Cog):
     async def nodocchi(self, interaction: Interaction, tenhou_name: str):
         await interaction.response.send_message(content=f"https://nodocchi.moe/tenhoulog/#!&name={tenhou_name}")
 
-    @app_commands.command(name="amae_koromo", description=f"Get a Amae-Koromo link for a given Mahjong Soul username.")
+    @app_commands.command(name="amae_koromo", description=f"Get an Amae-Koromo link for a given Mahjong Soul username.")
     @app_commands.describe(majsoul_name="The Mahjong Soul name to lookup.")
     async def amae_koromo(self, interaction: Interaction, majsoul_name: str):
         await interaction.response.defer()
-        import requests
         result = requests.get(url=f"https://5-data.amae-koromo.com/api/v2/pl4/search_player/{majsoul_name}").json()
         if len(result) == 0:
             return await interaction.followup.send(content=f"Error: could not find player {majsoul_name}")

@@ -317,28 +317,3 @@ class MajsoulChannel():
 
         return msg.name, msg.data
 
-async def main():
-    import proto.liqi_combined_pb2 as liqi_combined_proto
-    import mjsoul
-
-    channel = MajsoulChannel(liqi_combined_proto, log_messages=False)
-
-    servers = await mjsoul.get_recommended_servers()
-
-    await channel.connect(servers[0])
-
-    res = await channel.call(
-        methodName='oauth2Login',
-        type=10,
-        access_token='YOUR_TOKEN_HERE',
-    )
-
-    res = await channel.call(
-        methodName='fetchGameRecord',
-        game_uuid='200924-3e856303-84e7-411e-8666-ac2859d895cc',
-    )
-
-    print(res.head.result)
-
-if __name__ == "__main__":
-    asyncio.run(main())
