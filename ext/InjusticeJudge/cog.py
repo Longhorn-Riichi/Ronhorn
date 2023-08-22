@@ -191,8 +191,8 @@ class InjusticeJudge(commands.Cog):
         AccountManager.
         """
         assert link.startswith("https://mahjongsoul.game.yo-star.com/?paipu="), "expected mahjong soul link starting with https://mahjongsoul.game.yo-star.com/?paipu="
-        if not "_a" in link:
-            print("Assuming you're the first east player, since mahjong soul link did not end with _a<number>")
+        # if not "_a" in link:
+        #     print("Assuming you're the first east player, since mahjong soul link did not end with _a<number>")
 
         identifier, *player_string = link.split("https://mahjongsoul.game.yo-star.com/?paipu=")[1].split("_a")
         ms_account_id = None if len(player_string) == 0 else int((((int(player_string[0])-1358437)^86216345)-1117113)/7)
