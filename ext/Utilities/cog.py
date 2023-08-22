@@ -41,12 +41,6 @@ class Utilities(commands.Cog):
         self.registry_lock = bot.registry_lock
         self.raw_scores_lock = bot.raw_scores_lock
 
-        # we assume that the manager cogs have already been loaded
-        self.yh_cog = bot.get_cog(YH_NAME)
-        self.yt_cog = bot.get_cog(YT_NAME)
-        self.sh_cog = bot.get_cog(SH_NAME)
-        self.st_cog = bot.get_cog(ST_NAME)
-
     """
     =====================================================
     HELPERS
@@ -171,7 +165,7 @@ class Utilities(commands.Cog):
 
         if friend_id is not None:
             # Fetch Mahjong Soul details using one of the lobby managers
-            res = await self.st_cog.manager.call("searchAccountByEid", eids = [int(friend_id)])
+            res = await self.get_cog(ST_NAME).manager.call("searchAccountByEid", eids = [int(friend_id)])
             # if no account found, then `res` won't have a `search_result` field, but it won't
             # have an `error`` field, either (i.e., it's not an error!).
             if not res.search_result:
