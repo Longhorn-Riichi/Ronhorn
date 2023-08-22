@@ -124,10 +124,10 @@ class InjusticeJudge(commands.Cog):
                         final_ukeire = kyokus[i]["final_ukeire"][winner]
                         final_call_info = kyokus[i]["call_info"][winner]
                         result_string += "\n" + print_full_hand(final_closed_hand, final_call_info, (0, final_waits), final_ukeire)
-                    if "starting" in display_hands.value:
-                        starting_hand = sorted_hand(kyokus[i]["starting_hands"][winner])
-                        starting_shanten = kyokus[i]["starting_shanten"][winner]
-                        result_string += "\nfrom: " + print_full_hand(starting_hand, [], starting_shanten, -1)
+                        if "starting" in display_hands.value:
+                            starting_hand = sorted_hand(kyokus[i]["starting_hands"][winner])
+                            starting_shanten = kyokus[i]["starting_shanten"][winner]
+                            result_string += "\nfrom: " + print_full_hand(starting_hand, [], starting_shanten, -1)
             elif result_name in ["流局", "全員聴牌", "流し満貫"]: # ryuukyoku / nagashi
                 result_string = f"{TRANSLATE[result_name]} ({', '.join(player_names[i] for i, delta in enumerate(score_deltas) if delta > 0)})"
             elif result_name in ["九種九牌", "四家立直", "三家和了", "四槓散了", "四風連打"]: # draws
