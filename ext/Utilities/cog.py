@@ -9,9 +9,6 @@ from discord.ext import commands
 from discord import app_commands, Interaction
 from typing import *
 from ext.LobbyManagers.cog import LobbyManager
-from modules.InjusticeJudge.injustice_judge.fetch import parse_game_link
-from modules.InjusticeJudge.injustice_judge.utils import ph, pt, round_name, print_full_hand, sorted_hand, try_remove_all_tiles
-from modules.InjusticeJudge.injustice_judge.constants import TRANSLATE
 
 def assert_getenv(name: str) -> str:
     value = getenv(name)
@@ -37,17 +34,18 @@ class Utilities(commands.Cog):
         assert(isinstance(bot.raw_scores, gspread.Worksheet))
         assert(isinstance(bot.registry_lock, asyncio.Lock))
         assert(isinstance(bot.raw_scores_lock, asyncio.Lock))
-
+        
+        self.bot = bot
         self.registry = bot.registry
         self.raw_scores = bot.raw_scores
         self.registry_lock = bot.registry_lock
         self.raw_scores_lock = bot.raw_scores_lock
 
         # we assume that the manager cogs have already been loaded
-        self.yh_cog = bot.get_cog("YonmaHanchanLobbyManager")
-        self.yt_cog = bot.get_cog("YonmaTonpuuLobbyManager")
-        self.sh_cog = bot.get_cog("SanmaHanchanLobbyManager")
-        self.st_cog = bot.get_cog("SanmaTonpuuLobbyManager")
+        self.yh_cog = bot.get_cog(YH_NAME)
+        self.yt_cog = bot.get_cog(YT_NAME)
+        self.sh_cog = bot.get_cog(SH_NAME)
+        self.st_cog = bot.get_cog(ST_NAME)
 
     """
     =====================================================
@@ -56,14 +54,17 @@ class Utilities(commands.Cog):
     """
 
     def get_cog(self, lobby_name: str) -> LobbyManager:
-        if lobby_name == YH_NAME:
-            return self.yh_cog
-        if lobby_name == YT_NAME:
-            return self.yt_cog
-        if lobby_name == SH_NAME:
-            return self.sh_cog
-        if lobby_name == ST_NAME:
-            return self.st_cog
+        return self.bot.get_cog(lobby_name)
+
+    def lobby_choices(choices_list):
+        def decorator(func):
+            def wrapper(*args, **kwargs):
+                lobby_choices = [
+                    app_commands.Choice(name=choice, value=choice) for choice in choices_list
+                ]
+                return func(lobby_choices, *args, **kwargs)
+            return wrapper
+        return decorator
 
     """
     =====================================================
@@ -351,96 +352,6 @@ class Utilities(commands.Cog):
         majsoul_id = result[0]["id"]
         await interaction.followup.send(content=f"https://amae-koromo.sapk.ch/player/{majsoul_id}")
 
-    @app_commands.command(name="parse", description=f"Print out the results of a game.")
-    @app_commands.describe(link="Link to the game to describe (Mahjong Soul or tenhou.net).",
-                           display_hands="Display all hands, or just mangan+ hands?")
-    @app_commands.choices(display_hands=[
-        app_commands.Choice(name="Display mangan+ winning hands and their starting hands", value="mangan_starting"),
-        app_commands.Choice(name="Display mangan+ winning hands", value="mangan"),
-        app_commands.Choice(name="Display all winning hands and their starting hands", value="all_starting"),
-        app_commands.Choice(name="Display all winning hands", value="all")])
-    async def parse(self, interaction: Interaction, link: str, display_hands: Optional[app_commands.Choice[str]] = None):
-        await interaction.response.defer()
-        kyokus, game_metadata, player = await parse_game_link(link)
-        results = [(i, kyoku["round"], kyoku["honba"], kyoku["result"]) for i, kyoku in enumerate(kyokus)]
-        player_names = [f"**{name}**" for name in game_metadata["name"]]
-        game_scores = game_metadata["game_score"]
-        final_scores = game_metadata["final_score"]
-        num_players = len(player_names)
-
-        ret = [f"Result of game {link}:\n"]
-        ret[0] += ", ".join("{}: {} ({:+.1f})".format(p,g,f/1000.0) for p,g,f in sorted(zip(player_names, game_scores, final_scores), key=lambda z: -z[2]))
-        for i, rnd, honba, result in results:
-            result_name, score_deltas, *win_data = result
-            if result_name == "和了": # ron or tsumo
-                [winner, from_seat, _, point_string, *yaku] = win_data[0]
-                tsumo = winner == from_seat
-                if tsumo:
-                    result_string = f"{player_names[from_seat]} tsumoed"
-                else:
-                    result_string = f"{player_names[from_seat]} dealt into {player_names[winner]}"
-                below_mangan = "符" in point_string
-                if below_mangan:
-                    [fu, rest] = point_string.split("符")
-                    [han, rest] = rest.split("飜")
-                    [pts, _] = rest.split("点")
-                else: # e.g. "倍満16000点"
-                    pts = "".join(c for c in point_string if c.isdigit() or c == "-")
-                    limit_name = point_string.split(pts[0])[0]
-                pts = "/".join(pts.split("-"))
-                if tsumo:
-                    num_players == 3
-                if tsumo:
-                    if "∀" in point_string:
-                        result_string += f" for {pts}∀ = {int(pts)*(num_players-1)} points"
-                    else:
-                        ko, oya = map(int, pts.split('/'))
-                        result_string += f" for {pts} = {ko+ko+oya if num_players == 4 else ko+oya} points"
-                else:
-                    result_string += f" for {pts} points"
-                if below_mangan:
-                    result_string += f" ({han}/{fu})"
-                else:
-                    result_string += f" ({TRANSLATE[limit_name]})"
-                def translate_yaku(y):
-                    [name, value] = y.split('(')
-                    value = int(value.split("飜")[0])
-                    winds = {0:"ton",1:"nan",2:"shaa",3:"pei"}
-                    if value > 1 and TRANSLATE[name] in {"dora","aka","ura","kita"}:
-                        return f"{TRANSLATE[name]} {value}"
-                    elif TRANSLATE[name] == "round wind":
-                        return winds[rnd//4]
-                    elif TRANSLATE[name] == "seat wind":
-                        return winds[winner]
-                    else:
-                        return TRANSLATE[name]
-                result_string += f" ({', '.join(map(translate_yaku, yaku))})"
-                if display_hands is not None:
-                    if "all" in display_hands.value or ("mangan" in display_hands.value and not below_mangan):
-                        final_closed_hand = sorted_hand(try_remove_all_tiles(tuple(kyokus[i]["hands"][winner]), tuple(kyokus[i]["calls"][winner])))
-                        final_waits = kyokus[i]["final_waits"][winner]
-                        final_ukeire = kyokus[i]["final_ukeire"][winner]
-                        final_call_info = kyokus[i]["call_info"][winner]
-                        result_string += "\n" + print_full_hand(final_closed_hand, final_call_info, (0, final_waits), final_ukeire)
-                    if "starting" in display_hands.value:
-                        starting_hand = sorted_hand(kyokus[i]["starting_hands"][winner])
-                        starting_shanten = kyokus[i]["starting_shanten"][winner]
-                        result_string += "\nfrom: " + print_full_hand(starting_hand, [], starting_shanten, -1)
-            elif result_name in ["流局", "全員聴牌", "流し満貫"]: # ryuukyoku / nagashi
-                result_string = f"{TRANSLATE[result_name]} ({', '.join(player_names[i] for i, delta in enumerate(score_deltas) if delta > 0)})"
-            elif result_name in ["九種九牌", "四家立直", "三家和了", "四槓散了", "四風連打"]: # draws
-                result_string = TRANSLATE[result_name]
-            to_add = f"\n- {round_name(rnd, honba)}: {result_string}"
-            if len(to_add + ret[-1]) > 2000:
-                ret.append(to_add)
-            else:
-                ret[-1] += to_add
-
-        await interaction.followup.send(content=ret[0], suppress_embeds=True)
-        for chunk in ret[1:]:
-            await interaction.channel.send(chunk, suppress_embeds=True)
-
-
     @app_commands.command(name="submit_game", description=f"Submit a Mahjong Soul club game to the leaderboard. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(lobby="Which lobby is the game in?",
                            link="The Mahjong Soul club game link to submit.")
@@ -457,6 +368,7 @@ class Utilities(commands.Cog):
             return await interaction.followup.send(content="Error: expected mahjong soul link starting with \"https://mahjongsoul.game.yo-star.com/?paipu=\".")
         uuid, *player_string = link.split("https://mahjongsoul.game.yo-star.com/?paipu=")[1].split("_a")
         try:
+            # we assume that the officer chose the correct `lobby`
             resp = await self.get_cog(lobby.value).add_game_to_leaderboard(uuid)
         except Exception as e:
             return await interaction.followup.send(content="Error: " + str(e))
