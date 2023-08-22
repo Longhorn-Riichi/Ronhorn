@@ -51,7 +51,8 @@ class InjusticeJudge(commands.Cog):
         if injustices == []:
             injustices = ["No injustices detected."]
         as_player_string = "yourself" if player is None else player.name
-        await interaction.followup.send(content=f"Analyzing {game_link} for {as_player_string}:\n" + "\n".join(injustices), suppress_embeds=True)
+        green = Colour.from_str("#1EA51E")
+        await interaction.followup.send(content=f"Analyzing {game_link} for {as_player_string}:", embed=Embed(description="\n".join(injustices), colour=green))
 
     @app_commands.command(name="parse", description=f"Print out the results of a game.")
     @app_commands.describe(link="Link to the game to describe (Mahjong Soul or tenhou.net).",
