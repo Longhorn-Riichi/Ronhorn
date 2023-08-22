@@ -70,7 +70,7 @@ class InjusticeJudge(commands.Cog):
         game_scores = game_metadata["game_score"]
         final_scores = game_metadata["final_score"]
         num_players = len(player_names)
-        header = f"Result of game ([link]({link})):\n"
+        header = f"Result of game {link}):\n"
         header += ", ".join("{}: {} ({:+.1f})".format(p,g,f/1000.0) for p,g,f in sorted(zip(player_names, game_scores, final_scores), key=lambda z: -z[2]))
         ret = [""]
         for i, rnd, honba, result in results:
