@@ -131,10 +131,16 @@ class InjusticeJudge(commands.Cog):
                             final_waits = kyokus[i]["final_waits"][winner]
                             final_ukeire = kyokus[i]["final_ukeire"][winner]
                             final_call_info = kyokus[i]["call_info"][winner]
+                            furiten = kyokus[i]["furiten"][winner]
                             final_tile = kyokus[i]["final_tile"]
-                            result_string += "\n`    `" + print_full_hand(final_closed_hand, final_call_info, (0, final_waits), final_ukeire, final_tile)
+                            result_string += "\n`    `" + print_full_hand(final_closed_hand, final_call_info, (0, final_waits), final_ukeire, final_tile, furiten)
             elif result_name in ["流局", "全員聴牌", "流し満貫"]: # ryuukyoku / nagashi
-                result_string = f"{TRANSLATE[result_name]} ({', '.join(player_names[i] for i, delta in enumerate(win_data[0]) if delta > 0)})"
+                winners = [player_names[i] for i, delta in enumerate(win_data[0]) if delta > 0]
+                losers = [player_names[i] for i, delta in enumerate(win_data[0]) if delta < 0]
+                if len(winners) > 0 and len(losers) > 0:
+                    result_string = f"{TRANSLATE[result_name]} ({', '.join(losers)}⠀→⠀{', '.join(winners)})"
+                else:
+                    result_string = f"{TRANSLATE[result_name]}"
             elif result_name in ["九種九牌", "四家立直", "三家和了", "四槓散了", "四風連打"]: # draws
                 result_string = TRANSLATE[result_name]
             to_add = f"\n`{short_round_name(rnd, honba)}` {result_string}"
