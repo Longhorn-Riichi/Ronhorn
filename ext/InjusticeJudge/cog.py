@@ -126,7 +126,7 @@ class InjusticeJudge(commands.Cog):
                             if "starting" in display_hands.value:
                                 starting_hand = sorted_hand(kyokus[i]["starting_hands"][winner])
                                 starting_shanten = kyokus[i]["starting_shanten"][winner]
-                                result_string += "\n`    `" + print_full_hand(starting_hand, [], starting_shanten, -1) + "\n`    `⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀↓"
+                                result_string += "\n`    `" + print_full_hand(starting_hand, [], starting_shanten, -1) + f"\n`    ` ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀↓ ({len(kyokus[i]['pond'][winner])} discards)"
                             final_closed_hand = sorted_hand(try_remove_all_tiles(tuple(kyokus[i]["hands"][winner]), tuple(kyokus[i]["calls"][winner])))
                             final_waits = kyokus[i]["final_waits"][winner]
                             final_ukeire = kyokus[i]["final_ukeire"][winner]
