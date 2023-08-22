@@ -122,7 +122,7 @@ class LobbyManager(commands.Cog):
         record = record_list[0]
 
         # TODO: deal with ordering the scores; currently assumes the scores are ordered by
-        #       total_point (this algorithm can be shared with manual score entering)
+        #       total_point (adopt the algorithm of `enter_scores` command)
         seat_player_dict = {a.seat: (a.account_id, a.nickname) for a in record.accounts}
 
         player_scores_rendered = ["Game concluded! Results:"] # to be newline-separated
@@ -157,6 +157,7 @@ class LobbyManager(commands.Cog):
             self.raw_scores.append_row(raw_scores_row)
 
         return '\n'.join(player_scores_rendered)
+    
     """
     =====================================================
     MAHJONG SOUL API STUFF
@@ -174,7 +175,6 @@ class LobbyManager(commands.Cog):
             return await self.bot_channel.send(content="Error: " + str(e))
         await self.bot_channel.send(content=resp)
 
-
     """
     =====================================================
     GOOGLE SHEETS HELPER FUNCTIONS
@@ -191,13 +191,17 @@ class LobbyManager(commands.Cog):
 
 # need to make dummy classes so discord.py can distinguish between
 # different instances (as separate cogs)
-class YonmaHanchanLobbyManager(LobbyManager):
+YH_NAME = assert_getenv("yh_name")
+YT_NAME = assert_getenv("yt_name")
+SH_NAME = assert_getenv("sh_name")
+ST_NAME = assert_getenv("st_name")
+class YonmaHanchanLobbyManager(LobbyManager, name=YH_NAME):
     pass
-class YonmaTonpuuLobbyManager(LobbyManager):
+class YonmaTonpuuLobbyManager(LobbyManager, name=YT_NAME):
     pass
-class SanmaHanchanLobbyManager(LobbyManager):
+class SanmaHanchanLobbyManager(LobbyManager, name=SH_NAME):
     pass
-class SanmaTonpuuLobbyManager(LobbyManager):
+class SanmaTonpuuLobbyManager(LobbyManager, name=ST_NAME):
     pass
 
 async def setup(bot: commands.Bot):
@@ -208,25 +212,25 @@ async def setup(bot: commands.Bot):
         contest_unique_id=int(assert_getenv("yh_contest_unique_id")),
         mjs_username=assert_getenv("mjs_yh_username"),
         mjs_password=assert_getenv("mjs_yh_password"),
-        game_type=assert_getenv("yh_name")))
+        game_type=YH_NAME))
     cog_instances.append(YonmaTonpuuLobbyManager(
         bot=bot,
         contest_unique_id=int(assert_getenv("yt_contest_unique_id")),
         mjs_username=assert_getenv("mjs_yt_username"),
         mjs_password=assert_getenv("mjs_yt_password"),
-        game_type=assert_getenv("yt_name")))
+        game_type=YT_NAME))
     cog_instances.append(SanmaHanchanLobbyManager(
         bot=bot,
         contest_unique_id=int(assert_getenv("sh_contest_unique_id")),
         mjs_username=assert_getenv("mjs_sh_username"),
         mjs_password=assert_getenv("mjs_sh_password"),
-        game_type=assert_getenv("sh_name")))
+        game_type=SH_NAME))
     cog_instances.append(SanmaTonpuuLobbyManager(
         bot=bot,
         contest_unique_id=int(assert_getenv("st_contest_unique_id")),
         mjs_username=assert_getenv("mjs_st_username"),
         mjs_password=assert_getenv("mjs_st_password"),
-        game_type=assert_getenv("st_name")))
+        game_type=ST_NAME))
     
     for cog_instance in cog_instances:
         logging.info(f"Loading cog instance `{cog_instance.game_type}`.")
@@ -234,4 +238,3 @@ async def setup(bot: commands.Bot):
         await bot.add_cog(
             cog_instance,
             guild=discord.Object(id=GUILD_ID))
-        

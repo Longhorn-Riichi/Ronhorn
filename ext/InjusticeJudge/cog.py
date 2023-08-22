@@ -4,10 +4,16 @@ import os
 from discord.ext import commands
 from discord import app_commands, Interaction
 from typing import *
+
 from modules.mahjongsoul.account_manager import AccountManager
-from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_tenhou, parse_majsoul, save_cache
-from modules.InjusticeJudge.injustice_judge.injustices import evaluate_injustices
 from modules.pymjsoul.proto import liqi_combined_pb2 as proto
+
+# InjusticeJudge imports
+from google.protobuf.json_format import MessageToDict
+from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_tenhou, parse_majsoul, save_cache, parse_wrapped_bytes, GameMetadata
+from modules.InjusticeJudge.injustice_judge.utils import round_name, print_full_hand, sorted_hand, try_remove_all_tiles
+from modules.InjusticeJudge.injustice_judge.injustices import evaluate_injustices
+from modules.InjusticeJudge.injustice_judge.constants import Kyoku, TRANSLATE
 
 def assert_getenv(name: str) -> str:
     value = os.getenv(name)
@@ -47,33 +53,122 @@ class InjusticeJudge(commands.Cog):
         as_player_string = "yourself" if player is None else player.name
         await interaction.followup.send(content=f"Analyzing {game_link} for {as_player_string}:\n" + "\n".join(injustices), suppress_embeds=True)
 
+    @app_commands.command(name="parse", description=f"Print out the results of a game.")
+    @app_commands.describe(link="Link to the game to describe (Mahjong Soul or tenhou.net).",
+                           display_hands="Display all hands, or just mangan+ hands?")
+    @app_commands.choices(display_hands=[
+        app_commands.Choice(name="Display mangan+ winning hands and their starting hands", value="mangan_starting"),
+        app_commands.Choice(name="Display mangan+ winning hands", value="mangan"),
+        app_commands.Choice(name="Display all winning hands and their starting hands", value="all_starting"),
+        app_commands.Choice(name="Display all winning hands", value="all")])
+    async def parse(self, interaction: Interaction, link: str, display_hands: Optional[app_commands.Choice[str]] = None):
+        await interaction.response.defer()
+        kyokus, game_metadata, player = await self.parse_game_link(link)
+        results = [(i, kyoku["round"], kyoku["honba"], kyoku["result"]) for i, kyoku in enumerate(kyokus)]
+        player_names = [f"**{name}**" for name in game_metadata["name"]]
+        game_scores = game_metadata["game_score"]
+        final_scores = game_metadata["final_score"]
+        num_players = len(player_names)
+
+        ret = [f"Result of game {link}:\n"]
+        ret[0] += ", ".join("{}: {} ({:+.1f})".format(p,g,f/1000.0) for p,g,f in sorted(zip(player_names, game_scores, final_scores), key=lambda z: -z[2]))
+        for i, rnd, honba, result in results:
+            result_name, score_deltas, *win_data = result
+            if result_name == "和了": # ron or tsumo
+                [winner, from_seat, _, point_string, *yaku] = win_data[0]
+                tsumo = winner == from_seat
+                if tsumo:
+                    result_string = f"{player_names[from_seat]} tsumoed"
+                else:
+                    result_string = f"{player_names[from_seat]} dealt into {player_names[winner]}"
+                below_mangan = "符" in point_string
+                if below_mangan:
+                    [fu, rest] = point_string.split("符")
+                    [han, rest] = rest.split("飜")
+                    [pts, _] = rest.split("点")
+                else: # e.g. "倍満16000点"
+                    pts = "".join(c for c in point_string if c.isdigit() or c == "-")
+                    limit_name = point_string.split(pts[0])[0]
+                pts = "/".join(pts.split("-"))
+                if tsumo:
+                    num_players == 3
+                if tsumo:
+                    if "∀" in point_string:
+                        result_string += f" for {pts}∀ = {int(pts)*(num_players-1)} points"
+                    else:
+                        ko, oya = map(int, pts.split('/'))
+                        result_string += f" for {pts} = {ko+ko+oya if num_players == 4 else ko+oya} points"
+                else:
+                    result_string += f" for {pts} points"
+                if below_mangan:
+                    result_string += f" ({han}/{fu})"
+                else:
+                    result_string += f" ({TRANSLATE[limit_name]})"
+                def translate_yaku(y):
+                    [name, value] = y.split('(')
+                    value = int(value.split("飜")[0])
+                    winds = {0:"ton",1:"nan",2:"shaa",3:"pei"}
+                    if value > 1 and TRANSLATE[name] in {"dora","aka","ura","kita"}:
+                        return f"{TRANSLATE[name]} {value}"
+                    elif TRANSLATE[name] == "round wind":
+                        return winds[rnd//4]
+                    elif TRANSLATE[name] == "seat wind":
+                        return winds[winner]
+                    else:
+                        return TRANSLATE[name]
+                result_string += f" ({', '.join(map(translate_yaku, yaku))})"
+                if display_hands is not None:
+                    if "all" in display_hands.value or ("mangan" in display_hands.value and not below_mangan):
+                        final_closed_hand = sorted_hand(try_remove_all_tiles(tuple(kyokus[i]["hands"][winner]), tuple(kyokus[i]["calls"][winner])))
+                        final_waits = kyokus[i]["final_waits"][winner]
+                        final_ukeire = kyokus[i]["final_ukeire"][winner]
+                        final_call_info = kyokus[i]["call_info"][winner]
+                        result_string += "\n" + print_full_hand(final_closed_hand, final_call_info, (0, final_waits), final_ukeire)
+                    if "starting" in display_hands.value:
+                        starting_hand = sorted_hand(kyokus[i]["starting_hands"][winner])
+                        starting_shanten = kyokus[i]["starting_shanten"][winner]
+                        result_string += "\nfrom: " + print_full_hand(starting_hand, [], starting_shanten, -1)
+            elif result_name in ["流局", "全員聴牌", "流し満貫"]: # ryuukyoku / nagashi
+                result_string = f"{TRANSLATE[result_name]} ({', '.join(player_names[i] for i, delta in enumerate(score_deltas) if delta > 0)})"
+            elif result_name in ["九種九牌", "四家立直", "三家和了", "四槓散了", "四風連打"]: # draws
+                result_string = TRANSLATE[result_name]
+            to_add = f"\n- {round_name(rnd, honba)}: {result_string}"
+            if len(to_add + ret[-1]) > 2000:
+                ret.append(to_add)
+            else:
+                ret[-1] += to_add
+
+        await interaction.followup.send(content=ret[0], suppress_embeds=True)
+        for chunk in ret[1:]:
+            await interaction.channel.send(chunk, suppress_embeds=True)
+    
     """
     =====================================================
     Modified InjusticeJudge Functions
     =====================================================
     """
-    
-    async def analyze_game(self, link: str, specified_player = None) -> List[str]:
+    async def parse_game_link(self, link: str, specified_player: int = 0) -> Tuple[List[Kyoku], GameMetadata, int]:
         """
-        basically the same as the exposed `analyze_game()` of the InjusticeJudge,
+        basically the same as the exposed `parse_game_link()` of the InjusticeJudge,
         but with the `fetch_majsoul` part substituted out so we can use our own
         AccountManager (to avoid logging in for each fetch)
         """
         # print(f"Analyzing game {link}:")
-        kyokus = []
         if link.startswith("https://tenhou.net/0/?log="):
-            tenhou_log, player = fetch_tenhou(link)
-            for raw_kyoku in tenhou_log:
-                kyoku = parse_tenhou(raw_kyoku)
-                kyokus.append(kyoku)
+            tenhou_log, metadata, player = fetch_tenhou(link)
+            kyokus, parsed_metadata = parse_tenhou(tenhou_log, metadata)
         elif link.startswith("https://mahjongsoul.game.yo-star.com/?paipu="):
-            majsoul_log, player = await self.fetch_majsoul(link)
-            kyokus = parse_majsoul(majsoul_log)
+            majsoul_log, metadata, player = await self.fetch_majsoul(link)
+            kyokus, parsed_metadata = parse_majsoul(majsoul_log, metadata)
         else:
             raise Exception("expected tenhou link starting with https://tenhou.net/0/?log="
                             " or mahjong soul link starting with https://mahjongsoul.game.yo-star.com/?paipu=")
         if specified_player is not None:
             player = specified_player
+        return kyokus, parsed_metadata, player
+    
+    async def analyze_game(self, link: str, specified_player = None) -> List[str]:
+        kyokus, game_metadata, player = await self.parse_game_link(link, specified_player)
         return [injustice for kyoku in kyokus for injustice in evaluate_injustices(kyoku, player)]
     
     async def fetch_majsoul(self, link: str):
@@ -93,18 +188,22 @@ class InjusticeJudge(commands.Cog):
             f = open(f"cached_games/game-{identifier}.log", 'rb')
             record = proto.ResGameRecord()  # type: ignore[attr-defined]
             record.ParseFromString(f.read())
-            return (record.head, record.data), next((acc.seat for acc in record.head.accounts if acc.account_id == ms_account_id), 0)
         except Exception:
-            res = await self.account_manager.call(
+            record = await self.account_manager.call(
                 "fetchGameRecord",
                 game_uuid=identifier,
                 client_version_string=self.account_manager.client_version_string)
 
             save_cache(
                 filename=f"game-{identifier}.log",
-                data=res.SerializeToString())
+                data=record.SerializeToString())
 
-            return (res.head, res.data), next((acc.seat for acc in res.head.accounts if acc.account_id == ms_account_id), 0)
+        parsed = parse_wrapped_bytes(record.data)[1]
+        if parsed.actions != []:
+            actions = [parse_wrapped_bytes(action.result) for action in parsed.actions if len(action.result) > 0]
+        else:
+            actions = [parse_wrapped_bytes(record) for record in parsed.records]
+        return actions, MessageToDict(record.head), next((acc.seat for acc in record.head.accounts if acc.account_id == ms_account_id), 0)
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading extension `{InjusticeJudge.__name__}`...")
