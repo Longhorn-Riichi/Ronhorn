@@ -30,6 +30,7 @@ dotenv.load_dotenv("config.env")
 
 DISCORD_TOKEN = assert_getenv("bot_token")
 EXTENSIONS_FILE = assert_getenv("extensions_file")
+COMMAND_PREFIX = '$'
 
 try:
     with open(EXTENSIONS_FILE, 'r') as f:
@@ -42,7 +43,7 @@ except FileNotFoundError:
 intents = discord.Intents.default()
 intents.message_content = True # necessary for commands to work
 bot = commands.Bot(
-    command_prefix='$',
+    command_prefix=COMMAND_PREFIX,
     intents=intents)
 
 # initialize the spreadsheet interface and save references in `bot`
@@ -55,7 +56,7 @@ bot.registry_lock = asyncio.Lock()
 bot.raw_scores_lock = asyncio.Lock()
 
 # initialize an account manager to be shared with all extensions.
-# login must happen in `setup_hook()`, before loading extension
+# login must happen in `setup_hook()`, before loading extensions
 from modules.mahjongsoul.account_manager import AccountManager
 bot.account_manager = AccountManager(
     mjs_username=assert_getenv("mjs_sh_username"),
@@ -71,15 +72,14 @@ async def on_ready():
 @commands.is_owner()
 async def sync(ctx: commands.Context):
     # note that global commands need to be explicitly copied to the guild
-    bot.tree.copy_global_to(guild=ctx.guild)
     await bot.tree.sync(guild=ctx.guild)
-    await ctx.send(f"Synced command tree for this server ({ctx.guild.name}).")
+    await ctx.send(f"Synced slash commands exclusive to this server ({ctx.guild.name}). Remember to also sync global slash commands with {COMMAND_PREFIX}sync_global")
 
-# @bot.command(name='sync_global', hidden=True)
-# @commands.is_owner()
-# async def sync_global(ctx: commands.Context):
-#     await bot.tree.sync()
-#     await ctx.send("Synced command tree for ALL servers.")
+@bot.command(name='sync_global', hidden=True)
+@commands.is_owner()
+async def sync_global(ctx: commands.Context):
+    await bot.tree.sync()
+    await ctx.send("Synced global slash commands.")
 
 @bot.command(name='shutdown', hidden=True)
 @commands.is_owner()

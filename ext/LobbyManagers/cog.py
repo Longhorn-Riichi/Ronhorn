@@ -205,7 +205,7 @@ class SanmaTonpuuLobbyManager(LobbyManager, name=ST_NAME):
     pass
 
 async def setup(bot: commands.Bot):
-    logging.info(f"Loading extension `LobbyManagers`:")
+    logging.info(f"Loading `{LobbyManager.__name__}` cogs:")
     cog_instances: List[LobbyManager] = []
     cog_instances.append(YonmaHanchanLobbyManager(
         bot=bot,
@@ -233,7 +233,7 @@ async def setup(bot: commands.Bot):
         game_type=ST_NAME))
     
     for cog_instance in cog_instances:
-        logging.info(f"Loading cog instance `{cog_instance.game_type}`.")
+        logging.info(f"Loading cog `{cog_instance.game_type}`.")
         asyncio.create_task(cog_instance.async_setup())
         await bot.add_cog(
             cog_instance,

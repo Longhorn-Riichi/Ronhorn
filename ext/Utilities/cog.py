@@ -28,7 +28,10 @@ SH_NAME: str               = assert_getenv("sh_name")
 ST_NAME: str               = assert_getenv("st_name")
 REGISTRY_NAME_LENGTH: int  = 15
 
-class Utilities(commands.Cog):
+class LonghornRiichiUtilities(commands.Cog):
+    """
+    Utility commands specific to Longhorn Riichi
+    """
     def __init__(self, bot: commands.Bot):
         assert(isinstance(bot.registry, gspread.Worksheet))
         assert(isinstance(bot.raw_scores, gspread.Worksheet))
@@ -331,21 +334,6 @@ class Utilities(commands.Cog):
         except Exception as e:
             await interaction.followup.send(content="Error: " + str(e))
 
-    @app_commands.command(name="nodocchi", description=f"Get a Nodocchi link for a given tenhou.net username.")
-    @app_commands.describe(tenhou_name="The tenhou.net username to lookup.")
-    async def nodocchi(self, interaction: Interaction, tenhou_name: str):
-        await interaction.response.send_message(content=f"https://nodocchi.moe/tenhoulog/#!&name={tenhou_name}")
-
-    @app_commands.command(name="amae_koromo", description=f"Get an Amae-Koromo link for a given Mahjong Soul username.")
-    @app_commands.describe(majsoul_name="The Mahjong Soul name to lookup.")
-    async def amae_koromo(self, interaction: Interaction, majsoul_name: str):
-        await interaction.response.defer()
-        result = requests.get(url=f"https://5-data.amae-koromo.com/api/v2/pl4/search_player/{majsoul_name}").json()
-        if len(result) == 0:
-            return await interaction.followup.send(content=f"Error: could not find player {majsoul_name}")
-        majsoul_id = result[0]["id"]
-        await interaction.followup.send(content=f"https://amae-koromo.sapk.ch/player/{majsoul_id}")
-
     @app_commands.command(name="submit_game", description=f"Submit a Mahjong Soul club game to the leaderboard. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(lobby="Which lobby is the game in?",
                            link="The Mahjong Soul club game link to submit.")
@@ -420,10 +408,40 @@ class Utilities(commands.Cog):
     #     except Exception as e:
     #         await interaction.followup.send(content="Error: " + str(e))
 
+class GlobalUtilities(commands.Cog):
+    """
+    Utility commands that are applicable in- and outside Longhorn Riichi
+    """
+    # def __init__(self, bot: commands.Bot):
+    #     self.bot = bot
 
+    """
+    =====================================================
+    SLASH COMMANDS
+    =====================================================
+    """
+
+    @app_commands.command(name="nodocchi", description=f"Get a Nodocchi link for a given tenhou.net username.")
+    @app_commands.describe(tenhou_name="The tenhou.net username to lookup.")
+    async def nodocchi(self, interaction: Interaction, tenhou_name: str):
+        await interaction.response.send_message(content=f"https://nodocchi.moe/tenhoulog/#!&name={tenhou_name}")
+
+    @app_commands.command(name="amae_koromo", description=f"Get an Amae-Koromo link for a given Mahjong Soul username.")
+    @app_commands.describe(majsoul_name="The Mahjong Soul name to lookup.")
+    async def amae_koromo(self, interaction: Interaction, majsoul_name: str):
+        await interaction.response.defer()
+        result = requests.get(url=f"https://5-data.amae-koromo.com/api/v2/pl4/search_player/{majsoul_name}").json()
+        if len(result) == 0:
+            return await interaction.followup.send(content=f"Error: could not find player {majsoul_name}")
+        majsoul_id = result[0]["id"]
+        await interaction.followup.send(content=f"https://amae-koromo.sapk.ch/player/{majsoul_id}")
 
 async def setup(bot: commands.Bot):
-    logging.info(f"Loading extension `{Utilities.__name__}`...")
-    instance = Utilities(bot)
+    logging.info(f"Loading cog `{LonghornRiichiUtilities.__name__}`...")
+    instance = LonghornRiichiUtilities(bot)
     await bot.add_cog(instance, guild=discord.Object(id=GUILD_ID))
+
+    logging.info(f"Loading cog `{GlobalUtilities.__name__}`...")
+    instance = GlobalUtilities(bot)
+    await bot.add_cog(instance)
 

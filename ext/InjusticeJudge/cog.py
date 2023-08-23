@@ -1,6 +1,4 @@
-import discord
 import logging
-import os
 from discord.ext import commands
 from discord import app_commands, Colour, Embed, Interaction
 from typing import *
@@ -15,15 +13,12 @@ from modules.InjusticeJudge.injustice_judge.utils import short_round_name, print
 from modules.InjusticeJudge.injustice_judge.injustices import evaluate_injustices
 from modules.InjusticeJudge.injustice_judge.constants import Kyoku, TRANSLATE
 
-def assert_getenv(name: str) -> str:
-    value = os.getenv(name)
-    assert value is not None, f"missing \"{name}\" in config.env"
-    return value
-
-BOT_CHANNEL_ID: int        = int(assert_getenv("bot_channel_id"))
-GUILD_ID: int              = int(assert_getenv("guild_id"))
-
 class InjusticeJudge(commands.Cog):
+    """
+    Commands that invoke the InjusticJudge utilities and the helpers
+    that make efficient API calls. Caches the game logs in `/cached_games`,
+    up to 1 GB
+    """
     def __init__(self, bot: commands.Bot) -> None:
         assert(isinstance(bot.account_manager, AccountManager))
         self.account_manager = bot.account_manager
@@ -70,7 +65,7 @@ class InjusticeJudge(commands.Cog):
         game_scores = game_metadata["game_score"]
         final_scores = game_metadata["final_score"]
         num_players = len(player_names)
-        header = f"Result of game {link}):\n"
+        header = f"Result of game {link}:\n"
         header += ", ".join("{}: {} ({:+.1f})".format(p,g,f/1000.0) for p,g,f in sorted(zip(player_names, game_scores, final_scores), key=lambda z: -z[2]))
         ret = [""]
         for i, rnd, honba, result in results:
@@ -218,7 +213,7 @@ class InjusticeJudge(commands.Cog):
         return actions, MessageToDict(record.head), next((acc.seat for acc in record.head.accounts if acc.account_id == ms_account_id), 0)
 
 async def setup(bot: commands.Bot):
-    logging.info(f"Loading extension `{InjusticeJudge.__name__}`...")
+    logging.info(f"Loading cog `{InjusticeJudge.__name__}`...")
     instance = InjusticeJudge(bot=bot)
-    await bot.add_cog(instance, guild=discord.Object(id=GUILD_ID))
+    await bot.add_cog(instance)
 
