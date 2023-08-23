@@ -45,9 +45,20 @@ class InjusticeJudge(commands.Cog):
             injustices = await self.analyze_game(game_link)
         if injustices == []:
             injustices = ["No injustices detected."]
-        as_player_string = "yourself" if player is None else player.name
+            
+        ret = [""]
+        for to_add in injustices:
+            to_add += "\n"
+            if len(to_add) + len(ret[-1]) > 3900:
+                ret.append(to_add)
+            else:
+                ret[-1] += to_add
+        title = f"Injustices"
         green = Colour.from_str("#1EA51E")
-        await interaction.followup.send(content=f"Analyzing {game_link} for {as_player_string}:", embed=Embed(description="\n".join(injustices), colour=green))
+        as_player_string = "yourself" if player is None else player.name
+        await interaction.followup.send(content=f"Analyzing {game_link} for {as_player_string}:", embed=Embed(description=ret[0], colour=green))
+        for embed in [Embed(description=text, colour=green) for text in ret[1:]]:
+            await interaction.channel.send(embed=embed)
 
     @app_commands.command(name="parse", description=f"Print out the results of a game.")
     @app_commands.describe(link="Link to the game to describe (Mahjong Soul or tenhou.net).",
@@ -140,7 +151,7 @@ class InjusticeJudge(commands.Cog):
             elif result_name in ["九種九牌", "四家立直", "三家和了", "四槓散了", "四風連打"]: # draws
                 result_string = TRANSLATE[result_name]
             to_add = f"\n`{short_round_name(rnd, honba)}` {result_string}"
-            if len(to_add + ret[-1]) > 4096:
+            if len(to_add) + len(ret[-1]) > 3900:
                 ret.append(to_add)
             else:
                 ret[-1] += to_add
