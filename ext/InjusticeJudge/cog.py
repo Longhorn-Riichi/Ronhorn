@@ -44,8 +44,15 @@ class InjusticeJudge(commands.Cog):
         else:
             injustices = await self.analyze_game(game_link)
         if injustices == []:
-            injustices = ["No injustices detected."]
-            
+            starting_dir = player.value if player is not None else None
+            player_direction = {None: "player specified in the link",
+                                0: "starting East player",
+                                1: "starting South player",
+                                2: "starting West player",
+                                3: "starting North player"}
+            injustices = [f"No injustices detected for the {player_direction[starting_dir]}.\n"
+                           "Specify another player with the `player` option in `/injustice`.\n"
+                           "Did we miss an injustice? Contribute ideas [here](https://github.com/Longhorn-Riichi/InjusticeJudge/issues/1)!"]
         ret = [""]
         for to_add in injustices:
             to_add += "\n"
