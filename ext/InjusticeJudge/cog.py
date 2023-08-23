@@ -178,11 +178,10 @@ class InjusticeJudge(commands.Cog):
         but with the `fetch_majsoul` part substituted out so we can use our own
         AccountManager (to avoid logging in for each fetch)
         """
-        # print(f"Analyzing game {link}:")
-        if link.startswith("https://tenhou.net/0/?log="):
+        if "tenhou.net" in link:
             tenhou_log, metadata, player = fetch_tenhou(link)
             kyokus, parsed_metadata = parse_tenhou(tenhou_log, metadata)
-        elif link.startswith("https://mahjongsoul.game.yo-star.com/?paipu="):
+        elif "mahjongsoul.game.yo-star.com" in link:
             majsoul_log, metadata, player = await self.fetch_majsoul(link)
             kyokus, parsed_metadata = parse_majsoul(majsoul_log, metadata)
         else:
@@ -203,11 +202,10 @@ class InjusticeJudge(commands.Cog):
         Instead of logging in for each fetch, just fetch through the already logged-in
         AccountManager.
         """
-        assert link.startswith("https://mahjongsoul.game.yo-star.com/?paipu="), "expected mahjong soul link starting with https://mahjongsoul.game.yo-star.com/?paipu="
-        # if not "_a" in link:
-        #     print("Assuming you're the first east player, since mahjong soul link did not end with _a<number>")
-
-        identifier, *player_string = link.split("https://mahjongsoul.game.yo-star.com/?paipu=")[1].split("_a")
+        assert link.startswith(("https://mahjongsoul.game.yo-star.com/?paipu=",
+                            "http://mahjongsoul.game.yo-star.com/?paipu=")), "expected mahjong soul link starting with https://mahjongsoul.game.yo-star.com/?paipu="
+        
+        identifier, *player_string = link.split("?paipu=")[1].split("_a")
         ms_account_id = None if len(player_string) == 0 else int((((int(player_string[0])-1358437)^86216345)-1117113)/7)
         try:
             f = open(f"cached_games/game-{identifier}.log", 'rb')
