@@ -1,18 +1,13 @@
 import logging
-import re
 from discord.ext import commands
 from discord import app_commands, Colour, Embed, Interaction
 from typing import *
 
-from global_stuff import account_manager
-from modules.pymjsoul.proto import liqi_combined_pb2 as proto
-
 # InjusticeJudge imports
-from google.protobuf.json_format import MessageToDict
-from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_tenhou, parse_majsoul, save_cache, parse_wrapped_bytes, GameMetadata
 from modules.InjusticeJudge.injustice_judge.utils import short_round_name, print_full_hand, sorted_hand, try_remove_all_tiles
-from modules.InjusticeJudge.injustice_judge.injustices import evaluate_injustices
-from modules.InjusticeJudge.injustice_judge.constants import Kyoku, TRANSLATE
+from modules.InjusticeJudge.injustice_judge.constants import TRANSLATE
+from utilities import *
+
 
 class InjusticeJudge(commands.Cog):
     """
@@ -37,10 +32,10 @@ class InjusticeJudge(commands.Cog):
         app_commands.Choice(name="North", value=3)])
     async def injustice(self, interaction: Interaction, link: str, player: Optional[app_commands.Choice[int]]):
         await interaction.response.defer()
-        if player is not None:
-            injustices = await self.analyze_game(link, player.value)
+        if player is None:
+            injustices = await analyze_game(link)
         else:
-            injustices = await self.analyze_game(link)
+            injustices = await analyze_game(link, player.value)
         if injustices == []:
             starting_dir = player.value if player is not None else None
             player_direction = {None: "player specified in the link",
@@ -75,7 +70,7 @@ class InjusticeJudge(commands.Cog):
         app_commands.Choice(name="All winning hands", value="All winning hands")])
     async def parse(self, interaction: Interaction, link: str, display_hands: Optional[app_commands.Choice[str]] = None):
         await interaction.response.defer()
-        kyokus, game_metadata, player = await self.parse_game_link(link)
+        kyokus, game_metadata, player = await parse_game_link(link)
         results = [(i, kyoku["round"], kyoku["honba"], kyoku["result"]) for i, kyoku in enumerate(kyokus)]
         player_names = [f"**{name}**" for name in game_metadata["name"]]
         game_scores = game_metadata["game_score"]
@@ -164,76 +159,6 @@ class InjusticeJudge(commands.Cog):
         await interaction.followup.send(content=header, embed=Embed(description=ret[0], colour=green))
         for embed in [Embed(description=text, colour=green) for text in ret[1:]]:
             await interaction.channel.send(embed=embed)
-    
-    """
-    =====================================================
-    Modified InjusticeJudge Functions
-    =====================================================
-    """
-    async def parse_game_link(self, link: str, specified_player: int = 0) -> Tuple[List[Kyoku], GameMetadata, int]:
-        """
-        basically the same as the exposed `parse_game_link()` of the InjusticeJudge,
-        but with the `fetch_majsoul` part substituted out so we can use our own
-        AccountManager (to avoid logging in for each fetch)
-        """
-        if "tenhou.net/" in link:
-            tenhou_log, metadata, player = fetch_tenhou(link)
-            kyokus, parsed_metadata = parse_tenhou(tenhou_log, metadata)
-        elif "mahjongsoul" in link or "maj-soul" in link:
-            # EN: `mahjongsoul.game.yo-star.com`; CN: `maj-soul.com`; JP: `mahjongsoul.com`
-            majsoul_log, metadata, player = await self.fetch_majsoul(link)
-            kyokus, parsed_metadata = parse_majsoul(majsoul_log, metadata)
-        else:
-            raise Exception("expected tenhou link similar to `tenhou.net/0/?log=`"
-                            " or mahjong soul link similar to `mahjongsoul.game.yo-star.com/?paipu=`")
-        if specified_player is not None:
-            player = specified_player
-        return kyokus, parsed_metadata, player
-    
-    async def analyze_game(self, link: str, specified_player = None) -> List[str]:
-        kyokus, game_metadata, player = await self.parse_game_link(link, specified_player)
-        return [injustice for kyoku in kyokus for injustice in evaluate_injustices(kyoku, player)]
-    
-    async def fetch_majsoul(self, link: str):
-        """
-        NOTE:
-        basically the same as InjusticeJudge's `fetch_majsoul()`, with 1 difference;
-        Instead of logging in for each fetch, just fetch through the already logged-in
-        AccountManager.
-        """
-        identifier_pattern = r'\?paipu=([^_]+)'
-        identifier_match = re.search(identifier_pattern, link)
-        if identifier_match is None:
-            raise Exception(f"Invalid Mahjong Soul link: {link}")
-        identifier = identifier_match.group(1)
-        
-        player_pattern = r'_a(\d+)'
-        player_match = re.search(player_pattern, link)
-        if player_match is None:
-            ms_account_id = None
-        else:
-            ms_account_id = int((((int(player_match.group(1))-1358437)^86216345)-1117113)/7)
-        
-        try:
-            f = open(f"cached_games/game-{identifier}.log", 'rb')
-            record = proto.ResGameRecord()  # type: ignore[attr-defined]
-            record.ParseFromString(f.read())
-        except Exception:
-            record = await account_manager.call(
-                "fetchGameRecord",
-                game_uuid=identifier,
-                client_version_string=account_manager.client_version_string)
-
-            save_cache(
-                filename=f"game-{identifier}.log",
-                data=record.SerializeToString())
-
-        parsed = parse_wrapped_bytes(record.data)[1]
-        if parsed.actions != []:
-            actions = [parse_wrapped_bytes(action.result) for action in parsed.actions if len(action.result) > 0]
-        else:
-            actions = [parse_wrapped_bytes(record) for record in parsed.records]
-        return actions, MessageToDict(record.head), next((acc.seat for acc in record.head.accounts if acc.account_id == ms_account_id), 0)
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{InjusticeJudge.__name__}`...")
