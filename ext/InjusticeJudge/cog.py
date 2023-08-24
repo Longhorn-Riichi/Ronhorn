@@ -101,7 +101,7 @@ class ParseLog(commands.Cog):
                         result_string += f" ({TRANSLATE[result.limit_name]})"
                     def translate_yaku(y):
                         [name, value] = y.split('(')
-                        value = int(value.split("飜")[0])
+                        value = 13 if "役満" in value else int(value.split("飜")[0])
                         winds = {0:"ton",1:"nan",2:"shaa",3:"pei"}
                         if value > 1 and TRANSLATE[name] in {"dora","aka","ura","kita"}:
                             return f"{TRANSLATE[name]} {value}"
@@ -115,12 +115,16 @@ class ParseLog(commands.Cog):
                     if display_hands is not None:
                         if "All" in display_hands.value or ("Mangan" in display_hands.value and not below_mangan):
                             w = result.winner
+                            final_tile = kyokus[i].final_discard if kyokus[i].result[0] == "ron" else kyokus[i].final_draw
                             if "starting" in display_hands.value:
                                 result_string += "\n`    `"
+
                                 result_string += print_full_hand(hidden_part=kyokus[i].haipai[w],
                                                                  call_info=[],
                                                                  shanten=kyokus[i].haipai_shanten[w],
-                                                                 ukeire=kyokus[i].haipai_ukeire[w])
+                                                                 ukeire=kyokus[i].haipai_ukeire[w],
+                                                                 final_tile=final_tile,
+                                                                 furiten=kyokus[i].furiten[w])
                                 result_string += "\n`    ` ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀"
                                 result_string += f"↓ ({len(kyokus[i].pond[w])} discards)"
                             result_string += "\n`    `"
@@ -128,7 +132,7 @@ class ParseLog(commands.Cog):
                                                              call_info=kyokus[i].call_info[w],
                                                              shanten=(0, kyokus[i].final_waits[w]),
                                                              ukeire=kyokus[i].final_ukeire[w],
-                                                             final_tile=kyokus[i].final_discard if kyokus[i].result[0] == "ron" else kyokus[i].final_draw,
+                                                             final_tile=final_tile,
                                                              furiten=kyokus[i].furiten[w])
             elif result_type == "draw":
                 score_delta = results[0].score_delta
@@ -160,11 +164,6 @@ class ParseLog(commands.Cog):
                     declarer_hand = list(kyokus[i].haipai[declarer]) + [kyokus[i].final_draw]
                     result_string += "\n`    `"
                     result_string += f"{ph(declarer_hand)} ({count_terminals(declarer_hand)} terminals)"
-
-
-
-
-
 
             # add to the end of ret[-1] unless that makes it too long,
             # in which case we append a new string to ret
