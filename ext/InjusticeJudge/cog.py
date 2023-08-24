@@ -1,4 +1,5 @@
 import logging
+import re
 from discord.ext import commands
 from discord import app_commands, Colour, Embed, Interaction
 from typing import *
@@ -30,19 +31,19 @@ class InjusticeJudge(commands.Cog):
     """
 
     @app_commands.command(name="injustice", description="Display the injustices in a given game.")
-    @app_commands.describe(game_link="The game link to analyze (either Mahjong Soul or tenhou.net)",
+    @app_commands.describe(link="Link to the game to analyze (Mahjong Soul or tenhou.net)",
                            player="(optional) The seat to analyze the game from. Determined using the link, but defaults to East.")
     @app_commands.choices(player=[
         app_commands.Choice(name="East", value=0),
         app_commands.Choice(name="South", value=1),
         app_commands.Choice(name="West", value=2),
         app_commands.Choice(name="North", value=3)])
-    async def injustice(self, interaction: Interaction, game_link: str, player: Optional[app_commands.Choice[int]]):
+    async def injustice(self, interaction: Interaction, link: str, player: Optional[app_commands.Choice[int]]):
         await interaction.response.defer()
         if player is not None:
-            injustices = await self.analyze_game(game_link, player.value)
+            injustices = await self.analyze_game(link, player.value)
         else:
-            injustices = await self.analyze_game(game_link)
+            injustices = await self.analyze_game(link)
         if injustices == []:
             starting_dir = player.value if player is not None else None
             player_direction = {None: "player specified in the link",
@@ -63,7 +64,7 @@ class InjusticeJudge(commands.Cog):
         title = f"Injustices"
         green = Colour.from_str("#1EA51E")
         as_player_string = "yourself" if player is None else player.name
-        await interaction.followup.send(content=f"Analyzing {game_link} for {as_player_string}:", embed=Embed(description=ret[0], colour=green))
+        await interaction.followup.send(content=f"Input: {link}\nAnalysis result for **{as_player_string}**:", embed=Embed(description=ret[0], colour=green))
         for embed in [Embed(description=text, colour=green) for text in ret[1:]]:
             await interaction.channel.send(embed=embed)
 
@@ -178,15 +179,16 @@ class InjusticeJudge(commands.Cog):
         but with the `fetch_majsoul` part substituted out so we can use our own
         AccountManager (to avoid logging in for each fetch)
         """
-        if "tenhou.net" in link:
+        if "tenhou.net/" in link:
             tenhou_log, metadata, player = fetch_tenhou(link)
             kyokus, parsed_metadata = parse_tenhou(tenhou_log, metadata)
-        elif "mahjongsoul.game.yo-star.com" in link:
+        elif "mahjongsoul" in link or "maj-soul" in link:
+            # EN: `mahjongsoul.game.yo-star.com`; CN: `maj-soul.com`; JP: `mahjongsoul.com`
             majsoul_log, metadata, player = await self.fetch_majsoul(link)
             kyokus, parsed_metadata = parse_majsoul(majsoul_log, metadata)
         else:
-            raise Exception("expected tenhou link starting with https://tenhou.net/0/?log="
-                            " or mahjong soul link starting with https://mahjongsoul.game.yo-star.com/?paipu=")
+            raise Exception("expected tenhou link similar to `tenhou.net/0/?log=`"
+                            " or mahjong soul link similar to `mahjongsoul.game.yo-star.com/?paipu=`")
         if specified_player is not None:
             player = specified_player
         return kyokus, parsed_metadata, player
@@ -202,11 +204,19 @@ class InjusticeJudge(commands.Cog):
         Instead of logging in for each fetch, just fetch through the already logged-in
         AccountManager.
         """
-        assert link.startswith(("https://mahjongsoul.game.yo-star.com/?paipu=",
-                            "http://mahjongsoul.game.yo-star.com/?paipu=")), "expected mahjong soul link starting with https://mahjongsoul.game.yo-star.com/?paipu="
+        identifier_pattern = r'\?paipu=([^_]+)'
+        identifier_match = re.search(identifier_pattern, link)
+        if identifier_match is None:
+            raise Exception(f"Invalid Mahjong Soul link: {link}")
+        identifier = identifier_match.group(1)
         
-        identifier, *player_string = link.split("?paipu=")[1].split("_a")
-        ms_account_id = None if len(player_string) == 0 else int((((int(player_string[0])-1358437)^86216345)-1117113)/7)
+        player_pattern = r'_a(\d+)'
+        player_match = re.search(player_pattern, link)
+        if player_match is None:
+            ms_account_id = None
+        else:
+            ms_account_id = int((((int(player_match.group(1))-1358437)^86216345)-1117113)/7)
+        
         try:
             f = open(f"cached_games/game-{identifier}.log", 'rb')
             record = proto.ResGameRecord()  # type: ignore[attr-defined]
