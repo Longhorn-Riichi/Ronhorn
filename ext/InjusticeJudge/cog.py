@@ -6,9 +6,9 @@ from discord import app_commands, Colour, Embed, Interaction
 from typing import *
 
 # InjusticeJudge imports
-from modules.InjusticeJudge.injustice_judge.utils import short_round_name, print_full_hand, sorted_hand, try_remove_all_tiles
-from modules.InjusticeJudge.injustice_judge.constants import TRANSLATE
-from .utilities import *
+from modules.InjusticeJudge.injustice_judge.utils import ph, hidden_part, short_round_name, print_full_hand, sorted_hand, try_remove_all_tiles
+from modules.InjusticeJudge.injustice_judge.constants import TRANSLATE, YAOCHUUHAI
+from .utilities import analyze_game, parse_game_link
 from global_stuff import slash_commands_guilds
 
 class Injustice(commands.Cog):
@@ -69,50 +69,36 @@ class ParseLog(commands.Cog):
     async def parse(self, interaction: Interaction, link: str, display_hands: Optional[app_commands.Choice[str]] = None):
         await interaction.response.defer()
         kyokus, game_metadata, player = await parse_game_link(link)
-        results = [(i, kyoku["round"], kyoku["honba"], kyoku["result"]) for i, kyoku in enumerate(kyokus)]
-        player_names = [f"**{name}**" for name in game_metadata["name"]]
-        game_scores = game_metadata["game_score"]
-        final_scores = game_metadata["final_score"]
+        player_names = [f"**{name}**" for name in game_metadata.name]
+        game_scores = game_metadata.game_score
+        final_scores = game_metadata.final_score
         num_players = len(player_names)
         header = f"Result of game {link}:\n"
         header += ", ".join("{}: {} ({:+.1f})".format(p,g,f/1000.0) for p,g,f in sorted(zip(player_names, game_scores, final_scores), key=lambda z: -z[2]))
         ret = [""]
-        for i, rnd, honba, result in results:
-            result_name, *win_data = result
-            if result_name == "和了": # ron or tsumo
+        for i, rnd, honba, game_results in [(i, kyoku.round, kyoku.honba, kyoku.result) for i, kyoku in enumerate(kyokus)]:
+            result_type, *results = game_results
+            if result_type in {"ron", "tsumo"}: # ron or tsumo
                 result_string = ""
-                wins = [win_data[i*2:i*2+2] for i in range(len(win_data)//2)]
-                for j, [score_delta, [winner, from_seat, _, point_string, *yaku]] in enumerate(wins):
-                    tsumo = winner == from_seat
+                for j, result in enumerate(results):
                     if j != 0:
                         result_string += "\n` and` "
-                    if tsumo:
-                        result_string += f"{player_names[from_seat]} tsumos"
-                    else:
-                        result_string += f"{player_names[winner]} rons {player_names[from_seat]} "
-                    below_mangan = "符" in point_string
-                    if below_mangan:
-                        [fu, rest] = point_string.split("符")
-                        [han, rest] = rest.split("飜")
-                        [pts, _] = rest.split("点")
-                    else: # e.g. "倍満16000点"
-                        pts = "".join(c for c in point_string if c.isdigit() or c == "-")
-                        limit_name = point_string.split(pts[0])[0]
-                    pts = "/".join(pts.split("-"))
-                    if tsumo:
-                        num_players == 3
-                    if tsumo:
-                        if "∀" in point_string:
-                            result_string += f" for `{int(pts)*(num_players-1)}({pts}∀)`"
+                    if result_type == "tsumo":
+                        result_string += f"{player_names[result.winner]} tsumos"
+                        ko = result.score_ko
+                        oya = result.score_oya
+                        if ko == oya:
+                            result_string += f" for `{result.score}({ko}∀)`"
                         else:
-                            ko, oya = map(int, pts.split('/'))
-                            result_string += f" for `{ko+ko+oya if num_players == 4 else ko+oya}({pts})`"
+                            result_string += f" for `{result.score}({ko}/{oya})`"
                     else:
-                        result_string += f" for `{pts}`"
+                        result_string += f"{player_names[result.winner]} rons {player_names[result.won_from]} "
+                        result_string += f" for `{result.score}`"
+                    below_mangan = result.limit_name == ""
                     if below_mangan:
-                        result_string += f" ({han}/{fu})"
+                        result_string += f" ({result.han}/{result.fu})"
                     else:
-                        result_string += f" ({TRANSLATE[limit_name]})"
+                        result_string += f" ({TRANSLATE[result.limit_name]})"
                     def translate_yaku(y):
                         [name, value] = y.split('(')
                         value = int(value.split("飜")[0])
@@ -122,32 +108,66 @@ class ParseLog(commands.Cog):
                         elif TRANSLATE[name] == "round wind":
                             return winds[rnd//4]
                         elif TRANSLATE[name] == "seat wind":
-                            return winds[winner]
+                            return winds[result.winner]
                         else:
                             return TRANSLATE[name]
-                    result_string += f" *{', '.join(map(translate_yaku, yaku))}*"
+                    result_string += f" *{', '.join(map(translate_yaku, result.yaku.yaku_strs))}*"
                     if display_hands is not None:
                         if "All" in display_hands.value or ("Mangan" in display_hands.value and not below_mangan):
+                            w = result.winner
                             if "starting" in display_hands.value:
-                                starting_hand = sorted_hand(kyokus[i]["starting_hands"][winner])
-                                starting_shanten = kyokus[i]["starting_shanten"][winner]
-                                result_string += "\n`    `" + print_full_hand(starting_hand, [], starting_shanten, -1) + f"\n`    ` ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀↓ ({len(kyokus[i]['pond'][winner])} discards)"
-                            final_closed_hand = sorted_hand(try_remove_all_tiles(tuple(kyokus[i]["hands"][winner]), tuple(kyokus[i]["calls"][winner])))
-                            final_waits = kyokus[i]["final_waits"][winner]
-                            final_ukeire = kyokus[i]["final_ukeire"][winner]
-                            final_call_info = kyokus[i]["call_info"][winner]
-                            furiten = kyokus[i]["furiten"][winner]
-                            final_tile = kyokus[i]["final_tile"]
-                            result_string += "\n`    `" + print_full_hand(final_closed_hand, final_call_info, (0, final_waits), final_ukeire, final_tile, furiten)
-            elif result_name in ["流局", "全員聴牌", "流し満貫"]: # ryuukyoku / nagashi
-                winners = [player_names[i] for i, delta in enumerate(win_data[0]) if delta > 0]
-                losers = [player_names[i] for i, delta in enumerate(win_data[0]) if delta < 0]
-                if len(winners) > 0 and len(losers) > 0:
-                    result_string = f"{TRANSLATE[result_name]} ({', '.join(losers)}⠀→⠀{', '.join(winners)})"
+                                result_string += "\n`    `"
+                                result_string += print_full_hand(hidden_part=kyokus[i].haipai[w],
+                                                                 call_info=[],
+                                                                 shanten=kyokus[i].haipai_shanten[w],
+                                                                 ukeire=kyokus[i].haipai_ukeire[w])
+                                result_string += "\n`    ` ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀"
+                                result_string += f"↓ ({len(kyokus[i].pond[w])} discards)"
+                            result_string += "\n`    `"
+                            result_string += print_full_hand(hidden_part=hidden_part(kyokus[i].hands[w], kyokus[i].calls[w]),
+                                                             call_info=kyokus[i].call_info[w],
+                                                             shanten=(0, kyokus[i].final_waits[w]),
+                                                             ukeire=kyokus[i].final_ukeire[w],
+                                                             final_tile=kyokus[i].final_discard if kyokus[i].result[0] == "ron" else kyokus[i].final_draw,
+                                                             furiten=kyokus[i].furiten[w])
+            elif result_type == "draw":
+                score_delta = results[0].score_delta
+                draw_name = results[0].name
+                # check that there are any winners/losers at all
+                if not all(delta == 0 for delta in score_delta):
+                    # show that the winners pay out to the losers
+                    # also mark the dealer
+                    ith_player_string = lambda i: ("oya " if i == rnd % 4 else "") + player_names[i]
+                    winners = [ith_player_string(i) for i, delta in enumerate(score_delta) if delta > 0]
+                    losers = [ith_player_string(i) for i, delta in enumerate(score_delta) if delta < 0]
+                    result_string = f"{draw_name} ({', '.join(losers)}⠀→⠀{', '.join(winners)})"
                 else:
-                    result_string = f"{TRANSLATE[result_name]}"
-            elif result_name in ["九種九牌", "四家立直", "三家和了", "四槓散了", "四風連打"]: # draws
-                result_string = TRANSLATE[result_name]
+                    result_string = f"{draw_name}"
+                # show the nagashi discards
+                count_terminals = lambda hand: len([t for t in hand if t in YAOCHUUHAI])
+                if draw_name == "nagashi mangan" and display_hands is not None:
+                    winner = next(seat for seat in range(num_players) if score_delta[seat] > 0)
+                    if "starting" in display_hands.value:
+                        num_terminals = count_terminals(kyokus[i].haipai[winner])
+                        result_string += "\n`    `"
+                        result_string += f"{ph(kyokus[i].haipai[winner])} ({num_terminals} terminals)"
+                        result_string += "\n`    ` ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀"
+                        result_string += f"↓ ({len(kyokus[i].pond[winner])} discards)"
+                    result_string += "\n`    `"
+                    result_string += ph(kyokus[i].pond[winner])
+                if draw_name == "9 terminals draw" and display_hands is not None and "All" in display_hands.value:
+                    declarer = next(seat for seat in range(num_players) if count_terminals(kyokus[i].haipai[seat]) >= 9)
+                    declarer_hand = list(kyokus[i].haipai[declarer]) + [kyokus[i].final_draw]
+                    result_string += "\n`    `"
+                    result_string += f"{ph(declarer_hand)} ({count_terminals(declarer_hand)} terminals)"
+
+
+
+
+
+
+            # add to the end of ret[-1] unless that makes it too long,
+            # in which case we append a new string to ret
             to_add = f"\n`{short_round_name(rnd, honba)}` {result_string}"
             if len(to_add) + len(ret[-1]) > 3900:
                 ret.append(to_add)
