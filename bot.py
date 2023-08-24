@@ -114,9 +114,9 @@ async def on_app_command_error(interaction: Interaction, error: app_commands.App
         # meanwhile, the user also gets an idea of what they might have done wrong.
         if interaction.response.is_done():
             # NOTE: `ephemeral` here only works if `defer()` was called with `ephemeral=True`
-            await interaction.followup.send(f"The command failed: {error.original}", ephemeral=True)
+            await interaction.followup.send(f"The command failed: {repr(error)}", ephemeral=True)
         else:
-            await interaction.response.send_message(f"The command failed: {error}", ephemeral=True)
+            await interaction.response.send_message(f"The command failed: {repr(error)}", ephemeral=True)
         # do NOT raise the error again here; this somehow results in the error being
         # sent here again (TOTHINK: but only once! Intriguing...)
     else:
