@@ -35,11 +35,30 @@ First, `cp config.template.env config.env`.
     - Bot Permissions: Send Messages, Manage Messages, Use External Emojis (and more as we add more functionalities)
 1. fill in the `Discord Stuff` section of [config.env](config.env). The bot token can be obtained through (SETTINGS -> Bot \[-> Reset Token\])
 ### Google Sheets Stuff
-1. set up a Google Cloud project. Enable Google Sheets API access, and make a service account. Generate a JSON key for that service account and save it as `gs_service_account.json` in the root directory (`/`)
+1. set up a Google Cloud project. Enable Google Sheets API access, and make a service account. Generate a JSON key for that service account and save it as `gs_service_account.json` in the [root directory]
 1. make a suitable Google Spreadsheet ([example](https://docs.google.com/spreadsheets/d/1pXlGjyz165S62-3-4ZXxit4Ci0yW8piVfbVObtjg7Is/edit?usp=sharing)) and share the Spreadsheet with that service account.
 1. fill in the `Google Sheets Stuff` section of [config.env](config.env)
 ### Mahjong Soul Stuff
 1. fill in the `Mahjong Soul Stuff` section of [config.env](config.env)
+### Server Lists
+Make an `injustice_servers.json` in the [root directory], with `<server_name>: <server_ID>` pairs. The `<server_name>` is for record-keeping only. Only servers whose `<server_ID>` is specified here will have the `/injustice` command available. Example:
+```json
+{
+  "Longhorn Riichi": "111111111111111111",
+  "The Riichi Mahjong Association (UT Dallas)": "111111111111111111",
+  "Riichi Nomi": "111111111111111111"
+}
+```
+
+Similarly, make a `slash_commands_servers.json` in the [root directory], for the servers that want the slash commands that are not exclusive to Longhorn Riichi (excluding `/injustice`).
+```json
+{
+  "Longhorn Riichi": "111111111111111111",
+  "The Riichi Mahjong Association (UT Dallas)": "111111111111111111",
+  "Main Mahjong Server": "111111111111111111",
+  "Riichi Nomi": "111111111111111111"
+}
+```
 
 ## Running the bot
 1. in a Unix shell:
@@ -47,10 +66,12 @@ First, `cp config.template.env config.env`.
         pipenv install
         pipenv shell
         ./start.sh
-1. in the relevant Discord server: run `$sync` to sync the slash commands for that server.
+1. in the relevant Discord server: run `rh/sync` to sync the slash commands for that server (`rh/` is the regular command prefix).
 
 ## Relevant Links (References)
 - [amae-koromo](https://github.com/SAPikachu/amae-koromo) and [amae-koromo-scripts](https://github.com/SAPikachu/amae-koromo-scripts)
 - [Ronnie](https://github.com/RiichiNomi/ronnie)
 - [mjsoul.py](https://github.com/RiichiNomi/mjsoul.py) (eventually we'll add our `mahjongsoul` module into the `mjsoul.py` package)
 - [mahjong_soul_api](https://github.com/MahjongRepository/mahjong_soul_api/)
+
+[root directory]: /

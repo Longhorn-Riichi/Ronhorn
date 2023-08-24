@@ -7,7 +7,7 @@ from discord.ext import commands
 from discord import app_commands, Interaction
 from typing import *
 from ext.LobbyManagers.cog import LobbyManager
-from global_stuff import assert_getenv, registry, raw_scores, registry_lock, raw_scores_lock
+from global_stuff import assert_getenv, registry, raw_scores, registry_lock, raw_scores_lock, slash_commands_guilds
 
 GUILD_ID: int              = int(assert_getenv("guild_id"))
 OFFICER_ROLE: str          = assert_getenv("officer_role")
@@ -20,7 +20,7 @@ YH_NAME: str               = assert_getenv("yh_name")
 YT_NAME: str               = assert_getenv("yt_name")
 SH_NAME: str               = assert_getenv("sh_name")
 ST_NAME: str               = assert_getenv("st_name")
-REGISTRY_NAME_LENGTH: int  = 15
+REGISTRY_NAME_LENGTH: int  = int(assert_getenv("max_name_len"))
 
 class LonghornRiichiUtilities(commands.Cog):
     """
@@ -428,5 +428,5 @@ async def setup(bot: commands.Bot):
 
     logging.info(f"Loading cog `{GlobalUtilities.__name__}`...")
     instance = GlobalUtilities(bot)
-    await bot.add_cog(instance)
+    await bot.add_cog(instance, guilds=slash_commands_guilds)
 

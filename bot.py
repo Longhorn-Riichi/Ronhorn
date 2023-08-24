@@ -21,7 +21,7 @@ logging.basicConfig(
 
 DISCORD_TOKEN = assert_getenv("bot_token")
 EXTENSIONS_FILE = assert_getenv("extensions_file")
-COMMAND_PREFIX = '$'
+COMMAND_PREFIX = assert_getenv("command_prefix")
 
 try:
     with open(EXTENSIONS_FILE, 'r') as f:
@@ -48,7 +48,7 @@ async def on_ready():
 async def sync(ctx: commands.Context):
     # note that global commands need to be explicitly copied to the guild
     await bot.tree.sync(guild=ctx.guild)
-    await ctx.send(f"Synced slash commands exclusive to this server ({ctx.guild.name}). Remember to also sync global slash commands with {COMMAND_PREFIX}sync_global")
+    await ctx.send(f"Synced slash commands exclusive to this server ({ctx.guild.name}).")
 
 @bot.command(name='sync_global', hidden=True)
 @commands.is_owner()
