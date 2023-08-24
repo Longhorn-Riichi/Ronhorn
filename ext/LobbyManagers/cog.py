@@ -2,19 +2,13 @@ import asyncio
 import datetime
 import gspread
 import logging
-from os import getenv
 import discord
 from discord.ext import commands
 from discord import Interaction
-
-from modules.mahjongsoul.contest_manager import ContestManager
-from modules.mahjongsoul.account_manager import AccountManager
 from typing import *
 
-def assert_getenv(name: str) -> str:
-    value = getenv(name)
-    assert value is not None, f"missing \"{name}\" in config.env"
-    return value
+from modules.mahjongsoul.contest_manager import ContestManager
+from global_stuff import assert_getenv, account_manager, registry, raw_scores, registry_lock, raw_scores_lock
 
 BOT_CHANNEL_ID: int        = int(assert_getenv("bot_channel_id"))
 GUILD_ID: int              = int(assert_getenv("guild_id"))
@@ -37,19 +31,7 @@ class LobbyManager(commands.Cog):
             mjs_username,
             mjs_password,
             False,
-            game_type)        
-
-        assert(isinstance(bot.registry, gspread.Worksheet))
-        assert(isinstance(bot.raw_scores, gspread.Worksheet))
-        assert(isinstance(bot.registry_lock, asyncio.Lock))
-        assert(isinstance(bot.raw_scores_lock, asyncio.Lock))
-        self.registry = bot.registry
-        self.raw_scores = bot.raw_scores
-        self.registry_lock = bot.registry_lock
-        self.raw_scores_lock = bot.raw_scores_lock
-
-        assert(isinstance(bot.account_manager, AccountManager))
-        self.account_manager = bot.account_manager
+            game_type)
 
     async def async_setup(self):
         """
@@ -115,7 +97,7 @@ class LobbyManager(commands.Cog):
         await interaction.followup.send(content=message)
 
     async def add_game_to_leaderboard(self, uuid):
-        record_list = await self.account_manager.get_game_results([uuid])
+        record_list = await account_manager.get_game_results([uuid])
         if len(record_list) == 0:
             raise Exception("A game concluded without a record (possibly due to being terminated early).")
 
@@ -138,10 +120,10 @@ class LobbyManager(commands.Cog):
                 player_scores_rendered.append("ERROR: a game ended with AI players. How???")
             
             raw_score = p.part_point_1
-            async with self.registry_lock:
-                found_cell: gspread.cell.Cell = self.registry.find(str(player_account_id), in_column=MJS_ACCOUNT_ID_COL)
+            async with registry_lock:
+                found_cell: gspread.cell.Cell = registry.find(str(player_account_id), in_column=MJS_ACCOUNT_ID_COL)
                 if found_cell is not None:
-                    discord_name = self.registry.cell(found_cell.row, DISCORD_NAME_COL).value
+                    discord_name = registry.cell(found_cell.row, DISCORD_NAME_COL).value
                     raw_scores_row.extend((discord_name, raw_score))
                 else: # The player was not registered?
                     not_registered.append(player_nickname)
@@ -153,8 +135,8 @@ class LobbyManager(commands.Cog):
         for player_nickname in not_registered:
             player_scores_rendered.append(f"WARNING: Mahjong Soul player {player_nickname} is not registered! Modify spreadsheet after registration!")
 
-        async with self.raw_scores_lock:
-            self.raw_scores.append_row(raw_scores_row)
+        async with raw_scores_lock:
+            raw_scores.append_row(raw_scores_row)
 
         return '\n'.join(player_scores_rendered)
     
@@ -182,12 +164,12 @@ class LobbyManager(commands.Cog):
     """
 
     def get_member_mjs_nickname(self, discord_name: str) -> str | None:
-        found_cell: gspread.cell.Cell = self.registry.find(discord_name, in_column=DISCORD_NAME_COL)
+        found_cell: gspread.cell.Cell = registry.find(discord_name, in_column=DISCORD_NAME_COL)
         if found_cell is None:
             # No player with given Discord name found; returning None
             return None
         
-        return self.registry.cell(found_cell.row, MJS_NICKNAME_COL).value
+        return registry.cell(found_cell.row, MJS_NICKNAME_COL).value
 
 # need to make dummy classes so discord.py can distinguish between
 # different instances (as separate cogs)

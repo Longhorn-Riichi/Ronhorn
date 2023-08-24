@@ -1,12 +1,11 @@
-# bot.py
-import dotenv
-from os import getenv, execl
+# note that `global_stuff` loads the `config.env` variables
+from global_stuff import assert_getenv, account_manager
+
+from os import execl
 import discord
 from discord import app_commands, Interaction
 from discord.ext import commands
 import logging
-import gspread
-import asyncio
 
 # INFO level captures all except DEBUG log messages.
 # the FileHandler by default appends to the given file
@@ -19,14 +18,6 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-
-def assert_getenv(name: str) -> str:
-    value = getenv(name)
-    assert value is not None, f"missing \"{name}\" in config.env"
-    return value
-
-# load environmental variables
-dotenv.load_dotenv("config.env")
 
 DISCORD_TOKEN = assert_getenv("bot_token")
 EXTENSIONS_FILE = assert_getenv("extensions_file")
@@ -45,22 +36,6 @@ intents.message_content = True # necessary for commands to work
 bot = commands.Bot(
     command_prefix=COMMAND_PREFIX,
     intents=intents)
-
-# initialize the spreadsheet interface and save references in `bot`
-# so they can be accessed by all extensions.
-gs_client = gspread.service_account(filename='gs_service_account.json')
-bot.spreadsheet = gs_client.open_by_url(assert_getenv("spreadsheet_url"))
-bot.registry = bot.spreadsheet.worksheet("Registry")
-bot.raw_scores = bot.spreadsheet.worksheet("Raw Scores")
-bot.registry_lock = asyncio.Lock()
-bot.raw_scores_lock = asyncio.Lock()
-
-# initialize an account manager to be shared with all extensions.
-# login must happen in `setup_hook()`, before loading extensions
-from modules.mahjongsoul.account_manager import AccountManager
-bot.account_manager = AccountManager(
-    mjs_username=assert_getenv("mjs_sh_username"),
-    mjs_password=assert_getenv("mjs_sh_password"))
 
 # bot events
 @bot.event
@@ -152,7 +127,7 @@ async def setup_hook():
     # note that extensions should be loaded before the slash commands
     # are synched. Here we ensure that by only allowing manual synching
     # once the bot finishes loading (i.e., `setup_hook()` has been called)
-    await bot.account_manager.connect_and_login()
+    await account_manager.connect_and_login()
     for extension in EXTENSIONS:
         await bot.load_extension(extension)
 bot.setup_hook = setup_hook

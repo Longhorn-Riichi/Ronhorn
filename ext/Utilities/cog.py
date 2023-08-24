@@ -1,19 +1,13 @@
-import asyncio
 import datetime
 import discord
 import gspread
 import logging
 import requests
-from os import getenv
 from discord.ext import commands
 from discord import app_commands, Interaction
 from typing import *
 from ext.LobbyManagers.cog import LobbyManager
-
-def assert_getenv(name: str) -> str:
-    value = getenv(name)
-    assert value is not None, f"missing \"{name}\" in config.env"
-    return value
+from global_stuff import assert_getenv, registry, raw_scores, registry_lock, raw_scores_lock
 
 GUILD_ID: int              = int(assert_getenv("guild_id"))
 OFFICER_ROLE: str          = assert_getenv("officer_role")
@@ -33,16 +27,7 @@ class LonghornRiichiUtilities(commands.Cog):
     Utility commands specific to Longhorn Riichi
     """
     def __init__(self, bot: commands.Bot):
-        assert(isinstance(bot.registry, gspread.Worksheet))
-        assert(isinstance(bot.raw_scores, gspread.Worksheet))
-        assert(isinstance(bot.registry_lock, asyncio.Lock))
-        assert(isinstance(bot.raw_scores_lock, asyncio.Lock))
-        
         self.bot = bot
-        self.registry = bot.registry
-        self.raw_scores = bot.raw_scores
-        self.registry_lock = bot.registry_lock
-        self.raw_scores_lock = bot.raw_scores_lock
 
     """
     =====================================================
@@ -180,12 +165,12 @@ class LonghornRiichiUtilities(commands.Cog):
             mahjongsoul_account_id = None
         discord_name = server_member.name
 
-        async with self.registry_lock:
+        async with registry_lock:
             # Delete any existing registration
-            found_cell = self.registry.find(discord_name, in_column=2)
+            found_cell = registry.find(discord_name, in_column=2)
             cell_existed = found_cell is not None
             if cell_existed:
-                self.registry.delete_row(found_cell.row)
+                registry.delete_row(found_cell.row)
 
             data = [name,
                     discord_name,
@@ -193,7 +178,7 @@ class LonghornRiichiUtilities(commands.Cog):
                     mahjongsoul_nickname,
                     friend_id,
                     mahjongsoul_account_id]
-            self.registry.append_row(data)
+            registry.append_row(data)
             register_string = "updated registration" if cell_existed else "registered"
             mjsoul_string = f" and Mahjong Soul account \"{mahjongsoul_nickname}\"" if friend_id is not None else ""
             return f"\"{discord_name}\" {register_string} with name \"{name}\"{mjsoul_string}."
@@ -217,12 +202,12 @@ class LonghornRiichiUtilities(commands.Cog):
 
     async def _unregister(self, server_member: discord.Member) -> str:
         discord_name = server_member.name
-        async with self.registry_lock:
-            found_cell: gspread.cell.Cell = self.registry.find(discord_name, in_column=2)
+        async with registry_lock:
+            found_cell: gspread.cell.Cell = registry.find(discord_name, in_column=2)
             if found_cell is None:
                 return f"\"{discord_name}\" is not a registered member."
             else:
-                self.registry.delete_row(found_cell.row)
+                registry.delete_row(found_cell.row)
                 return f"\"{discord_name}\"'s registration has been removed."
 
     @app_commands.command(name="unregister", description="Remove your registered information.")
@@ -295,8 +280,8 @@ class LonghornRiichiUtilities(commands.Cog):
             timestamp = str(datetime.datetime.now()).split(".")[0]
             gamemode = f"{game_style} {game_type.value}"
             flatten = lambda xss: (x for xs in xss for x in xs)
-            async with self.raw_scores_lock:
-                self.raw_scores.append_row([timestamp, gamemode, "yes", *map(str, flatten(ordered_players))])
+            async with raw_scores_lock:
+                raw_scores.append_row([timestamp, gamemode, "yes", *map(str, flatten(ordered_players))])
 
             player_score_strings = list(flatten(map(lambda p: (p[0].mention, str(p[1])), ordered_players)))
             score_printout = f"Successfully entered scores for a {gamemode} game:\n" \
@@ -324,11 +309,11 @@ class LonghornRiichiUtilities(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         try:
             discord_name = server_member.name
-            async with self.registry_lock:
-                found_cell = self.registry.find(discord_name, in_column=2)
+            async with registry_lock:
+                found_cell = registry.find(discord_name, in_column=2)
                 if found_cell is None:
                     return await interaction.followup.send(content=f"Error: {discord_name} is not registered as a club member.")
-                self.registry.update_cell(row=found_cell.row, col=3, value=membership.value)
+                registry.update_cell(row=found_cell.row, col=3, value=membership.value)
             paid_unpaid = "paid" if membership.value == "yes" else "unpaid"
             await interaction.followup.send(content=f"Successfully made {discord_name} a {paid_unpaid} member.")
         except Exception as e:
@@ -363,11 +348,11 @@ class LonghornRiichiUtilities(commands.Cog):
     #     try:
     #         discord_name = server_member.name
     #         discord_name = server_member.mention
-    #         found_cell = self.registry.find(discord_name, in_column=2)
+    #         found_cell = registry.find(discord_name, in_column=2)
     #         if found_cell is None:
     #             await interaction.followup.send(content=f"Error: {discord_name} is not registered as a club member.")
     #         else
-    #             [name, _, paid_membership, majsoul_name, majsoul_friend_code, majsoul_id, *rest] = self.registry.row_values(found_cell.row)
+    #             [name, _, paid_membership, majsoul_name, majsoul_friend_code, majsoul_id, *rest] = registry.row_values(found_cell.row)
     #             paid_unpaid = "a paid" if paid_membership == "yes" else "an unpaid"
     #             await interaction.followup.send(content=f"{server_member.mention} (MJS: {majsoul_name}, id {majsoul_id}) is {paid_unpaid} member of Longhorn Riichi.")
 
@@ -382,7 +367,7 @@ class LonghornRiichiUtilities(commands.Cog):
     #     try:
     #         discord_name = server_member.name
     #         discord_name = server_member.mention
-    #         found_cell = self.registry.find(discord_name, in_column=2)
+    #         found_cell = registry.find(discord_name, in_column=2)
     #         if found_cell is None:
     #             return await interaction.followup.send(content=f"Error: {discord_name} is not registered as a club member.")
 

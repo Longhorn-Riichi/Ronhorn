@@ -4,7 +4,7 @@ from discord.ext import commands
 from discord import app_commands, Colour, Embed, Interaction
 from typing import *
 
-from modules.mahjongsoul.account_manager import AccountManager
+from global_stuff import account_manager
 from modules.pymjsoul.proto import liqi_combined_pb2 as proto
 
 # InjusticeJudge imports
@@ -16,13 +16,10 @@ from modules.InjusticeJudge.injustice_judge.constants import Kyoku, TRANSLATE
 
 class InjusticeJudge(commands.Cog):
     """
-    Commands that invoke the InjusticJudge utilities and the helpers
+    Commands that invoke the InjusticJudge utilities, and the helpers
     that make efficient API calls. Caches the game logs in `/cached_games`,
     up to 1 GB
     """
-    def __init__(self, bot: commands.Bot) -> None:
-        assert(isinstance(bot.account_manager, AccountManager))
-        self.account_manager = bot.account_manager
 
     """
     =====================================================
@@ -222,10 +219,10 @@ class InjusticeJudge(commands.Cog):
             record = proto.ResGameRecord()  # type: ignore[attr-defined]
             record.ParseFromString(f.read())
         except Exception:
-            record = await self.account_manager.call(
+            record = await account_manager.call(
                 "fetchGameRecord",
                 game_uuid=identifier,
-                client_version_string=self.account_manager.client_version_string)
+                client_version_string=account_manager.client_version_string)
 
             save_cache(
                 filename=f"game-{identifier}.log",
@@ -240,6 +237,6 @@ class InjusticeJudge(commands.Cog):
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{InjusticeJudge.__name__}`...")
-    instance = InjusticeJudge(bot=bot)
+    instance = InjusticeJudge()
     await bot.add_cog(instance)
 
