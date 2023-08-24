@@ -23,24 +23,21 @@ class Injustice(commands.Cog):
     @app_commands.describe(link="Link to the game to analyze (Mahjong Soul or tenhou.net)",
                            player="(optional) The seat to analyze the game from. Determined using the link, but defaults to East.")
     @app_commands.choices(player=[
-        app_commands.Choice(name="East", value=0),
-        app_commands.Choice(name="South", value=1),
-        app_commands.Choice(name="West", value=2),
-        app_commands.Choice(name="North", value=3)])
-    async def injustice(self, interaction: Interaction, link: str, player: Optional[app_commands.Choice[int]]):
+        app_commands.Choice(name="East", value="East"),
+        app_commands.Choice(name="South", value="South"),
+        app_commands.Choice(name="West", value="West"),
+        app_commands.Choice(name="North", value="North")])
+    async def injustice(self, interaction: Interaction, link: str, player: Optional[app_commands.Choice[str]]):
         await interaction.response.defer()
         if player is None:
             injustices = await analyze_game(link)
+            player_str = "player specified in the link"
         else:
-            injustices = await analyze_game(link, player.value)
+            dir_map = ["East", "South", "West", "North"]
+            injustices = await analyze_game(link, dir_map.index(player.value))
+            player_str = f"starting {player.value} player"
         if injustices == []:
-            starting_dir = player.value if player is not None else None
-            player_direction = {None: "player specified in the link",
-                                0: "starting East player",
-                                1: "starting South player",
-                                2: "starting West player",
-                                3: "starting North player"}
-            injustices = [f"No injustices detected for the {player_direction[starting_dir]}.\n"
+            injustices = [f"No injustices detected for the {player_str}.\n"
                            "Specify another player with the `player` option in `/injustice`.\n"
                            "Did we miss an injustice? Contribute ideas [here](https://github.com/Longhorn-Riichi/InjusticeJudge/issues/1)!"]
         ret = [""]
