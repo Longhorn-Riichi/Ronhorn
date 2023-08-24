@@ -1,4 +1,6 @@
 import logging
+import json
+import discord
 from discord.ext import commands
 from discord import app_commands, Colour, Embed, Interaction
 from typing import *
@@ -6,20 +8,15 @@ from typing import *
 # InjusticeJudge imports
 from modules.InjusticeJudge.injustice_judge.utils import short_round_name, print_full_hand, sorted_hand, try_remove_all_tiles
 from modules.InjusticeJudge.injustice_judge.constants import TRANSLATE
-from utilities import *
+from .utilities import *
+from global_stuff import slash_commands_guilds
 
-
-class InjusticeJudge(commands.Cog):
+class Injustice(commands.Cog):
     """
-    Commands that invoke the InjusticJudge utilities, and the helpers
-    that make efficient API calls. Caches the game logs in `/cached_games`,
-    up to 1 GB
-    """
-
-    """
-    =====================================================
-    SLASH COMMANDS
-    =====================================================
+    invokes a modified version of InjusticeJudge that uses our
+    account manager to avoid repeated logging in-and-out. This is
+    its own class so we can limit the `injustice` command to a
+    given list of servers.
     """
 
     @app_commands.command(name="injustice", description="Display the injustices in a given game.")
@@ -60,6 +57,7 @@ class InjusticeJudge(commands.Cog):
         for embed in [Embed(description=text, colour=green) for text in ret[1:]]:
             await interaction.channel.send(embed=embed)
 
+class ParseLog(commands.Cog):
     @app_commands.command(name="parse", description=f"Print out the results of a game.")
     @app_commands.describe(link="Link to the game to describe (Mahjong Soul or tenhou.net).",
                            display_hands="Display all hands, or just mangan+ hands?")
@@ -161,7 +159,11 @@ class InjusticeJudge(commands.Cog):
             await interaction.channel.send(embed=embed)
 
 async def setup(bot: commands.Bot):
-    logging.info(f"Loading cog `{InjusticeJudge.__name__}`...")
-    instance = InjusticeJudge()
-    await bot.add_cog(instance)
+    logging.info(f"Loading cog `{ParseLog.__name__}`...")
+    await bot.add_cog(ParseLog(), guilds=slash_commands_guilds)
 
+    logging.info(f"Loading cog `{Injustice.__name__}`...")
+    with open('injustice_servers.json', 'r') as file:
+        injustice_servers = json.load(file)
+    injustice_guilds = [discord.Object(id=id) for id in injustice_servers.values()]
+    await bot.add_cog(Injustice(), guilds=injustice_guilds)

@@ -1,6 +1,8 @@
 import gspread
 import asyncio
 import dotenv
+import json
+import discord
 from os import getenv
 from modules.mahjongsoul.account_manager import AccountManager
 
@@ -23,7 +25,12 @@ raw_scores_lock = asyncio.Lock()
 
 # initialize an account manager to be shared with all extensions.
 # login must happen in `setup_hook()`, before loading extensions
-
 account_manager = AccountManager(
     mjs_username=assert_getenv("mjs_sh_username"),
     mjs_password=assert_getenv("mjs_sh_password"))
+
+# load the list of servers that want the
+# non-Longhorn Riichi, non-/injustice commands
+with open('slash_commands_servers.json', 'r') as file:
+    slash_commands_servers = json.load(file)
+slash_commands_guilds = [discord.Object(id=id) for id in slash_commands_servers.values()]
