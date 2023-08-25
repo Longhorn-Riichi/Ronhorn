@@ -339,7 +339,7 @@ class LonghornRiichiUtilities(commands.Cog):
             resp = await self.get_cog(lobby.value).add_game_to_leaderboard(uuid)
         except Exception as e:
             return await interaction.followup.send(content="Error: " + str(e))
-        await interaction.followup.send(content=f"Successfully submitted {link} to the {lobby.value} leaderboard.\n" + resp, suppress_embeds=True)
+        await interaction.followup.send(content=f"Successfully submitted the game to {lobby.value} leaderboard.\n" + resp, suppress_embeds=True)
 
     # @app_commands.command(name="info", description=f"Look up a player's club info (e.g. Mahjong Soul ID).")
     # @app_commands.describe(server_member="The player to lookup.")

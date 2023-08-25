@@ -24,7 +24,7 @@ class LobbyManager(commands.Cog):
     """
     def __init__(self, bot: commands.Bot, contest_unique_id: int, mjs_username: str, mjs_password: str, game_type: str):
         self.bot = bot
-        self.bot_channel: Optional[int] = None # fetched in `self.async_setup()`
+        self.bot_channel: Optional[discord.TextChannel] = None # fetched in `self.async_setup()`
         self.game_type = game_type
         self.manager = ContestManager(
             contest_unique_id,
@@ -107,7 +107,8 @@ class LobbyManager(commands.Cog):
         #       total_point (adopt the algorithm of `enter_scores` command)
         seat_player_dict = {a.seat: (a.account_id, a.nickname) for a in record.accounts}
 
-        player_scores_rendered = ["Game concluded! Results:"] # to be newline-separated
+        player_scores_rendered = ["Game concluded! You can `/parse` the link below:"] # to be newline-separated
+        player_scores_rendered.append(f"https://mahjongsoul.game.yo-star.com/?paipu={uuid}")
 
         timestamp = str(datetime.datetime.now()).split(".")[0]
         raw_scores_row = [timestamp, self.game_type, "no"] # a list of values for a "Raw Scores" row
@@ -115,9 +116,6 @@ class LobbyManager(commands.Cog):
 
         for p in record.result.players:
             player_account_id, player_nickname = seat_player_dict.get(p.seat, (0, "AI"))
-
-            if player_account_id == 0:
-                player_scores_rendered.append("ERROR: a game ended with AI players. How???")
             
             raw_score = p.part_point_1
             async with registry_lock:
@@ -133,7 +131,7 @@ class LobbyManager(commands.Cog):
                 f"{player_nickname}: {p.part_point_1} ({(p.total_point/1000):+})")
 
         for player_nickname in not_registered:
-            player_scores_rendered.append(f"WARNING: Mahjong Soul player {player_nickname} is not registered! Modify spreadsheet after registration!")
+            player_scores_rendered.append(f"*WARNING*: Mahjong Soul player `{player_nickname}` is not registered!")
 
         async with raw_scores_lock:
             raw_scores.append_row(raw_scores_row)
@@ -152,10 +150,10 @@ class LobbyManager(commands.Cog):
 
     async def on_NotifyContestGameEnd(self, _, msg):
         try:
-            resp = self.add_game_to_leaderboard(msg.game_uuid)
+            resp = await self.add_game_to_leaderboard(msg.game_uuid)
         except Exception as e:
             return await self.bot_channel.send(content="Error: " + str(e))
-        await self.bot_channel.send(content=resp)
+        await self.bot_channel.send(content=resp, suppress_embeds=True)
 
     """
     =====================================================
