@@ -9,18 +9,20 @@ from typing import *
 from ext.LobbyManagers.cog import LobbyManager
 from global_stuff import assert_getenv, registry, raw_scores, registry_lock, raw_scores_lock, slash_commands_guilds
 
-GUILD_ID: int              = int(assert_getenv("guild_id"))
-OFFICER_ROLE: str          = assert_getenv("officer_role")
-SPREADSHEET_ID: str        = assert_getenv("spreadsheet_url")
-YH_TOURNAMENT_ID: str      = assert_getenv("yh_tournament_id")
-YT_TOURNAMENT_ID: str      = assert_getenv("yt_tournament_id")
-SH_TOURNAMENT_ID: str      = assert_getenv("sh_tournament_id")
-ST_TOURNAMENT_ID: str      = assert_getenv("st_tournament_id")
-YH_NAME: str               = assert_getenv("yh_name")
-YT_NAME: str               = assert_getenv("yt_name")
-SH_NAME: str               = assert_getenv("sh_name")
-ST_NAME: str               = assert_getenv("st_name")
-REGISTRY_NAME_LENGTH: int  = int(assert_getenv("max_name_len"))
+GUILD_ID: int                 = int(assert_getenv("guild_id"))
+OFFICER_ROLE: str             = assert_getenv("officer_role")
+PAID_MEMBER_ROLE_ID: int      = int(assert_getenv("paid_member_role_id"))
+PAST_PAID_MEMBER_ROLE_ID: int = int(assert_getenv("past_paid_member_role_id"))
+SPREADSHEET_ID: str           = assert_getenv("spreadsheet_url")
+YH_TOURNAMENT_ID: str         = assert_getenv("yh_tournament_id")
+YT_TOURNAMENT_ID: str         = assert_getenv("yt_tournament_id")
+SH_TOURNAMENT_ID: str         = assert_getenv("sh_tournament_id")
+ST_TOURNAMENT_ID: str         = assert_getenv("st_tournament_id")
+YH_NAME: str                  = assert_getenv("yh_name")
+YT_NAME: str                  = assert_getenv("yt_name")
+SH_NAME: str                  = assert_getenv("sh_name")
+ST_NAME: str                  = assert_getenv("st_name")
+REGISTRY_NAME_LENGTH: int     = int(assert_getenv("max_name_len"))
 
 class LonghornRiichiUtilities(commands.Cog):
     """
@@ -307,17 +309,37 @@ class LonghornRiichiUtilities(commands.Cog):
                                       server_member: discord.Member,
                                       membership: app_commands.Choice[str]):
         await interaction.response.defer(ephemeral=True)
-        try:
-            discord_name = server_member.name
-            async with registry_lock:
-                found_cell = registry.find(discord_name, in_column=2)
-                if found_cell is None:
-                    return await interaction.followup.send(content=f"Error: {discord_name} is not registered as a club member.")
-                registry.update_cell(row=found_cell.row, col=3, value=membership.value)
-            paid_unpaid = "paid" if membership.value == "yes" else "unpaid"
-            await interaction.followup.send(content=f"Successfully made {discord_name} a {paid_unpaid} member.")
-        except Exception as e:
-            await interaction.followup.send(content="Error: " + str(e))
+        discord_name = server_member.name
+        async with registry_lock:
+            found_cell = registry.find(discord_name, in_column=2)
+            if found_cell is None:
+                return await interaction.followup.send(content=f"Error: {discord_name} is not registered as a club member.")
+            registry.update_cell(row=found_cell.row, col=3, value=membership.value)
+        if membership.value == "yes":
+            await server_member.add_roles(discord.Object(PAID_MEMBER_ROLE_ID))
+            await interaction.followup.send(content=f"Updated {discord_name} to be a paid member.")
+        else:
+            await server_member.remove_roles(discord.Object(PAID_MEMBER_ROLE_ID))
+            await interaction.followup.send(content=f"Revoked {discord_name}'s paid membership status.")
+    
+    @app_commands.command(name="replace_role", description=f"Remove/replace a role from everyone. Only usable by @{OFFICER_ROLE}.")
+    @app_commands.describe(old_role="The role to be removed/replaced",
+                           new_role="The new role to replace the old one with")
+    @app_commands.checks.has_role(OFFICER_ROLE)
+    async def new_season_setup(self, interaction: Interaction, old_role: discord.Role, new_role: Optional[discord.Role]):
+        """
+        This is good for scenarios like replacing @Paid Member with @Past Paid Member
+        """
+        await interaction.response.defer(ephemeral=True)
+        if new_role is None:
+            for member in old_role.members:
+                await member.remove_roles(old_role)
+            await interaction.followup.send(content=f"Removed the role `@{old_role}` from everyone.")
+        else:
+            for member in old_role.members:
+                await member.remove_roles(old_role)
+                await member.add_roles(new_role)
+            await interaction.followup.send(content=f"Replaced the role `@{old_role}` with `@{new_role}` for everyone.")
 
     @app_commands.command(name="submit_game", description=f"Submit a Mahjong Soul club game to the leaderboard. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(lobby="Which lobby is the game in?",

@@ -30,9 +30,10 @@ except FileNotFoundError:
     with open(EXTENSIONS_FILE, 'w') as f:
         EXTENSIONS = []
 
-# initialize the bot
+# initialize the bot.
 intents = discord.Intents.default()
-intents.message_content = True # necessary for commands to work
+intents.members = True # necessary e.g., to get members of a role
+intents.message_content = True # necessary for regular commands to work
 bot = commands.Bot(
     command_prefix=COMMAND_PREFIX,
     intents=intents)
@@ -114,9 +115,9 @@ async def on_app_command_error(interaction: Interaction, error: app_commands.App
         # meanwhile, the user also gets an idea of what they might have done wrong.
         if interaction.response.is_done():
             # NOTE: `ephemeral` here only works if `defer()` was called with `ephemeral=True`
-            await interaction.followup.send(f"The command failed: {repr(error)}", ephemeral=True)
+            await interaction.followup.send(repr(error.original), ephemeral=True)
         else:
-            await interaction.response.send_message(f"The command failed: {repr(error)}", ephemeral=True)
+            await interaction.response.send_message(repr(error.original), ephemeral=True)
         # do NOT raise the error again here; this somehow results in the error being
         # sent here again (TOTHINK: but only once! Intriguing...)
     else:

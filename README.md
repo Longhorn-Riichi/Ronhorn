@@ -29,7 +29,7 @@ It also has many utilities that are not specific to Longhorn Riichi, like `/inju
 First, `cp config.template.env config.env`.
 ### Discord Stuff
 1. set up a bot account on Discord's [developer portal](https://discord.com/developers/applications) (`New Application`).
-    - (SETTINGS -> Bot) Privileged Gateway Intents: `MESSAGE CONTENT INTENT`
+    - (SETTINGS -> Bot) Privileged Gateway Intents: `SERVER MEMBERS INTENT` AND `MESSAGE CONTENT INTENT`
 1. invite the bot to the respective servers. You can use the developer portal's OAuth2 URL Generator (SETTINGS -> OAuth2 -> URL Generator):
     - Scopes: bot
     - Bot Permissions: Send Messages, Manage Messages, Use External Emojis (and more as we add more functionalities)
