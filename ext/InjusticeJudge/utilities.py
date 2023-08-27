@@ -40,7 +40,7 @@ async def parse_game_link(link: str, specified_player: int = 0) -> Tuple[List[Ky
 
 async def analyze_game(link: str, specified_player = None) -> List[str]:
     kyokus, game_metadata, player = await parse_game_link(link, specified_player)
-    return [injustice for kyoku in kyokus for injustice in evaluate_injustices(kyoku, player)]
+    return [injustice for kyoku in kyokus for injustice in evaluate_injustices(kyoku, game_metadata, player)]
 
 async def fetch_majsoul(link: str):
     """
