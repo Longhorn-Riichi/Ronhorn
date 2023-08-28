@@ -6,7 +6,7 @@ from discord import app_commands, Colour, Embed, Interaction
 from typing import *
 
 # InjusticeJudge imports
-from modules.InjusticeJudge.injustice_judge.utils import ph, hidden_part, short_round_name, print_full_hand, sorted_hand, try_remove_all_tiles
+from modules.InjusticeJudge.injustice_judge.utils import ph, short_round_name, sorted_hand, try_remove_all_tiles
 from modules.InjusticeJudge.injustice_judge.constants import TRANSLATE, YAOCHUUHAI
 from .utilities import analyze_game, parse_game_link
 from global_stuff import slash_commands_guilds
@@ -19,7 +19,7 @@ class Injustice(commands.Cog):
     given list of servers.
     """
 
-    @app_commands.command(name="injustice", description="Display the injustices in a given game.")
+    @app_commands.command(name="injustice", description="Display the injustices in a given game.")  # type: ignore[arg-type]
     @app_commands.describe(link="Link to the game to analyze (Mahjong Soul or tenhou.net)",
                            player="(optional) The seat to analyze the game from. Determined using the link, but defaults to East.")
     @app_commands.choices(player=[
@@ -52,10 +52,10 @@ class Injustice(commands.Cog):
         as_player_string = "yourself" if player is None else player.name
         await interaction.followup.send(content=f"Input: {link}\nAnalysis result for **{as_player_string}**:", embed=Embed(description=ret[0], colour=green))
         for embed in [Embed(description=text, colour=green) for text in ret[1:]]:
-            await interaction.channel.send(embed=embed)
+            await interaction.channel.send(embed=embed)  # type: ignore[union-attr]
 
 class ParseLog(commands.Cog):
-    @app_commands.command(name="parse", description=f"Print out the results of a game.")
+    @app_commands.command(name="parse", description=f"Print out the results of a game.")  # type: ignore[arg-type]
     @app_commands.describe(link="Link to the game to describe (Mahjong Soul or tenhou.net).",
                            display_hands="Display all hands, or just mangan+ hands?")
     @app_commands.choices(display_hands=[
@@ -116,21 +116,17 @@ class ParseLog(commands.Cog):
                             if "starting" in display_hands.value:
                                 result_string += "\n`    `"
 
-                                result_string += print_full_hand(hidden_part=kyokus[i].haipai[w],
-                                                                 call_info=[],
-                                                                 shanten=kyokus[i].haipai_shanten[w],
-                                                                 ukeire=kyokus[i].haipai_ukeire[w],
-                                                                 final_tile=final_tile,
-                                                                 furiten=kyokus[i].furiten[w])
+                                result_string += kyokus[i].haipai[w].final_hand(
+                                                    ukeire=kyokus[i].haipai_ukeire[w],
+                                                    final_tile=final_tile,
+                                                    furiten=kyokus[i].furiten[w])
                                 result_string += "\n`    ` ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀"
                                 result_string += f"↓ ({len(kyokus[i].pond[w])} discards)"
                             result_string += "\n`    `"
-                            result_string += print_full_hand(hidden_part=hidden_part(kyokus[i].hands[w], kyokus[i].calls[w]),
-                                                             call_info=kyokus[i].call_info[w],
-                                                             shanten=(0, kyokus[i].final_waits[w]),
-                                                             ukeire=kyokus[i].final_ukeire[w],
-                                                             final_tile=final_tile,
-                                                             furiten=kyokus[i].furiten[w])
+                            result_string += kyokus[i].hands[w].final_hand(
+                                                 ukeire=kyokus[i].final_ukeire[w],
+                                                 final_tile=final_tile,
+                                                 furiten=kyokus[i].furiten[w])
             elif result_type == "draw":
                 score_delta = results[0].score_delta
                 draw_name = results[0].name
@@ -158,7 +154,7 @@ class ParseLog(commands.Cog):
                     result_string += ph(kyokus[i].pond[winner])
                 if draw_name == "9 terminals draw" and display_hands is not None and "All" in display_hands.value:
                     declarer = next(seat for seat in range(num_players) if count_terminals(kyokus[i].haipai[seat]) >= 9)
-                    declarer_hand = list(kyokus[i].haipai[declarer]) + [kyokus[i].final_draw]
+                    declarer_hand = list(kyokus[i].haipai[declarer].tiles) + [kyokus[i].final_draw]
                     result_string += "\n`    `"
                     result_string += f"{ph(declarer_hand)} ({count_terminals(declarer_hand)} terminals)"
 
@@ -172,7 +168,7 @@ class ParseLog(commands.Cog):
         green = Colour.from_str("#1EA51E")
         await interaction.followup.send(content=header, embed=Embed(description=ret[0], colour=green))
         for embed in [Embed(description=text, colour=green) for text in ret[1:]]:
-            await interaction.channel.send(embed=embed)
+            await interaction.channel.send(embed=embed)  # type: ignore[union-attr]
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{ParseLog.__name__}`...")

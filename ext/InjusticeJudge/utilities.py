@@ -4,10 +4,10 @@ from global_stuff import account_manager
 from modules.pymjsoul.proto import liqi_combined_pb2 as proto
 
 # InjusticeJudge imports
-from google.protobuf.json_format import MessageToDict
+from google.protobuf.json_format import MessageToDict  # type: ignore[import]
 from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_tenhou, parse_majsoul, save_cache, parse_wrapped_bytes, GameMetadata
 from modules.InjusticeJudge.injustice_judge.injustices import evaluate_injustices
-from modules.InjusticeJudge.injustice_judge.constants import Kyoku
+from modules.InjusticeJudge.injustice_judge.classes import Kyoku
 
 """
 =====================================================
