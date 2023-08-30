@@ -80,8 +80,9 @@ class ParseLog(commands.Cog):
                 for j, result in enumerate(results):
                     if j != 0:
                         result_string += "\n` and` "
+                    dama = "dama " if result.dama else ""
                     if result_type == "tsumo":
-                        result_string += f"{player_names[result.winner]} tsumos"
+                        result_string += f"{player_names[result.winner]} {dama}tsumos"
                         ko = result.score_ko
                         oya = result.score_oya
                         if ko == oya:
@@ -89,7 +90,7 @@ class ParseLog(commands.Cog):
                         else:
                             result_string += f" for `{result.score}({ko}/{oya})`"
                     else:
-                        result_string += f"{player_names[result.winner]} rons {player_names[result.won_from]} "
+                        result_string += f"{player_names[result.winner]} {dama}rons {player_names[result.won_from]} "
                         result_string += f" for `{result.score}`"
                     below_mangan = result.limit_name == ""
                     if below_mangan:
@@ -108,8 +109,7 @@ class ParseLog(commands.Cog):
                             return winds[result.winner]
                         else:
                             return TRANSLATE[name]
-                    dama = "dama, " if result.dama else ""
-                    result_string += f" *{dama}{', '.join(map(translate_yaku, result.yaku.yaku_strs))}*"
+                    result_string += f" *{', '.join(map(translate_yaku, result.yaku.yaku_strs))}*"
                     if display_hands is not None:
                         if "All" in display_hands.value or ("Mangan" in display_hands.value and not below_mangan):
                             w = result.winner
