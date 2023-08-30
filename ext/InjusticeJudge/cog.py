@@ -117,14 +117,14 @@ class ParseLog(commands.Cog):
                             if "starting" in display_hands.value:
                                 result_string += "\n`    `"
 
-                                result_string += kyokus[i].haipai[w].final_hand(
+                                result_string += kyokus[i].haipai[w].print_hand_details(
                                                     ukeire=kyokus[i].haipai_ukeire[w],
                                                     final_tile=final_tile,
                                                     furiten=kyokus[i].furiten[w])
                                 result_string += "\n`    ` ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀"
                                 result_string += f"↓ ({len(kyokus[i].pond[w])} discards)"
                             result_string += "\n`    `"
-                            result_string += kyokus[i].hands[w].final_hand(
+                            result_string += kyokus[i].hands[w].print_hand_details(
                                                  ukeire=kyokus[i].final_ukeire[w],
                                                  final_tile=final_tile,
                                                  furiten=kyokus[i].furiten[w])
