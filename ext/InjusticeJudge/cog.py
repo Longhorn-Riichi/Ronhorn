@@ -95,7 +95,7 @@ class ParseLog(commands.Cog):
                     if below_mangan:
                         result_string += f" ({result.han}/{result.fu})"
                     else:
-                        result_string += f" ({TRANSLATE[result.limit_name]})"
+                        result_string += f" ({result.limit_name})"
                     def translate_yaku(y):
                         [name, value] = y.split('(')
                         value = 13 if "役満" in value else int(value.split("飜")[0])
@@ -108,7 +108,8 @@ class ParseLog(commands.Cog):
                             return winds[result.winner]
                         else:
                             return TRANSLATE[name]
-                    result_string += f" *{', '.join(map(translate_yaku, result.yaku.yaku_strs))}*"
+                    dama = "dama, " if result.dama else ""
+                    result_string += f" *{dama}{', '.join(map(translate_yaku, result.yaku.yaku_strs))}*"
                     if display_hands is not None:
                         if "All" in display_hands.value or ("Mangan" in display_hands.value and not below_mangan):
                             w = result.winner
