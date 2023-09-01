@@ -123,14 +123,18 @@ class ParseLog(commands.Cog):
                                 result_string += kyokus[i].haipai[w].print_hand_details(
                                                     ukeire=kyokus[i].haipai_ukeire[w],
                                                     final_tile=final_tile,
-                                                    furiten=kyokus[i].furiten[w])
+                                                    furiten=kyokus[i].furiten[w],
+                                                    doras=kyokus[i].doras,
+                                                    uras=kyokus[i].doras)
                                 result_string += CODE_BLOCK_AND_SPACES_PREFIX
                                 result_string += f"↓ ({len(kyokus[i].pond[w])} discards)"
                             result_string += CODE_BLOCK_PREFIX
                             result_string += kyokus[i].hands[w].print_hand_details(
                                                  ukeire=kyokus[i].final_ukeire[w],
                                                  final_tile=final_tile,
-                                                 furiten=kyokus[i].furiten[w])
+                                                 furiten=kyokus[i].furiten[w],
+                                                 doras=kyokus[i].doras,
+                                                 uras=kyokus[i].doras)
             elif result_type == "draw":
                 score_delta = results[0].score_delta
                 draw_name = results[0].name
