@@ -152,52 +152,70 @@ class LonghornRiichiUtilities(commands.Cog):
         Raise exceptions if the friend ID is invalid.
         Returns the response string.
         """
-
-        if friend_id is not None:
+        paid_membership = "no"
+        discord_name = server_member.name
+        
+        existing_friend_id: Optional[int] = None
+        mahjongsoul_nickname = None
+        mahjongsoul_account_id = None
+        async with registry_lock:
+            # Delete any existing registration
+            found_cell: gspread.cell.Cell = registry.find(discord_name, in_column=2)
+            cell_existed = found_cell is not None
+            if cell_existed:
+                [_, _, paid_membership, *mahjongsoul_fields] = registry.row_values(found_cell.row)
+                if mahjongsoul_fields:
+                    [mahjongsoul_nickname, existing_friend_id, mahjongsoul_account_id] = mahjongsoul_fields
+                    assert existing_friend_id is not None, "There are Mahjong Soul fields in the existing registry entry, but no Friend ID??"
+                    existing_friend_id = int(existing_friend_id)
+                registry.delete_row(found_cell.row)
+        
+        if friend_id is None:
+            friend_id = existing_friend_id
+        elif friend_id != existing_friend_id:
             # Fetch Mahjong Soul details using one of the lobby managers
-            res = await self.get_cog(ST_NAME).manager.call("searchAccountByEid", eids = [int(friend_id)])
+            res = await self.get_cog(ST_NAME).manager.call("searchAccountByEid", eids = [friend_id])
             # if no account found, then `res` won't have a `search_result` field, but it won't
             # have an `error`` field, either (i.e., it's not an error!).
             if not res.search_result:
                 raise Exception(f"Couldn't find Mahjong Soul account for this friend ID: {friend_id}")
             mahjongsoul_nickname = res.search_result[0].nickname
             mahjongsoul_account_id = res.search_result[0].account_id
-        else:
-            mahjongsoul_nickname = None
-            mahjongsoul_account_id = None
-        discord_name = server_member.name
+
+        data = [name,
+                discord_name,
+                paid_membership,
+                mahjongsoul_nickname,
+                friend_id,
+                mahjongsoul_account_id]
 
         async with registry_lock:
-            # Delete any existing registration
-            found_cell = registry.find(discord_name, in_column=2)
-            cell_existed = found_cell is not None
-            if cell_existed:
-                registry.delete_row(found_cell.row)
-
-            data = [name,
-                    discord_name,
-                    "no",
-                    mahjongsoul_nickname,
-                    friend_id,
-                    mahjongsoul_account_id]
             registry.append_row(data)
-            register_string = "updated registration" if cell_existed else "registered"
-            mjsoul_string = f" and Mahjong Soul account \"{mahjongsoul_nickname}\"" if friend_id is not None else ""
-            return f"\"{discord_name}\" {register_string} with name \"{name}\"{mjsoul_string}."
+        
+        register_string = "updated registration" if cell_existed else "registered"
+
+        if friend_id is None:
+            mjsoul_string = f" without a Mahjong Soul account"
+        elif friend_id == existing_friend_id:
+            mjsoul_string = f" with the same Friend ID as before"
+        else:
+            mjsoul_string = f" and Mahjong Soul account \"{mahjongsoul_nickname}\""
+        
+        return f"\"{discord_name}\" {register_string} with name \"{name}\"{mjsoul_string}."
     
     @app_commands.command(name="register", description="Register with your name and Mahjong Soul friend ID, or update your current registration.")
     @app_commands.describe(
-        name=f"Your preferred, real-life name (no more than {REGISTRY_NAME_LENGTH} characters)",
+        real_name=f"Your preferred, real-life name (no more than {REGISTRY_NAME_LENGTH} characters)",
         friend_id="(optional) Mahjong Soul friend ID. Find it in the Friends tab; this is not your username.")
-    async def register(self, interaction: Interaction, name: str, friend_id: Optional[int] = None):
-        if len(name) > REGISTRY_NAME_LENGTH:
+    async def register(self, interaction: Interaction, real_name: str, friend_id: Optional[int] = None):
+        if len(real_name) > REGISTRY_NAME_LENGTH:
             await interaction.response.send_message(f"Please keep your preferred name within {REGISTRY_NAME_LENGTH} characters and `/register` again.", ephemeral=True)
             return
 
         await interaction.response.defer()
         assert isinstance(interaction.user, discord.Member)
         try:
-            response = await self._register(name, interaction.user, friend_id)
+            response = await self._register(real_name, interaction.user, friend_id)
             await interaction.followup.send(content=response)
         except Exception as e:
             await interaction.followup.send(content=str(e))
@@ -366,7 +384,7 @@ class LonghornRiichiUtilities(commands.Cog):
     # @app_commands.command(name="info", description=f"Look up a player's club info (e.g. Mahjong Soul ID).")
     # @app_commands.describe(server_member="The player to lookup.")
     # async def info(self, interaction: Interaction, server_member: discord.Member):
-    #     await interaction.response.defer()
+    #     await interaction.response.defer(ephemeral=True)
     #     try:
     #         discord_name = server_member.name
     #         discord_name = server_member.mention
@@ -374,9 +392,11 @@ class LonghornRiichiUtilities(commands.Cog):
     #         if found_cell is None:
     #             await interaction.followup.send(content=f"Error: {discord_name} is not registered as a club member.")
     #         else
-    #             [name, _, paid_membership, majsoul_name, majsoul_friend_code, majsoul_id, *rest] = registry.row_values(found_cell.row)
+    #             [name, _, paid_membership, *mahjongsoul_fields] = registry.row_values(found_cell.row)
+    #                if mahjongsoul_fields is not None:
+    #                    [mahjongsoul_nickname, _, _] = mahjongsoul_fields
     #             paid_unpaid = "a paid" if paid_membership == "yes" else "an unpaid"
-    #             await interaction.followup.send(content=f"{server_member.mention} (MJS: {majsoul_name}, id {majsoul_id}) is {paid_unpaid} member of Longhorn Riichi.")
+    #             await interaction.followup.send(content=f"{server_member.mention} (MJS: {mahjongsoul_nickname}, id {majsoul_id}) is {paid_unpaid} member of Longhorn Riichi.")
 
         # except Exception as e:
         #     await interaction.followup.send(content="Error: " + str(e))
@@ -393,14 +413,14 @@ class LonghornRiichiUtilities(commands.Cog):
     #         if found_cell is None:
     #             return await interaction.followup.send(content=f"Error: {discord_name} is not registered as a club member.")
 
-    #         majsoul_name, majsoul_id = 1, 1
+    #         mahjongsoul_nickname, majsoul_id = 1, 1
     #         num_games_played = 10
     #         placement = 4
     #         max_placement = 10
     #         avg_yonma_placement = 2.5
     #         avg_sanma_placement = 2
     #         await interaction.followup.send(content=
-    #              f"{server_member.mention} ({majsoul_name}) (id {majsoul_id}) has played {num_games_played} games "
+    #              f"{server_member.mention} ({mahjongsoul_nickname}) (id {majsoul_id}) has played {num_games_played} games "
     #             +f" and is currently number {placement} (out of {max_placement}) on the leaderboard.\n"
     #             + " Average yonma placement is {:.2f}. Average scores:\n".format(avg_yonma_placement)
     #             + " - (Yonma) 1st place: 42000 (25%% of games)\n"
