@@ -113,7 +113,7 @@ def display_hand(input: str) -> str:
 
         if emoji_tile_group:
             if output:
-                output += "⠀" # add a Braille space between groups
+                output += " "
             output += emoji_tile_group
 
     return output
@@ -156,8 +156,8 @@ def replace_text(input: str) -> str:
 
         if j-i == 1 and input[i] == ' ':
             # if it's a space between two groups of tiles, turn it
-            # into a Braille space
-            output += "⠀"
+            # into a figurespace
+            output += " "
         else:
             output += input[i:j]
         

@@ -6,10 +6,14 @@ from discord import app_commands, Colour, Embed, Interaction
 from typing import *
 
 # InjusticeJudge imports
-from modules.InjusticeJudge.injustice_judge.utils import ph, short_round_name, sorted_hand, try_remove_all_tiles
+from modules.InjusticeJudge.injustice_judge.utils import ph, short_round_name
 from modules.InjusticeJudge.injustice_judge.constants import TRANSLATE, YAOCHUUHAI
 from .utilities import analyze_game, parse_game_link
 from global_stuff import slash_commands_guilds
+
+# constants for `/parse`
+CODE_BLOCK_PREFIX = "\n`    `"
+CODE_BLOCK_AND_SPACES_PREFIX = "\n`    `              "
 
 class Injustice(commands.Cog):
     """
@@ -114,15 +118,15 @@ class ParseLog(commands.Cog):
                             w = result.winner
                             final_tile = kyokus[i].final_discard if kyokus[i].result[0] == "ron" else kyokus[i].final_draw
                             if "starting" in display_hands.value:
-                                result_string += "\n`    `"
+                                result_string += CODE_BLOCK_PREFIX
 
                                 result_string += kyokus[i].haipai[w].print_hand_details(
                                                     ukeire=kyokus[i].haipai_ukeire[w],
                                                     final_tile=final_tile,
                                                     furiten=kyokus[i].furiten[w])
-                                result_string += "\n`    ` ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀"
+                                result_string += CODE_BLOCK_AND_SPACES_PREFIX
                                 result_string += f"↓ ({len(kyokus[i].pond[w])} discards)"
-                            result_string += "\n`    `"
+                            result_string += CODE_BLOCK_PREFIX
                             result_string += kyokus[i].hands[w].print_hand_details(
                                                  ukeire=kyokus[i].final_ukeire[w],
                                                  final_tile=final_tile,
@@ -146,16 +150,16 @@ class ParseLog(commands.Cog):
                     winner = next(seat for seat in range(num_players) if score_delta[seat] > 0)
                     if "starting" in display_hands.value:
                         num_terminals = count_terminals(kyokus[i].haipai[winner])
-                        result_string += "\n`    `"
+                        result_string += CODE_BLOCK_PREFIX
                         result_string += f"{ph(kyokus[i].haipai[winner])} ({num_terminals} terminals)"
-                        result_string += "\n`    ` ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀ ⠀"
+                        result_string += CODE_BLOCK_AND_SPACES_PREFIX
                         result_string += f"↓ ({len(kyokus[i].pond[winner])} discards)"
-                    result_string += "\n`    `"
+                    result_string += CODE_BLOCK_PREFIX
                     result_string += ph(kyokus[i].pond[winner])
                 if draw_name == "9 terminals draw" and display_hands is not None and "All" in display_hands.value:
                     declarer = next(seat for seat in range(num_players) if count_terminals(kyokus[i].haipai[seat]) >= 9)
                     declarer_hand = list(kyokus[i].haipai[declarer].tiles) + [kyokus[i].final_draw]
-                    result_string += "\n`    `"
+                    result_string += CODE_BLOCK_PREFIX
                     result_string += f"{ph(declarer_hand)} ({count_terminals(declarer_hand)} terminals)"
 
             # add to the end of ret[-1] unless that makes it too long,
