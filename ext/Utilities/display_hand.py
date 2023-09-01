@@ -152,7 +152,15 @@ def replace_text(input: str) -> str:
     i = 0 # the index of the first character after the last notation
     tsb_matches = re.finditer(r'\d+[mspzxMSPZX]', input)
     for tsb_match in tsb_matches:
-        output += input[i:tsb_match.start()]
+        j = tsb_match.start()
+
+        if j-i == 1 and input[i] == ' ':
+            # if it's a space between two groups of tiles, turn it
+            # into a Braille space
+            output += "⠀"
+        else:
+            output += input[i:j]
+        
         # Tile Suit Block
         tsb: str = tsb_match.group()
         suit = tsb[-1]
