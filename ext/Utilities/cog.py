@@ -7,6 +7,7 @@ from discord.ext import commands
 from discord import app_commands, Interaction
 from typing import *
 from ext.LobbyManagers.cog import LobbyManager
+from .display_hand import replace_text
 from global_stuff import assert_getenv, registry, raw_scores, registry_lock, raw_scores_lock, slash_commands_guilds
 
 GUILD_ID: int                 = int(assert_getenv("guild_id"))
@@ -462,6 +463,11 @@ class GlobalUtilities(commands.Cog):
             return await interaction.followup.send(content=f"Error: could not find player {majsoul_name}")
         majsoul_id = result[0]["id"]
         await interaction.followup.send(content=f"https://amae-koromo.sapk.ch/player/{majsoul_id}")
+
+    @app_commands.command(name="display", description=f"Display mahjong tiles in place of the mahjong notation like 123p 3z3Z3z")
+    @app_commands.describe(text="The text containing mahjong tiles to display")
+    async def display(self, interaction: Interaction, text: str):
+        await interaction.response.send_message(replace_text(text))
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{LonghornRiichiUtilities.__name__}`...")
