@@ -92,6 +92,94 @@ DISCORD_TILES = {
     "7Z": "<:7Z:1147238500727537774>",
 
     "1X": "<:1X:1147238378685861908>",
+
+
+    "1md": "<:1md:1147275913319428216>",
+    "2md": "<:2md:1147276023642210304>",
+    "3md": "<:3md:1147276030151766037>",
+    "4md": "<:4md:1147276133956591666>",
+    "5md": "<:5md:1147276140088672417>",
+    "6md": "<:6md:1147276278437773372>",
+    "7md": "<:7md:1147276284318191687>",
+    "8md": "<:8md:1147276427784355880>",
+    "9md": "<:9md:1147276431957696632>",
+    "0md": "<:0md:1147275908399509657>",
+
+    "1pd": "<:1pd:1147275914896494642>",
+    "2pd": "<:2pd:1147276025835835594>",
+    "3pd": "<:3pd:1147276031456202783>",
+    "4pd": "<:4pd:1147276135151980634>",
+    "5pd": "<:5pd:1147276141191778334>",
+    "6pd": "<:6pd:1147276280400711740>",
+    "7pd": "<:7pd:1147276285303853147>",
+    "8pd": "<:8pd:1147276428841341018>",
+    "9pd": "<:9pd:1147276433098559668>",
+    "0pd": "<:0pd:1147275909691346984>",
+
+    "1sd": "<:1sd:1147275915932467323>",
+    "2sd": "<:2sd:1147276027123482684>",
+    "3sd": "<:3sd:1147276032441860186>",
+    "4sd": "<:4sd:1147276136900993114>",
+    "5sd": "<:5sd:1147276142399717427>",
+    "6sd": "<:6sd:1147276281818398943>",
+    "7sd": "<:7sd:1147276286172090571>",
+    "8sd": "<:8sd:1147276430946865337>",
+    "9sd": "<:9sd:1147276434730139779>",
+    "0sd": "<:0sd:1147275911922729091>",
+
+    "1zd": "<:1zd:1147275919380185150>",
+    "2zd": "<:2zd:1147276027949764669>",
+    "3zd": "<:3zd:1147276033549152286>",
+    "4zd": "<:4zd:1147276138155089990>",
+    "5zd": "<:5zd:1147276143125352449>",
+    "6zd": "<:6zd:1147276282866966538>",
+    "7zd": "<:7zd:1147276287581372556>",
+
+    "1xd": "<:1xd:1147275917404680375>",
+
+
+    "1Md": "<:1Md:1147277392931459156>",
+    "2Md": "<:2Md:1147277545868382328>",
+    "3Md": "<:3Md:1147277551765573735>",
+    "4Md": "<:4Md:1147277711652425788>",
+    "5Md": "<:5Md:1147277717113413632>",
+    "6Md": "<:6Md:1147277954922061945>",
+    "7Md": "<:7Md:1147277963688165406>",
+    "8Md": "<:8Md:1147278119145853038>",
+    "9Md": "<:9Md:1147278123046555781>",
+    "0Md": "<:0Md:1147277387747315782>",
+
+    "1Pd": "<:1Pd:1147277394789539952>",
+    "2Pd": "<:2Pd:1147277546929524797>",
+    "3Pd": "<:3Pd:1147277552805748977>",
+    "4Pd": "<:4Pd:1147277713141407825>",
+    "5Pd": "<:5Pd:1147277719080542341>",
+    "6Pd": "<:6Pd:1147277958592073801>",
+    "7Pd": "<:7Pd:1147277965432987770>",
+    "8Pd": "<:8Pd:1147278120248954890>",
+    "9Pd": "<:9Pd:1147278124262887534>",
+    "0Pd": "<:0Pd:1147277389622149355>",
+
+    "1Sd": "<:1Sd:1147277396328845372>",
+    "2Sd": "<:2Sd:1147277548733071440>",
+    "3Sd": "<:3Sd:1147277554156306503>",
+    "4Sd": "<:4Sd:1147277714735247543>",
+    "5Sd": "<:5Sd:1147277720095572099>",
+    "6Sd": "<:6Sd:1147277959716159649>",
+    "7Sd": "<:7Sd:1147277967286861916>",
+    "8Sd": "<:8Sd:1147278121926668348>",
+    "9Sd": "<:9Sd:1147278126502653952>",
+    "0Sd": "<:0Sd:1147277391660580954>",
+
+    "1Zd": "<:1Zd:1147277398727991387>",
+    "2Zd": "<:2Zd:1147277550029123654>",
+    "3Zd": "<:3Zd:1147277555351687268>",
+    "4Zd": "<:4Zd:1147277715968372747>",
+    "5Zd": "<:5Zd:1147277721701986335>",
+    "6Zd": "<:6Zd:1147277961196748853>",
+    "7Zd": "<:7Zd:1147277968419344504>",
+
+    "1Xd": "<:1Xd:1147277396878299148>",
 }
 
 def display_hand(input: str) -> str:
@@ -127,13 +215,16 @@ def emoji_for_tile_group(tile_group: str) -> str:
     can be used as is, or as a helper of `display_hand()`
     """
     output = ''
-    # get the Tile Suit Blocks: "12p78s45p" => ["12p", "78s", "45p"]
-    tsb_matches = re.finditer(r'\d+[mspzxMSPZX]', tile_group)
-    # ["12p", "78s", "45p"] =>
+    # get the Tile Suit Blocks: "12p78s45pd" => ["12p", "78s", "45pd"]
+    tsb_matches = re.finditer(r'(\d+[mspzxMSPZX])(d)?', tile_group)
+    # ["12p", "78s", "45pd"] =>
     # "<:1p:1142707873802113044><:2p:1142707875261726772>..."
     for tsb_match in tsb_matches:
-        tsb: str = tsb_match.group()
-        suit = tsb[-1]
+        tsb: str = tsb_match.group(1)
+        if tsb_match.group(2):
+            suit = tsb[-1] + "d"
+        else:
+            suit = tsb[-1]
         for tile in tsb[:-1]:
             output += DISCORD_TILES.get(tile+suit, DEFAULT_TILE)
     return output
@@ -150,7 +241,7 @@ def replace_text(input: str) -> str:
     output = ''
     error_output = "The input is too long! Try dividing up the input message."
     i = 0 # the index of the first character after the last notation
-    tsb_matches = re.finditer(r'\d+[mspzxMSPZX]', input)
+    tsb_matches = re.finditer(r'(\d+[mspzxMSPZX])(d)?', input)
     for tsb_match in tsb_matches:
         j = tsb_match.start()
 
@@ -162,8 +253,11 @@ def replace_text(input: str) -> str:
             output += input[i:j]
         
         # Tile Suit Block
-        tsb: str = tsb_match.group()
-        suit = tsb[-1]
+        tsb: str = tsb_match.group(1)
+        if tsb_match.group(2):
+            suit = tsb[-1] + "d"
+        else:
+            suit = tsb[-1]
         for tile in tsb[:-1]:
             output += DISCORD_TILES.get(tile+suit, DEFAULT_TILE)
         if len(output) > DISCORD_CHAR_LIMIT:
@@ -178,5 +272,5 @@ def replace_text(input: str) -> str:
     return output
                 
 if __name__ == "__main__":
-    # print(display_hand("111m456p8p134s 4p 7z7Z7z"))
-    print(replace_text("Do notations like \"3p2m20M1Z 2d2P2223M\" work? What about another tile like 1m? Unquoted and undelimited1s, for example.1p"))
+    # print(display_hand("111md456p8pd134s 4p 7z7Zd7z"))
+    print(replace_text("Do notations like \"3p2m20M1Zd 2d2Pd2223Md\" work? What about another tile like 1m? Unquoted and undelimited1s, for example.1p"))
