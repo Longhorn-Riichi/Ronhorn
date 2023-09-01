@@ -15,6 +15,5 @@ cached_games/*
 **/package-lock.json
 **/node_modules
 
-# tests
-test_api.py
+# cache
 cached_results/*

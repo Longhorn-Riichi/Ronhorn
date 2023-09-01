@@ -47,7 +47,6 @@ class Injustice(commands.Cog):
                 ret.append(to_add)
             else:
                 ret[-1] += to_add
-        title = f"Injustices"
         green = Colour.from_str("#1EA51E")
         as_player_string = "yourself" if player is None else player.name
         await interaction.followup.send(content=f"Input: {link}\nAnalysis result for **{as_player_string}**:", embed=Embed(description=ret[0], colour=green))

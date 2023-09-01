@@ -34,15 +34,14 @@ class MajsoulChannel():
 
     def __init__(self, proto, log_messages=True, logger_name="MajsoulChannel"):
         self.logger = logging.getLogger(logger_name)
-
+        
+        self.index = 0 # should be referenced while holding the lock
         self.websocket = None
         self.websocket_lock = asyncio.Lock()
 
         self.uri = None
 
         self.proto = proto
-
-        self.index = 0
         self.requests = {}
         self.responses = {}
 
@@ -211,16 +210,14 @@ class MajsoulChannel():
                     |_______|_______ _______
         '''
 
-        msgIndex = self.index
-        self.index = (self.index + 1) % MAX_MSG_INDEX
-
         wrapped = self.wrap(name, data)
-        message = MSG_TYPE_REQUEST.to_bytes(1, 'little') + msgIndex.to_bytes(2, 'little') + wrapped
-
-        resEvent = asyncio.Event()
-        self.requests[msgIndex] = resEvent
-
         async with self.websocket_lock:
+            msgIndex = self.index
+            self.index = (self.index + 1) % MAX_MSG_INDEX
+            message = MSG_TYPE_REQUEST.to_bytes(1, 'little') + msgIndex.to_bytes(2, 'little') + wrapped
+
+            resEvent = asyncio.Event()
+            self.requests[msgIndex] = resEvent
             await self.websocket.send(message)
 
             try:
@@ -256,7 +253,6 @@ class MajsoulChannel():
                 reconnect = True
             )
         '''
-
         # Optional method hack
         serviceName = None
         if 'serviceName' in msgFields:

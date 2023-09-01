@@ -218,3 +218,5 @@ async def setup(bot: commands.Bot):
         await bot.add_cog(
             cog_instance,
             guild=discord.Object(id=GUILD_ID))
+    
+    logging.info(f"Finished loading `{LobbyManager.__name__}` cogs.")

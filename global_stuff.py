@@ -14,8 +14,7 @@ def assert_getenv(name: str) -> str:
     assert value is not None, f"missing \"{name}\" in config.env"
     return value
 
-# initialize the spreadsheet interface and save references in `bot`
-# so they can be accessed by all extensions.
+# Google Sheets stuff
 gs_client = gspread.service_account(filename='gs_service_account.json')
 leaderboard_ss = gs_client.open_by_url(assert_getenv("spreadsheet_url"))
 registry = leaderboard_ss.worksheet("Registry")
