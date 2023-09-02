@@ -49,7 +49,7 @@ async def fetch_majsoul(link: str):
     Instead of logging in for each fetch, just fetch through the already logged-in
     AccountManager.
     """
-    identifier_pattern = r'\?paipu=([^_]+)'
+    identifier_pattern = r'\?paipu=([0-9a-zA-Z-]+)'
     identifier_match = re.search(identifier_pattern, link)
     if identifier_match is None:
         raise Exception(f"Invalid Mahjong Soul link: {link}")
