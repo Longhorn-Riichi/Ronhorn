@@ -62,7 +62,9 @@ class ParseLog(commands.Cog):
         app_commands.Choice(name="All winning hands", value="All winning hands")])
     async def parse(self, interaction: Interaction, link: str, display_hands: Optional[app_commands.Choice[str]] = None):
         await interaction.response.defer()
-        header, ret = await parse_game(link, display_hands.value)
+        if display_hands is not None:
+            display_hands = display_hands.value
+        header, ret = await parse_game(link, display_hands)
         green = Colour.from_str("#1EA51E")
         await interaction.followup.send(content=header, embed=Embed(description=ret[0], colour=green))
         for embed in [Embed(description=text, colour=green) for text in ret[1:]]:
