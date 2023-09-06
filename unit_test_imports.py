@@ -19,4 +19,6 @@ links = {
     "rinshan": "https://mahjongsoul.game.yo-star.com/?paipu=230728-5ec4d440-0499-4aee-91e6-dce1c0b5708d",
     "dama kokushi, dama oyappane (no injustice for player)": "https://mahjongsoul.game.yo-star.com/?paipu=220502-4a0534c9-8b34-4fb2-a1bd-30787d378df1_a933848157",
     "called kakan on a pon including red five": "https://mahjongsoul.game.yo-star.com/?paipu=230902-4edb23fb-4be8-464e-83aa-f8d2609ead35_a920788771",
+    "kakan adding red five": "https://tenhou.net/0/?log=2023090513gm-0089-0000-a3baa162&tw=0",
+    "chiitoitsu where the last tile is part of a triplet is not tenpai": "https://mahjongsoul.game.yo-star.com/?paipu=230905-95b3d8f9-838a-4024-a30c-7ef0f0799b24_a939490715",
 }
