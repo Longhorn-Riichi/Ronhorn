@@ -8,22 +8,22 @@ It also has many utilities that are not specific to Longhorn Riichi, like `/inju
 
 ## Repository Structure:
 - `bot.py`: entry point of the Discord bot. Does the following:
-  1. imports `global_stuff.py`, which does the following:
-    1. load all the environment variabels from `config.env`
-    1. initialize the Google Sheets interface
-    1. initialize Mahjong Soul `AccountManager`
-  1. set up the non-slash Discord commands
-  1. set up command error handlers (both slash and non-slash)
+    1. imports `global_stuff.py`, which does the following:
+        1. load all the environment variabels from `config.env`
+        1. initialize the Google Sheets interface
+        1. initialize Mahjong Soul `AccountManager`
+    1. set up the non-slash Discord commands
+    1. set up command error handlers (both slash and non-slash)
 - `/ext/`: Discord bot extensions (each extension is a suite of slash commands and their helper functions)
-  - `LobbyManagers`: has commands to pause, unpause, and terminate contest games from all 4 tournaments. Listens for finished games and record results. Automatically extends contest finish_time and reconnect when necessary.
-  - `Utilities`: various utilities, including recording in-person games, managing club membership, fetching links to player stats on external websites, etc.
-  - `InjusticeJudge`: has commands that rely on the [InjusticJudge](https://github.com/Longhorn-Riichi/InjusticeJudge) submodule, and the helpers that make efficient API calls. Caches the game logs in `/cached_games`, up to 1 GB.
+    - `LobbyManagers`: has commands to pause, unpause, and terminate contest games from all 4 tournaments. Listens for finished games and record results. Automatically extends contest finish_time and reconnect when necessary.
+    - `Utilities`: various utilities, including recording in-person games, managing club membership, fetching links to player stats on external websites, etc.
+    - `InjusticeJudge`: has commands that rely on the [InjusticJudge](https://github.com/Longhorn-Riichi/InjusticeJudge) submodule, and the helpers that make efficient API calls. Caches the game logs in `/cached_games`, up to 1 GB.
 - `/modules/`: modules to be imported into the above extensions
-  - `InjusticeJudge`: houses the [InjusticJudge](https://github.com/Longhorn-Riichi/InjusticeJudge) submodule
-  - `pymjsoul`: a modified version of [mjsoul.py](https://github.com/RiichiNomi/mjsoul.py) that provides `MajsoulChannel`, a class for interfacing with Mahjong Soul's API
-  - `mahjongsoul`: contains two wrappers of `MajsoulChannel`:
-    1. `ContestManager`: logs into the Chinese Mahjong Soul contest management server to monitor club tournaments
-    1. `AccountManager`: logs into the Chinese Mahjong Soul game server to directly fetch game results/records
+    - `InjusticeJudge`: houses the [InjusticJudge](https://github.com/Longhorn-Riichi/InjusticeJudge) submodule
+    - `pymjsoul`: a modified version of [mjsoul.py](https://github.com/RiichiNomi/mjsoul.py) that provides `MajsoulChannel`, a class for interfacing with Mahjong Soul's API
+    - `mahjongsoul`: contains two wrappers of `MajsoulChannel`:
+        1. `ContestManager`: logs into the Chinese Mahjong Soul contest management server to monitor club tournaments
+        1. `AccountManager`: logs into the Chinese Mahjong Soul game server to directly fetch game results/records
 
 ## Setting up the bot
 First, `cp config.template.env config.env`.
