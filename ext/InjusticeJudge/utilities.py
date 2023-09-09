@@ -8,6 +8,7 @@ from google.protobuf.json_format import MessageToDict  # type: ignore[import]
 from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_tenhou, parse_majsoul, save_cache, parse_wrapped_bytes, GameMetadata
 from modules.InjusticeJudge.injustice_judge.injustices import evaluate_injustices
 from modules.InjusticeJudge.injustice_judge.classes import Kyoku
+from modules.InjusticeJudge.injustice_judge.constants import KO_TSUMO_SCORE, OYA_TSUMO_SCORE
 
 """
 =====================================================
@@ -144,33 +145,30 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
                 dama = "dama " if result.dama else ""
                 if result_type == "tsumo":
                     result_string += f"{player_names[result.winner]} {dama}tsumos"
-                    ko = result.score_ko
-                    oya = result.score_oya
+                    ko = KO_TSUMO_SCORE[result.score.han][result.score.fu]  # type: ignore[index]
+                    oya = OYA_TSUMO_SCORE[result.score.han][result.score.fu]  # type: ignore[index]
                     if ko == oya:
-                        result_string += f" for `{result.score}({ko}∀)`"
+                        result_string += f" for `{result.score.to_points()}({ko}∀)`"
                     else:
-                        result_string += f" for `{result.score}({ko}/{oya})`"
+                        result_string += f" for `{result.score.to_points()}({ko}/{oya})`"
                 else:
                     result_string += f"{player_names[result.winner]} {dama}rons {player_names[result.won_from]} "
-                    result_string += f" for `{result.score}`"
-                below_mangan = result.limit_name == ""
+                    result_string += f" for `{result.score.to_points()}`"
+                below_mangan = result.score.get_limit_hand_name() == ""
                 if below_mangan:
-                    result_string += f" ({result.han}/{result.fu})"
+                    result_string += f" ({result.score.han}/{result.score.fu})"
                 else:
-                    result_string += f" ({result.limit_name})"
-                def translate_yaku(y):
-                    [name, value] = y.split('(')
-                    value = 13 if "役満" in value else int(value.split("飜")[0])
+                    result_string += f" ({result.score.get_limit_hand_name()})"
+                def get_yaku_name(t: Tuple[str, int]):
+                    name = t[0]
                     winds = {0:"ton",1:"nan",2:"shaa",3:"pei"}
-                    if value > 1 and TRANSLATE[name] in {"dora","aka","ura","kita"}:
-                        return f"{TRANSLATE[name]} {value}"
-                    elif TRANSLATE[name] == "round wind":
+                    if name == "round wind":
                         return winds[rnd//4]
-                    elif TRANSLATE[name] == "seat wind":
+                    elif name == "seat wind":
                         return winds[result.winner]
                     else:
-                        return TRANSLATE[name]
-                result_string += f" *{', '.join(map(translate_yaku, result.yaku.yaku_strs))}*"
+                        return name
+                result_string += f" *{', '.join(map(get_yaku_name, result.score.yaku))}*"
                 if display_hands is not None:
                     if "All" in display_hands or ("Mangan" in display_hands and not below_mangan):
                         w: int = result.winner
