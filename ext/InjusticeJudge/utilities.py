@@ -2,20 +2,35 @@ import re
 from typing import *
 from global_stuff import account_manager
 from modules.pymjsoul.proto import liqi_combined_pb2 as proto
+from discord import Colour, Embed, Interaction
 
 # InjusticeJudge imports
 from google.protobuf.json_format import MessageToDict  # type: ignore[import]
 from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_tenhou, parse_majsoul, save_cache, parse_wrapped_bytes, GameMetadata
-from modules.InjusticeJudge.injustice_judge.injustices import evaluate_injustices
+from modules.InjusticeJudge.injustice_judge.injustices import evaluate_game
 from modules.InjusticeJudge.injustice_judge.classes import Kyoku
 from modules.InjusticeJudge.injustice_judge.constants import KO_TSUMO_SCORE, OYA_TSUMO_SCORE
+
+async def long_followup(interaction: Interaction, chunks: List[str], header: str):
+    """Followup with a long message by breaking it into multiple messages"""
+    ret = [""]
+    for to_add in chunks:
+        to_add += "\n"
+        if len(to_add) + len(ret[-1]) > 3900:
+            ret.append(to_add)
+        else:
+            ret[-1] += to_add
+    green = Colour.from_str("#1EA51E")
+    await interaction.followup.send(content=header, embed=Embed(description=ret[0], colour=green))
+    for embed in [Embed(description=text, colour=green) for text in ret[1:]]:
+        await interaction.channel.send(embed=embed)  # type: ignore[union-attr]
 
 """
 =====================================================
 Modified InjusticeJudge Functions
 =====================================================
 """
-async def parse_game_link(link: str, specified_player: int = 0) -> Tuple[List[Kyoku], GameMetadata, int]:
+async def parse_game_link(link: str, specified_player: Optional[int] = None) -> Tuple[List[Kyoku], GameMetadata, int]:
     """
     basically the same as the exposed `parse_game_link()` of the InjusticeJudge,
     but with the `fetch_majsoul` part substituted out so we can use our own
@@ -39,9 +54,9 @@ async def parse_game_link(link: str, specified_player: int = 0) -> Tuple[List[Ky
         player = specified_player
     return kyokus, parsed_metadata, player
 
-async def analyze_game(link: str, specified_player = None) -> List[str]:
+async def analyze_game(link: str, specified_player: Optional[int] = None, look_for: Set[str] = {"injustice"}) -> List[str]:
     kyokus, game_metadata, player = await parse_game_link(link, specified_player)
-    return [injustice for kyoku in kyokus for injustice in evaluate_injustices(kyoku, player)]
+    return [result for kyoku in kyokus for result in evaluate_game(kyoku, player, look_for)]
 
 async def fetch_majsoul(link: str):
     """
@@ -105,14 +120,14 @@ HELPER FUNCTIONS for `cog.py`
 Factored out so we can unit-test them.
 =====================================================
 """
-def count_terminals(hand: List[int]):
+def count_terminals(hand: Tuple[int, ...]):
     counter = 0
     for tile in hand:
         if tile in YAOCHUUHAI:
             counter += 1
     return counter
 
-def count_unique_terminals(hand: List[int]):
+def count_unique_terminals(hand: Tuple[int, ...]):
     unique_yaochuuhai = set()
     for tile in hand:
         if tile in YAOCHUUHAI:
@@ -228,7 +243,7 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
                             break
                         curr_seat = (curr_seat + 1) % kyoku.num_players
 
-                    declarer_hand = list(kyoku.haipai[declarer].tiles) + [kyoku.final_draw]
+                    declarer_hand = (*kyoku.haipai[declarer].tiles, kyoku.final_draw)
 
                     result_string += CODE_BLOCK_PREFIX
                     result_string += f"{ph(declarer_hand)} ({count_unique_terminals(declarer_hand)} unique terminals)"

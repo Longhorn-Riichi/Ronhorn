@@ -6,7 +6,7 @@ from discord import app_commands, Colour, Embed, Interaction
 from typing import *
 
 # InjusticeJudge imports
-from .utilities import analyze_game, parse_game
+from .utilities import analyze_game, long_followup, parse_game
 from global_stuff import slash_commands_guilds
 
 class Injustice(commands.Cog):
@@ -38,18 +38,34 @@ class Injustice(commands.Cog):
             injustices = [f"No injustices detected for the {player_str}.\n"
                            "Specify another player with the `player` option in `/injustice`.\n"
                            "Did we miss an injustice? Contribute ideas [here](https://github.com/Longhorn-Riichi/InjusticeJudge/issues/1)!"]
-        ret = [""]
-        for to_add in injustices:
-            to_add += "\n"
-            if len(to_add) + len(ret[-1]) > 3900:
-                ret.append(to_add)
-            else:
-                ret[-1] += to_add
-        green = Colour.from_str("#1EA51E")
         as_player_string = "yourself" if player is None else player.name
-        await interaction.followup.send(content=f"Input: {link}\nAnalysis result for **{as_player_string}**:", embed=Embed(description=ret[0], colour=green))
-        for embed in [Embed(description=text, colour=green) for text in ret[1:]]:
-            await interaction.channel.send(embed=embed)  # type: ignore[union-attr]
+        header = f"Input: {link}\nAnalysis result for **{as_player_string}**:"
+        await long_followup(interaction, injustices, header)
+
+    @app_commands.command(name="skill", description="Display instances of pure mahjong skill in a given game.")  # type: ignore[arg-type]
+    @app_commands.describe(link="Link to the game to analyze (Mahjong Soul or tenhou.net)",
+                           player="(optional) The seat to analyze the game from. Determined using the link, but defaults to East.")
+    @app_commands.choices(player=[
+        app_commands.Choice(name="East", value="East"),
+        app_commands.Choice(name="South", value="South"),
+        app_commands.Choice(name="West", value="West"),
+        app_commands.Choice(name="North", value="North")])
+    async def skill(self, interaction: Interaction, link: str, player: Optional[app_commands.Choice[str]]):
+        await interaction.response.defer()
+        if player is None:
+            injustices = await analyze_game(link, look_for={"skill"})
+            player_str = "player specified in the link"
+        else:
+            dir_map = ["East", "South", "West", "North"]
+            injustices = await analyze_game(link, dir_map.index(player.value), look_for={"skill"})
+            player_str = f"starting {player.value} player"
+        if injustices == []:
+            injustices = [f"No skills detected for the {player_str}.\n"
+                           "Specify another player with the `player` option in `/skill`.\n"
+                           "Did we miss a skill? Contribute ideas [here](https://github.com/Longhorn-Riichi/InjusticeJudge/issues/10)!"]
+        as_player_string = "yourself" if player is None else player.name
+        header = f"Input: {link}\nAnalysis result for **{as_player_string}**:"
+        await long_followup(interaction, injustices, header)
 
 class ParseLog(commands.Cog):
     @app_commands.command(name="parse", description=f"Print out the results of a game.")  # type: ignore[arg-type]
@@ -63,10 +79,7 @@ class ParseLog(commands.Cog):
     async def parse(self, interaction: Interaction, link: str, display_hands: Optional[app_commands.Choice[str]] = None):
         await interaction.response.defer()
         header, ret = await parse_game(link, display_hands.value if display_hands is not None else None)
-        green = Colour.from_str("#1EA51E")
-        await interaction.followup.send(content=header, embed=Embed(description=ret[0], colour=green))
-        for embed in [Embed(description=text, colour=green) for text in ret[1:]]:
-            await interaction.channel.send(embed=embed)  # type: ignore[union-attr]
+        await long_followup(interaction, ret, header)
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{ParseLog.__name__}`...")
