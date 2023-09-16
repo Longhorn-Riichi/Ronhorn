@@ -114,6 +114,7 @@ class LobbyManager(commands.Cog):
         raw_scores_row = [timestamp, self.game_type, "no"] # a list of values for a "Raw Scores" row
         not_registered = [] # list of unregistered players in game, if any
 
+        seat_name = ["East", "South", "West", "North"]
         for p in record.result.players:
             player_account_id, player_nickname = seat_player_dict.get(p.seat, (0, "AI"))
             
@@ -128,7 +129,7 @@ class LobbyManager(commands.Cog):
                     raw_scores_row.extend(("Unregistered player", raw_score))
             
             player_scores_rendered.append(
-                f"{player_nickname}: {p.part_point_1} ({(p.total_point/1000):+})")
+                f"{player_nickname} ({seat_name[p.seat]}): {p.part_point_1} ({(p.total_point/1000):+})")
 
         for player_nickname in not_registered:
             player_scores_rendered.append(f"*WARNING*: Mahjong Soul player `{player_nickname}` is not registered!")

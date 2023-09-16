@@ -9,6 +9,7 @@ from google.protobuf.json_format import MessageToDict  # type: ignore[import]
 from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_tenhou, parse_majsoul, save_cache, parse_wrapped_bytes, GameMetadata
 from modules.InjusticeJudge.injustice_judge.injustices import evaluate_game
 from modules.InjusticeJudge.injustice_judge.classes import Kyoku
+from modules.InjusticeJudge.injustice_judge.utils import pt
 from modules.InjusticeJudge.injustice_judge.constants import KO_TSUMO_SCORE, OYA_TSUMO_SCORE
 
 async def long_followup(interaction: Interaction, chunks: List[str], header: str):
@@ -148,7 +149,8 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
     final_scores = game_metadata.final_score
     num_players = len(player_names)
     header = f"Result of game {link}:\n"
-    header += ", ".join("{}: {} ({:+.1f})".format(p,g,f/1000.0) for p,g,f in sorted(zip(player_names, game_scores, final_scores), key=lambda z: -z[2]))
+    seat_names = [pt(t) for t in range(41,45)]
+    header += ", ".join("{} {}: {} ({:+.1f})".format(d,p,g,f/1000.0) for p,d,g,f in sorted(zip(player_names, seat_names, game_scores, final_scores), key=lambda z: -z[3]))
     ret = [""]
     for i, rnd, honba, game_results in [(i, kyoku.round, kyoku.honba, kyoku.result) for i, kyoku in enumerate(kyokus)]:
         result_type, *results = game_results
