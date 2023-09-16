@@ -23,4 +23,6 @@ links = {
     "chiitoitsu where the last tile is part of a triplet is not tenpai": "https://mahjongsoul.game.yo-star.com/?paipu=230905-95b3d8f9-838a-4024-a30c-7ef0f0799b24_a939490715",
     "head bump sanma": "https://mahjongsoul.game.yo-star.com/?paipu=230916-e2c93de6-8884-4777-b31f-943a0417b9b7_a878761203",
     "won after changing wait": "https://mahjongsoul.game.yo-star.com/?paipu=230917-66548924-25f2-4d20-818c-f96bf1b92ea4_a878761203",
+    "pon pon ron and hell wait": "http://tenhou.net/4/?log=2023042300gm-000b-18940-d986a355",
+    "rinshan 4 dora": "https://mahjongsoul.game.yo-star.com/?paipu=230916-474cf754-e36c-438b-886f-d88ed3e27a28",
 }

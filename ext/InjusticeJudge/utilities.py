@@ -17,6 +17,7 @@ async def long_followup(interaction: Interaction, chunks: List[str], header: str
     ret = [""]
     for to_add in chunks:
         to_add += "\n"
+        # assert len(to_add) >= 3900, "single message is too long!"
         if len(to_add) + len(ret[-1]) > 3900:
             ret.append(to_add)
         else:
