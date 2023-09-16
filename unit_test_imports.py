@@ -22,4 +22,5 @@ links = {
     "kakan adding red five": "https://tenhou.net/0/?log=2023090513gm-0089-0000-a3baa162&tw=0",
     "chiitoitsu where the last tile is part of a triplet is not tenpai": "https://mahjongsoul.game.yo-star.com/?paipu=230905-95b3d8f9-838a-4024-a30c-7ef0f0799b24_a939490715",
     "head bump sanma": "https://mahjongsoul.game.yo-star.com/?paipu=230916-e2c93de6-8884-4777-b31f-943a0417b9b7_a878761203",
+    "won after changing wait": "https://mahjongsoul.game.yo-star.com/?paipu=230917-66548924-25f2-4d20-818c-f96bf1b92ea4_a878761203",
 }
