@@ -14,8 +14,12 @@ async def test_injustice():
     print("===============================")
     for reason, link in links.items():
         print("reason: ", reason, "\n-----------")
-        for injustice in await analyze_game(link, look_for={"skill"}):
-            print(injustice)
+        try:
+            for injustice in await analyze_game(link, specified_players={0,1,2,3}, look_for={"skill"}):
+                print(injustice)
+        except:
+            for injustice in await analyze_game(link, specified_players={0,1,2}, look_for={"skill"}):
+                print(injustice)
         print("===============================")
 
 asyncio.run(test_injustice())

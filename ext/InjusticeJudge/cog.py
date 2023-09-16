@@ -46,7 +46,10 @@ class Injustice(commands.Cog):
     @app_commands.describe(link="Link to the game to analyze (Mahjong Soul or tenhou.net)")
     async def skill(self, interaction: Interaction, link: str):
         await interaction.response.defer()
-        skills = await analyze_game(link, look_for={"skill"})
+        try:
+            skills = await analyze_game(link, specified_players={0,1,2,3}, look_for={"skill"})
+        except:
+            skills = await analyze_game(link, specified_players={0,1,2}, look_for={"skill"})
         if skills == []:
             skills = [f"No skills detected for any player.\n"
                        "Did we miss a skill? Contribute ideas [here](https://github.com/Longhorn-Riichi/InjusticeJudge/issues/10)!"]
