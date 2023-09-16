@@ -32,7 +32,7 @@ class Injustice(commands.Cog):
             player_str = "player specified in the link"
         else:
             dir_map = ["East", "South", "West", "North"]
-            injustices = await analyze_game(link, dir_map.index(player.value))
+            injustices = await analyze_game(link, {dir_map.index(player.value)})
             player_str = f"starting {player.value} player"
         if injustices == []:
             injustices = [f"No injustices detected for the {player_str}.\n"
@@ -43,29 +43,15 @@ class Injustice(commands.Cog):
         await long_followup(interaction, injustices, header)
 
     @app_commands.command(name="skill", description="Display instances of pure mahjong skill in a given game.")  # type: ignore[arg-type]
-    @app_commands.describe(link="Link to the game to analyze (Mahjong Soul or tenhou.net)",
-                           player="(optional) The seat to analyze the game from. Determined using the link, but defaults to East.")
-    @app_commands.choices(player=[
-        app_commands.Choice(name="East", value="East"),
-        app_commands.Choice(name="South", value="South"),
-        app_commands.Choice(name="West", value="West"),
-        app_commands.Choice(name="North", value="North")])
-    async def skill(self, interaction: Interaction, link: str, player: Optional[app_commands.Choice[str]]):
+    @app_commands.describe(link="Link to the game to analyze (Mahjong Soul or tenhou.net)")
+    async def skill(self, interaction: Interaction, link: str):
         await interaction.response.defer()
-        if player is None:
-            injustices = await analyze_game(link, look_for={"skill"})
-            player_str = "player specified in the link"
-        else:
-            dir_map = ["East", "South", "West", "North"]
-            injustices = await analyze_game(link, dir_map.index(player.value), look_for={"skill"})
-            player_str = f"starting {player.value} player"
-        if injustices == []:
-            injustices = [f"No skills detected for the {player_str}.\n"
-                           "Specify another player with the `player` option in `/skill`.\n"
-                           "Did we miss a skill? Contribute ideas [here](https://github.com/Longhorn-Riichi/InjusticeJudge/issues/10)!"]
-        as_player_string = "yourself" if player is None else player.name
-        header = f"Input: {link}\nAnalysis result for **{as_player_string}**:"
-        await long_followup(interaction, injustices, header)
+        skills = await analyze_game(link, look_for={"skill"})
+        if skills == []:
+            skills = [f"No skills detected for any player.\n"
+                       "Did we miss a skill? Contribute ideas [here](https://github.com/Longhorn-Riichi/InjusticeJudge/issues/10)!"]
+        header = f"Input: {link}\nSkills everyone pulled off this game:"
+        await long_followup(interaction, skills, header)
 
 class ParseLog(commands.Cog):
     @app_commands.command(name="parse", description=f"Print out the results of a game.")  # type: ignore[arg-type]
