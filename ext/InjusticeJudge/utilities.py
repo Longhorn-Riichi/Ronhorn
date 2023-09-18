@@ -8,9 +8,9 @@ from discord import Colour, Embed, Interaction
 from google.protobuf.json_format import MessageToDict  # type: ignore[import]
 from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_tenhou, parse_majsoul, save_cache, parse_wrapped_bytes, GameMetadata
 from modules.InjusticeJudge.injustice_judge.injustices import evaluate_game
-from modules.InjusticeJudge.injustice_judge.classes import Kyoku
-from modules.InjusticeJudge.injustice_judge.utils import pt
-from modules.InjusticeJudge.injustice_judge.constants import KO_TSUMO_SCORE, OYA_TSUMO_SCORE
+from modules.InjusticeJudge.injustice_judge.classes2 import Kyoku
+from modules.InjusticeJudge.injustice_judge.constants import KO_TSUMO_SCORE, OYA_TSUMO_SCORE, TRANSLATE, YAOCHUUHAI
+from modules.InjusticeJudge.injustice_judge.display import ph, ph, short_round_name
 
 async def long_followup(interaction: Interaction, chunks: List[str], header: str):
     """Followup with a long message by breaking it into multiple messages"""
@@ -32,6 +32,7 @@ async def long_followup(interaction: Interaction, chunks: List[str], header: str
 Modified InjusticeJudge Functions
 =====================================================
 """
+
 async def parse_game_link(link: str, specified_players: Set[int] = set()) -> Tuple[List[Kyoku], GameMetadata, Set[int]]:
     """
     basically the same as the exposed `parse_game_link()` of the InjusticeJudge,
@@ -138,9 +139,6 @@ def count_unique_terminals(hand: Tuple[int, ...]):
             unique_yaochuuhai.add(tile)
     return len(unique_yaochuuhai)
 
-
-from modules.InjusticeJudge.injustice_judge.utils import ph, short_round_name
-from modules.InjusticeJudge.injustice_judge.constants import TRANSLATE, YAOCHUUHAI
 # constants for `/parse`
 CODE_BLOCK_PREFIX = "\n`    `"
 CODE_BLOCK_AND_SPACES_PREFIX = "\n`    `              "
