@@ -9,6 +9,7 @@ from typing import *
 from ext.LobbyManagers.cog import LobbyManager
 from .display_hand import replace_text
 from global_stuff import assert_getenv, registry, raw_scores, registry_lock, raw_scores_lock, slash_commands_guilds
+from modules.InjusticeJudge.injustice_judge.fetch import parse_majsoul_link
 
 GUILD_ID: int                 = int(assert_getenv("guild_id"))
 OFFICER_ROLE: str             = assert_getenv("officer_role")
@@ -372,9 +373,10 @@ class LonghornRiichiUtilities(commands.Cog):
     async def submit_game(self, interaction: Interaction, lobby: app_commands.Choice[str], link: str):
         await interaction.response.defer(ephemeral=True)
         # extract the uuid from the game link
-        if not link.startswith("https://mahjongsoul.game.yo-star.com/?paipu="):
+        try:
+            uuid = parse_majsoul_link(link)[0]
+        except:
             return await interaction.followup.send(content="Error: expected mahjong soul link starting with \"https://mahjongsoul.game.yo-star.com/?paipu=\".")
-        uuid, *player_string = link.split("https://mahjongsoul.game.yo-star.com/?paipu=")[1].split("_a")
         try:
             # we assume that the officer chose the correct `lobby`
             resp = await self.get_cog(lobby.value).add_game_to_leaderboard(uuid)
