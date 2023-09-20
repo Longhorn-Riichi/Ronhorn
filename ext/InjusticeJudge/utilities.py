@@ -10,7 +10,7 @@ from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_ten
 from modules.InjusticeJudge.injustice_judge.injustices import evaluate_game
 from modules.InjusticeJudge.injustice_judge.classes2 import Kyoku
 from modules.InjusticeJudge.injustice_judge.constants import KO_TSUMO_SCORE, OYA_TSUMO_SCORE, TRANSLATE, YAOCHUUHAI
-from modules.InjusticeJudge.injustice_judge.display import ph, ph, short_round_name
+from modules.InjusticeJudge.injustice_judge.display import ph, pt, short_round_name
 
 async def long_followup(interaction: Interaction, chunks: List[str], header: str):
     """Followup with a long message by breaking it into multiple messages"""
