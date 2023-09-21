@@ -25,4 +25,5 @@ links = {
     "won after changing wait, all tiles deal in": "https://mahjongsoul.game.yo-star.com/?paipu=230917-66548924-25f2-4d20-818c-f96bf1b92ea4_a878761203",
     "pon pon ron and hell wait": "http://tenhou.net/4/?log=2023042300gm-000b-18940-d986a355",
     "rinshan 4 dora": "https://mahjongsoul.game.yo-star.com/?paipu=230916-474cf754-e36c-438b-886f-d88ed3e27a28",
+    "daiminkan rinshan": "http://tenhou.net/4/?log=2023092110gm-000b-18940-501ea72b",
 }
