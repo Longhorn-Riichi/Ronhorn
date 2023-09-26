@@ -24,21 +24,34 @@ class Injustice(commands.Cog):
         app_commands.Choice(name="East", value="East"),
         app_commands.Choice(name="South", value="South"),
         app_commands.Choice(name="West", value="West"),
-        app_commands.Choice(name="North", value="North")])
+        app_commands.Choice(name="North", value="North"),
+        app_commands.Choice(name="All", value="All")])
     async def injustice(self, interaction: Interaction, link: str, player: Optional[app_commands.Choice[str]]):
         await interaction.response.defer()
         if player is None:
             injustices = await analyze_game(link)
             player_str = "player specified in the link"
+        elif player.value == "All":
+            try:
+                injustices = await analyze_game(link, {0,1,2,3})
+            except:
+                injustices = await analyze_game(link, {0,1,2})
+            player_str = f"all players"
         else:
             dir_map = ["East", "South", "West", "North"]
-            injustices = await analyze_game(link, {dir_map.index(player.value)})
+            try:
+                injustices = await analyze_game(link, {dir_map.index(player.value)})
+            except Exception as e:
+                if player.value == "North":
+                    await interaction.followup.send(content="Error: can't specify North player for a 3-player game.")
+                else:
+                    raise e
             player_str = f"starting {player.value} player"
         if injustices == []:
             injustices = [f"No injustices detected for the {player_str}.\n"
                            "Specify another player with the `player` option in `/injustice`.\n"
                            "Did we miss an injustice? Contribute ideas [here](https://github.com/Longhorn-Riichi/InjusticeJudge/issues/1)!"]
-        as_player_string = "yourself" if player is None else player.name
+        as_player_string = "yourself" if player is None else "all players" if player.value is "All" else player.name
         header = f"Input: {link}\nAnalysis result for **{as_player_string}**:"
         await long_followup(interaction, injustices, header)
 
