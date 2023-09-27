@@ -5,7 +5,7 @@ import datetime
 from typing import *
 from modules.pymjsoul.channel import MajsoulChannel, GeneralMajsoulError
 from modules.pymjsoul.proto import liqi_combined_pb2
-from websockets.exceptions import ConnectionClosed, ConnectionClosedError
+from websockets.exceptions import ConnectionClosed, ConnectionClosedError, InvalidStatusCode
 
 # MS_MANAGER_WSS_ENDPOINT: `__MJ_DHS_WS__` from https://www.maj-soul.com/dhs/js/config.js
 MS_MANAGER_WSS_ENDPOINT = "wss://gateway-v2.maj-soul.com/contest_ws_gateway"
@@ -82,10 +82,14 @@ class ContestManager(MajsoulChannel):
         """
         Connect to the Chinese tournament manager server, login with username and password, start managing the specified contest, and start receiving the notifications for the games in that contest.
         """
-        # Establish WSS connection
-        await self.connect(MS_MANAGER_WSS_ENDPOINT)
-        # Login, manage specific contest, and start listening to notifications
-        await self.login_and_start_listening()
+        try:
+            # Establish WSS connection
+            await self.connect(MS_MANAGER_WSS_ENDPOINT)
+            # Login, manage specific contest, and start listening to notifications
+            await self.login_and_start_listening()
+        except InvalidStatusCode as e:
+            self.logger.error("Failed to login for CustomizedContestManagerApi. Is Mahjong Soul currently undergoing maintenance?")
+            raise e
     
     async def reconnect_and_login(self):
         """

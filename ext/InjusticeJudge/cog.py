@@ -51,7 +51,7 @@ class Injustice(commands.Cog):
             injustices = [f"No injustices detected for the {player_str}.\n"
                            "Specify another player with the `player` option in `/injustice`.\n"
                            "Did we miss an injustice? Contribute ideas [here](https://github.com/Longhorn-Riichi/InjusticeJudge/issues/1)!"]
-        as_player_string = "yourself" if player is None else "all players" if player.value is "All" else player.name
+        as_player_string = "yourself" if player is None else "all players" if player.value == "All" else player.name
         header = f"Input: {link}\nAnalysis result for **{as_player_string}**:"
         await long_followup(interaction, injustices, header)
 

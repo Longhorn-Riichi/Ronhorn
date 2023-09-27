@@ -6,7 +6,7 @@ import asyncio
 from typing import *
 from modules.pymjsoul.channel import MajsoulChannel, GeneralMajsoulError
 from modules.pymjsoul.proto import liqi_combined_pb2
-from websockets.exceptions import ConnectionClosed, ConnectionClosedError
+from websockets.exceptions import ConnectionClosed, ConnectionClosedError, InvalidStatusCode
 
 MS_CHINESE_WSS_ENDPOINT = "wss://gateway-hw.maj-soul.com:443/gateway"
 
@@ -71,8 +71,12 @@ class AccountManager(MajsoulChannel):
         """
         Connect to the Chinese game server and login with username and password.
         """
-        await self.connect(MS_CHINESE_WSS_ENDPOINT)
-        await self.login()
+        try:
+            await self.connect(MS_CHINESE_WSS_ENDPOINT)
+            await self.login()
+        except InvalidStatusCode as e:
+            self.logger.error("Failed to login for Lobby. Is Mahjong Soul currently undergoing maintenance?")
+            raise e
     
     async def reconnect_and_login(self):
         """
