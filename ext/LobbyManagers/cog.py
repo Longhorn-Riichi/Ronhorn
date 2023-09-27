@@ -146,7 +146,8 @@ class LobbyManager(commands.Cog):
     """
 
     async def on_NotifyContestGameStart(self, _, msg):
-        nicknames = " | ".join([p.nickname or "AI" for p in msg.game_info.players])
+        seat_name = ["East", "South", "West", "North"]
+        nicknames = " | ".join([f"{p.nickname or 'AI'} ({seat_name[p.seat]}" for p in msg.game_info.players])
         await self.bot_channel.send(f"{self.game_type} game started! Players:\n{nicknames}.")
 
     async def on_NotifyContestGameEnd(self, _, msg):
