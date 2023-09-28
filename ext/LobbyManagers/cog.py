@@ -45,6 +45,7 @@ class LobbyManager(commands.Cog):
         # the bot has not cached the channel yet...
         self.bot_channel = await self.bot.fetch_channel(BOT_CHANNEL_ID)
         await self.manager.connect_and_login()
+        await self.manager.subscribe("NotifyContestMatchingPlayer", self.on_NotifyContestMatchingPlayer)
         await self.manager.subscribe("NotifyContestGameStart", self.on_NotifyContestGameStart)
         await self.manager.subscribe("NotifyContestGameEnd", self.on_NotifyContestGameEnd)
 
@@ -144,12 +145,17 @@ class LobbyManager(commands.Cog):
     =====================================================
     """
 
+    async def on_NotifyContestMatchingPlayer(self, _, msg):
+        self.manager.logger.info(f"Player joined match for {self.game_type}: {msg}")
+
     async def on_NotifyContestGameStart(self, _, msg):
+        self.manager.logger.info(f"Match started for {self.game_type}: {msg}")
         seat_name = ["East", "South", "West", "North"]
         nicknames = " | ".join([f"{p.nickname or 'AI'} ({seat_name[p.seat]}" for p in msg.game_info.players])
         await self.bot_channel.send(f"{self.game_type} game started! Players:\n{nicknames}.")
 
     async def on_NotifyContestGameEnd(self, _, msg):
+        self.manager.logger.info(f"Match ended for {self.game_type}: {msg}")
         try:
             resp = await self.add_game_to_leaderboard(msg.game_uuid)
         except Exception as e:
