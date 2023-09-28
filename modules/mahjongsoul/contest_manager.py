@@ -196,7 +196,7 @@ class ContestManager(MajsoulChannel):
 
         return f"{nickname}'s paused game has been unpaused."
 
-    async def start_game(self, account_ids: List[int]=[0, 0, 0, 0], tag: str="", random_position=False, open_live=True, ai_level=1) -> None:
+    async def start_game(self, account_ids: List[int]=[0, 0, 0, 0], tag: str="", random_position=False, open_live=True, ai_level=1, starting_points=None) -> None:
         """
         start a tournament game. `account_ids` is a list of mahjong soul player
         ids, where 0 means adding a computer at the given seat.
@@ -213,6 +213,7 @@ class ContestManager(MajsoulChannel):
             account_id = account_ids[i]
             playerList.append(self.proto.ReqCreateContestGame.Slot(
                 account_id=account_id,
+                start_point=starting_points,
                 seat=i))
             # if it's a real player, call `lockGamePlayer`
             if account_id > 0:
