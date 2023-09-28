@@ -4,11 +4,11 @@ import gspread
 import logging
 import requests
 from discord.ext import commands
-from discord import app_commands, Interaction
+from discord import app_commands, Colour, Embed, Interaction
 from typing import *
 from ext.LobbyManagers.cog import LobbyManager
 from .display_hand import replace_text
-from global_stuff import assert_getenv, registry, raw_scores, registry_lock, raw_scores_lock, slash_commands_guilds
+from global_stuff import account_manager, assert_getenv, registry, raw_scores, registry_lock, raw_scores_lock, slash_commands_guilds
 from modules.InjusticeJudge.injustice_judge.fetch import parse_majsoul_link
 
 GUILD_ID: int                 = int(assert_getenv("guild_id"))
@@ -247,6 +247,147 @@ class LonghornRiichiUtilities(commands.Cog):
         response = await self._unregister(server_member)
         await interaction.followup.send(content=response)
 
+
+    async def _get_queued_players(self, lobby):
+        # get all queued players
+        players = list((await self.get_cog(lobby).manager.call("fetchContestMatchingPlayer")).players)
+
+        # # debug
+        # make_ai = lambda: self.get_cog(lobby).manager.proto.ContestPlayerInfo(account_id=0, nickname="")
+        # for _ in range(12 - len(players)):
+        #     players.append(make_ai())
+
+        # shuffle players before returning
+        import random
+        random.shuffle(players)
+        return players
+
+    def _split_queued_players(self, players):
+        import random
+        random.shuffle(players)
+        num = len(players)
+        overflow = (num%4) or 4
+        yonma = ((num-1) // 4) + (overflow - 3)
+        sanma = 4 - overflow
+        if yonma < 0 or sanma < 0 or (yonma + sanma == 0): # when num = 0, 1, 2, 5
+            return f"Unable to split {num} player{'' if num == 1 else 's'} into yonma/sanma tables.", ""
+
+        # ask players to queue up
+        header = f"{num} players can be split into"
+        header += f" {yonma} yonma table{'' if yonma == 1 else 's'} and"
+        header += f" {sanma} sanma table{'' if sanma == 1 else 's'}. Possible assignment:"
+        msg = f"- **Yonma Hanchan ({YH_TOURNAMENT_ID})**: {', '.join(p.nickname or 'AI' for p in players[:yonma*4])}\n"
+        msg += f"- **Sanma Hanchan ({SH_TOURNAMENT_ID})**: {', '.join(p.nickname or 'AI' for p in players[yonma*4:])}\n"
+        return header, msg
+
+    @app_commands.command(name="check_queues", description=f"Check to see if everyone is queued up")
+    async def check_queues(self, interaction: Interaction):
+        await interaction.response.defer()
+        yh_players = await self._get_queued_players(YH_NAME)
+        yt_players = await self._get_queued_players(YT_NAME)
+        sh_players = await self._get_queued_players(SH_NAME)
+        st_players = await self._get_queued_players(ST_NAME)
+
+        header = ""
+        msg = ""
+        if len(yh_players) + len(yt_players) + len(sh_players) + len(st_players) == 0:
+            header = "Nobody is currently queued in any lobby!"
+
+        # determine if there's enough players queued up in yonma/sanma to just start all the games
+        elif len(yh_players) % 4 == len(yt_players) % 4 == len(sh_players) % 3 == len(st_players) % 3 == 0:
+            header = f"Each lobby has a correct number of players, start with `/start_queued_games`!"
+            for players, lobby, lobby_id in \
+                    [(yh_players, YH_NAME, YH_TOURNAMENT_ID), (yt_players, YT_NAME, YT_TOURNAMENT_ID),
+                     (sh_players, SH_NAME, SH_TOURNAMENT_ID), (st_players, ST_NAME, ST_TOURNAMENT_ID)]:
+                if len(players) > 0:
+                    msg += f"- **{lobby} ({lobby_id})**: {', '.join(p.nickname or 'AI' for p in players)}\n"
+        else:
+            # otherwise, partition everyone up into tables and give a suggestion of who goes where
+            header, msg = self._split_queued_players(yh_players + yt_players + sh_players + st_players)
+
+        if len(msg) > 0:
+            green = Colour.from_str("#1EA51E")
+            await interaction.followup.send(content=header, embed=Embed(description=msg, colour=green))
+        else:
+            await interaction.followup.send(content=header)
+
+    @app_commands.command(name="start_queued_games", description=f"Start games for all queued players in each tournament lobby.")
+    async def start_queued_games(self, interaction: Interaction):
+        await interaction.response.defer()
+        yh_players = await self._get_queued_players(YH_NAME)
+        yt_players = await self._get_queued_players(YT_NAME)
+        sh_players = await self._get_queued_players(SH_NAME)
+        st_players = await self._get_queued_players(ST_NAME)
+
+        header = ""
+        msg = ""
+        if len(yh_players) + len(yt_players) + len(sh_players) + len(st_players) == 0:
+            header = "Nobody is currently queued in any lobby!"
+
+        # determine if there's enough players queued up in yonma/sanma to just start all the games
+        elif len(yh_players) % 4 == len(yt_players) % 4 == len(sh_players) % 3 == len(st_players) % 3 == 0:
+            # create games corresponding to those tables
+            num_tables = 0
+            for num_players, players, lobby, lobby_id in \
+                    [(4, yh_players, YH_NAME, YH_TOURNAMENT_ID), (4, yt_players, YT_NAME, YT_TOURNAMENT_ID),
+                     (3, sh_players, SH_NAME, SH_TOURNAMENT_ID), (3, st_players, ST_NAME, ST_TOURNAMENT_ID)]:
+                if len(players) > 0:
+                    for i in range(len(players) // num_players):
+                        num_tables += 1
+                        table = players[i*num_players:(i+1)*num_players]
+                        await self.get_cog(lobby).manager.start_game(account_ids=[p.account_id for p in table])
+                        msg += f"- **Table {num_tables}** ({lobby} {lobby_id}): {', '.join(p.nickname or 'AI' for p in table)}\n"
+            header = f"Created the following table{'' if num_tables == 1 else 's'}:"
+        else:
+            # otherwise, partition everyone up into tables and give a suggestion of who goes where
+            header, msg = self._split_queued_players(yh_players + yt_players + sh_players + st_players)
+
+        if len(msg) > 0:
+            green = Colour.from_str("#1EA51E")
+            await interaction.followup.send(content=header, embed=Embed(description=msg, colour=green))
+        else:
+            await interaction.followup.send(content=header)
+
+    async def _toggle_auto_match(self, lobby_name: str, enabled: bool):
+        contest = self.get_cog(lobby_name).manager.contest
+        assert contest is not None
+        rules = await self.get_cog(lobby_name).manager.call("fetchContestGameRule")
+        params = {
+            # "contest_name": "LR " + lobby_name,
+            "contest_name": contest.contest_name,
+            "start_time": contest.start_time,
+            "finish_time": contest.finish_time,
+            "open": contest.open,
+            "rank_rule": contest.rank_rule,
+            "auto_match": enabled,
+            "auto_disable_end_chat": contest.auto_disable_end_chat,
+            "contest_type": contest.contest_type,
+            "game_rule_setting": rules.game_rule_setting,
+            # "emoji_switch": contest.emoji_switch,
+            "player_roster_type": contest.player_roster_type,
+            "disable_broadcast": contest.disable_broadcast,
+        }
+        await self.get_cog(lobby_name).manager.call("updateContestGameRule", **params)
+
+    @app_commands.command(name="toggle_auto_match", description=f"Test command")
+    @app_commands.describe(
+        lobby="Which lobby do you want to configure?",
+        enabled="True if you want to enable auto matching")
+    @app_commands.choices(lobby=[
+        app_commands.Choice(name=YH_NAME, value=YH_NAME),
+        app_commands.Choice(name=YT_NAME, value=YT_NAME),
+        app_commands.Choice(name=SH_NAME, value=SH_NAME),
+        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
+    @app_commands.checks.has_role(OFFICER_ROLE)
+    async def toggle_auto_match(self, interaction: Interaction, lobby: app_commands.Choice[str], enabled: bool):
+        await interaction.response.defer()
+        await self._toggle_auto_match(lobby.value, enabled)
+        contest = (await self.get_cog(lobby.value).manager.call("fetchContestInfo")).contest
+        assert contest is not None
+        if contest.auto_match == enabled:
+            await interaction.followup.send(content=f"Successfully {'enabled' if enabled else 'disabled'} auto-matching for {lobby.value}.")
+        else:
+            await interaction.followup.send(content=f"Failed to {'enable' if enabled else 'disable'} auto-matching for {lobby.value}.")
     @app_commands.command(name="enter_scores", description=f"Enter scores for an IRL game, starting with the East player. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(game_type="Hanchan or tonpuu?",
                            player1="The East player you want to record the score for.",
@@ -362,15 +503,9 @@ class LonghornRiichiUtilities(commands.Cog):
             await interaction.followup.send(content=f"Replaced the role `@{old_role}` with `@{new_role}` for everyone.")
 
     @app_commands.command(name="submit_game", description=f"Submit a Mahjong Soul club game to the leaderboard. Only usable by @{OFFICER_ROLE}.")
-    @app_commands.describe(lobby="Which lobby is the game in?",
-                           link="The Mahjong Soul club game link to submit.")
-    @app_commands.choices(lobby=[
-        app_commands.Choice(name=YH_NAME, value=YH_NAME),
-        app_commands.Choice(name=YT_NAME, value=YT_NAME),
-        app_commands.Choice(name=SH_NAME, value=SH_NAME),
-        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
+    @app_commands.describe(link="The Mahjong Soul club game link to submit.")
     @app_commands.checks.has_role(OFFICER_ROLE)
-    async def submit_game(self, interaction: Interaction, lobby: app_commands.Choice[str], link: str):
+    async def submit_game(self, interaction: Interaction, link: str):
         await interaction.response.defer(ephemeral=True)
         # extract the uuid from the game link
         try:
@@ -378,8 +513,17 @@ class LonghornRiichiUtilities(commands.Cog):
         except:
             return await interaction.followup.send(content="Error: expected mahjong soul link starting with \"https://mahjongsoul.game.yo-star.com/?paipu=\".")
         try:
-            # we assume that the officer chose the correct `lobby`
-            resp = await self.get_cog(lobby.value).add_game_to_leaderboard(uuid)
+            # get the game record
+            record_list = await account_manager.get_game_results([uuid])
+            if len(record_list) == 0:
+                raise Exception("A game concluded without a record (possibly due to being terminated early).")
+            record = record_list[0]
+            # figure out which lobby the game was played in
+            contest_uid = record.config.meta.contest_uid
+            uid_to_name = {YH_TOURNAMENT_ID: YH_NAME, YT_TOURNAMENT_ID: YT_NAME, SH_TOURNAMENT_ID: SH_NAME, ST_TOURNAMENT_ID: ST_NAME}
+            if contest_uid not in uid_to_name:
+                raise Exception(f"/submit_game was given a game which wasn't played in our lobby. (uid={contest_uid})\n{link}")
+            resp = await self.get_cog(uid_to_name[contest_uid]).add_game_to_leaderboard(uuid, record)
         except Exception as e:
             return await interaction.followup.send(content="Error: " + str(e))
         await interaction.followup.send(content=f"Successfully submitted the game to {lobby.value} leaderboard.\n" + resp, suppress_embeds=True)

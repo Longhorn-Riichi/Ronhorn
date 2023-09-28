@@ -96,13 +96,12 @@ class LobbyManager(commands.Cog):
         message = await self.manager.unpause_game(mjs_nickname)
         await interaction.followup.send(content=message)
 
-    async def add_game_to_leaderboard(self, uuid):
-        record_list = await account_manager.get_game_results([uuid])
-        if len(record_list) == 0:
-            raise Exception("A game concluded without a record (possibly due to being terminated early).")
-
-        record = record_list[0]
-
+    async def add_game_to_leaderboard(self, uuid: str, record=None) -> str:
+        if record is None:
+            record_list = await account_manager.get_game_results([uuid])
+            if len(record_list) == 0:
+                raise Exception("A game concluded without a record (possibly due to being terminated early).")
+            record = record_list[0]
         # TODO: deal with ordering the scores; currently assumes the scores are ordered by
         #       total_point (adopt the algorithm of `enter_scores` command)
         seat_player_dict = {a.seat: (a.account_id, a.nickname) for a in record.accounts}
