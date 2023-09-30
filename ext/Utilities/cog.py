@@ -360,25 +360,7 @@ class LonghornRiichiUtilities(commands.Cog):
             await interaction.followup.send(content=header)
 
     async def _toggle_auto_match(self, lobby_name: str, enabled: bool):
-        contest = self.get_cog(lobby_name).manager.contest
-        assert contest is not None
-        rules = await self.get_cog(lobby_name).manager.call("fetchContestGameRule")
-        params = {
-            # "contest_name": "LR " + lobby_name,
-            "contest_name": contest.contest_name,
-            "start_time": contest.start_time,
-            "finish_time": contest.finish_time,
-            "open": contest.open,
-            "rank_rule": contest.rank_rule,
-            "auto_match": enabled,
-            "auto_disable_end_chat": contest.auto_disable_end_chat,
-            "contest_type": contest.contest_type,
-            "game_rule_setting": rules.game_rule_setting,
-            # "emoji_switch": contest.emoji_switch,
-            "player_roster_type": contest.player_roster_type,
-            "disable_broadcast": contest.disable_broadcast,
-        }
-        await self.get_cog(lobby_name).manager.call("updateContestGameRule", **params)
+        await self.get_cog(lobby_name).manager.call("updateContestGameRule", auto_match=enabled)
 
     @app_commands.command(name="toggle_auto_match", description=f"Test command")
     @app_commands.describe(
