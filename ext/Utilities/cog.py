@@ -267,40 +267,60 @@ class LonghornRiichiUtilities(commands.Cog):
         random.shuffle(players)
         return players
 
-    def _split_queued_players(self, players):
+    def _split_queued_players(self, players, excluded=[]):
         import random
         random.shuffle(players)
         num = len(players)
+        player_names = [player if isinstance(player, str) else (player.nickname or 'AI') for player in players]
+        player_names = [name for name in player_names if name not in excluded]
+        if len(player_names) == 0:
+            return "No players are looking to play!", ""
         overflow = (num%4) or 4
         yonma = ((num-1) // 4) + (overflow - 3)
         sanma = 4 - overflow
         if yonma < 0 or sanma < 0 or (yonma + sanma == 0): # when num = 0, 1, 2, 5
-            return f"Unable to split {num} player{'' if num == 1 else 's'} into yonma/sanma tables.", ""
+            return f"Unable to split {num } player{'' if num == 1 else 's'} into yonma/sanma tables.", ""
 
         # ask players to queue up
         header = f"{num} players can be split into"
         header += f" {yonma} yonma table{'' if yonma == 1 else 's'} and"
         header += f" {sanma} sanma table{'' if sanma == 1 else 's'}. Possible assignment:"
-        to_playername = lambda player: player if isinstance(player, str) else (player.nickname or 'AI')
-        msg = f"- **Yonma Hanchan ({YH_TOURNAMENT_ID})**: {', '.join(map(to_playername, players[:yonma*4]))}\n"
-        msg += f"- **Sanma Hanchan ({SH_TOURNAMENT_ID})**: {', '.join(map(to_playername, players[yonma*4:]))}\n"
+        name_list_to_str = lambda name_list: ', '.join(name for name in name_list if name not in excluded)
+        msg = f"- **Yonma Hanchan ({YH_TOURNAMENT_ID})**: {name_list_to_str(player_names[:yonma*4])}\n"
+        msg += f"- **Sanma Hanchan ({SH_TOURNAMENT_ID})**: {name_list_to_str(player_names[yonma*4:])}\n"
         return header, msg
 
     @app_commands.command(name="check_queues", description=f"Check to see if everyone is queued up")
-    async def check_queues(self, interaction: Interaction, check_voice_channel: Optional[bool]):
+    @app_commands.describe(
+        check_voice_channel="Whether to check the voice channel for players instead.",
+        exclude1="A player who wishes to not be included in the check.",
+        exclude2="A player who wishes to not be included in the check.",
+        exclude3="A player who wishes to not be included in the check.",
+        exclude4="A player who wishes to not be included in the check.")
+    async def check_queues(self, interaction: Interaction, check_voice_channel: Optional[bool],
+            exclude1: Optional[discord.User], exclude2: Optional[discord.User],
+            exclude3: Optional[discord.User], exclude4: Optional[discord.User]):
         await interaction.response.defer()
         yh_players = await self._get_queued_players(YH_NAME)
         yt_players = await self._get_queued_players(YT_NAME)
         sh_players = await self._get_queued_players(SH_NAME)
         st_players = await self._get_queued_players(ST_NAME)
+        excluded = [e.name for e in (exclude1, exclude2, exclude3, exclude4) if e is not None]
 
         header = ""
         msg = ""
-        if len(yh_players) + len(yt_players) + len(sh_players) + len(st_players) == 0:
+        if check_voice_channel == True:
+            voice_channel = await self.bot.fetch_channel(VOICE_CHANNEL_ID)
+            assert isinstance(voice_channel, VoiceChannel)
+            if len(voice_channel.members) == 0:
+                header = "Nobody is currently in the voice channel!"
+            else:
+                # otherwise, partition everyone up into tables and give a suggestion of who goes where
+                header, msg = self._split_queued_players([member.name for member in voice_channel.members], excluded)
+        elif len(yh_players) + len(yt_players) + len(sh_players) + len(st_players) == 0:
             header = "Nobody is currently queued in any lobby!"
-
-        # determine if there's enough players queued up in yonma/sanma to just start all the games
         elif len(yh_players) % 4 == len(yt_players) % 4 == len(sh_players) % 3 == len(st_players) % 3 == 0:
+            # there's enough players queued up in yonma/sanma to just start all the games
             header = f"Each lobby has a correct number of players, start with `/start_queued_games`!"
             for players, lobby, lobby_id in \
                     [(yh_players, YH_NAME, YH_TOURNAMENT_ID), (yt_players, YT_NAME, YT_TOURNAMENT_ID),
@@ -309,12 +329,7 @@ class LonghornRiichiUtilities(commands.Cog):
                     msg += f"- **{lobby} ({lobby_id})**: {', '.join(p.nickname or 'AI' for p in players)}\n"
         else:
             # otherwise, partition everyone up into tables and give a suggestion of who goes where
-            if check_voice_channel == True:
-                voice_channel = await self.bot.fetch_channel(VOICE_CHANNEL_ID)
-                assert isinstance(voice_channel, VoiceChannel)
-                header, msg = self._split_queued_players([member.name for member in voice_channel.members])
-            else:
-                header, msg = self._split_queued_players(yh_players + yt_players + sh_players + st_players)
+            header, msg = self._split_queued_players(yh_players + yt_players + sh_players + st_players)
 
         if len(msg) > 0:
             green = Colour.from_str("#1EA51E")
