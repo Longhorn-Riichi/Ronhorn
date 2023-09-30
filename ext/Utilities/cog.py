@@ -20,6 +20,10 @@ YH_TOURNAMENT_ID: str         = assert_getenv("yh_tournament_id")
 YT_TOURNAMENT_ID: str         = assert_getenv("yt_tournament_id")
 SH_TOURNAMENT_ID: str         = assert_getenv("sh_tournament_id")
 ST_TOURNAMENT_ID: str         = assert_getenv("st_tournament_id")
+YH_UNIQUE_ID: str             = int(assert_getenv("yh_contest_unique_id"))
+YT_UNIQUE_ID: str             = int(assert_getenv("yt_contest_unique_id"))
+SH_UNIQUE_ID: str             = int(assert_getenv("sh_contest_unique_id"))
+ST_UNIQUE_ID: str             = int(assert_getenv("st_contest_unique_id"))
 YH_NAME: str                  = assert_getenv("yh_name")
 YT_NAME: str                  = assert_getenv("yt_name")
 SH_NAME: str                  = assert_getenv("sh_name")
@@ -527,13 +531,13 @@ class LonghornRiichiUtilities(commands.Cog):
             record = record_list[0]
             # figure out which lobby the game was played in
             contest_uid = record.config.meta.contest_uid
-            uid_to_name = {YH_TOURNAMENT_ID: YH_NAME, YT_TOURNAMENT_ID: YT_NAME, SH_TOURNAMENT_ID: SH_NAME, ST_TOURNAMENT_ID: ST_NAME}
-            if contest_uid not in uid_to_name:
+            uid_to_name = {YH_UNIQUE_ID: YH_NAME, YT_UNIQUE_ID: YT_NAME, SH_UNIQUE_ID: SH_NAME, ST_UNIQUE_ID: ST_NAME}
+            if contest_uid not in uid_to_name.keys():
                 raise Exception(f"/submit_game was given a game which wasn't played in our lobby. (uid={contest_uid})\n{link}")
             resp = await self.get_cog(uid_to_name[contest_uid]).add_game_to_leaderboard(uuid, record)
         except Exception as e:
             return await interaction.followup.send(content="Error: " + str(e))
-        await interaction.followup.send(content=f"Successfully submitted the game to {lobby.value} leaderboard.\n" + resp, suppress_embeds=True)
+        await interaction.followup.send(content=f"Successfully submitted the game to {uid_to_name[contest_uid]} leaderboard.\n" + resp, suppress_embeds=True)
 
     # @app_commands.command(name="info", description=f"Look up a player's club info (e.g. Mahjong Soul ID).")
     # @app_commands.describe(server_member="The player to lookup.")
