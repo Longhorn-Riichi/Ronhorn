@@ -517,7 +517,7 @@ class LonghornRiichiUtilities(commands.Cog):
     @app_commands.describe(link="The Mahjong Soul club game link to submit.")
     @app_commands.checks.has_role(OFFICER_ROLE)
     async def submit_game(self, interaction: Interaction, link: str):
-        await interaction.response.defer(ephemeral=True)
+        await interaction.response.defer()
         # extract the uuid from the game link
         try:
             uuid = parse_majsoul_link(link)[0]
