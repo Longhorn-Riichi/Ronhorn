@@ -4,7 +4,7 @@ import gspread
 import logging
 import requests
 from discord.ext import commands
-from discord import app_commands, Colour, Embed, Interaction
+from discord import app_commands, Colour, Embed, Interaction, VoiceChannel
 from typing import *
 from ext.LobbyManagers.cog import LobbyManager
 from .display_hand import replace_text
@@ -25,6 +25,7 @@ YT_NAME: str                  = assert_getenv("yt_name")
 SH_NAME: str                  = assert_getenv("sh_name")
 ST_NAME: str                  = assert_getenv("st_name")
 REGISTRY_NAME_LENGTH: int     = int(assert_getenv("max_name_len"))
+VOICE_CHANNEL_ID: int         = int(assert_getenv("voice_channel_id"))
 
 class LonghornRiichiUtilities(commands.Cog):
     """
@@ -276,12 +277,13 @@ class LonghornRiichiUtilities(commands.Cog):
         header = f"{num} players can be split into"
         header += f" {yonma} yonma table{'' if yonma == 1 else 's'} and"
         header += f" {sanma} sanma table{'' if sanma == 1 else 's'}. Possible assignment:"
-        msg = f"- **Yonma Hanchan ({YH_TOURNAMENT_ID})**: {', '.join(p.nickname or 'AI' for p in players[:yonma*4])}\n"
-        msg += f"- **Sanma Hanchan ({SH_TOURNAMENT_ID})**: {', '.join(p.nickname or 'AI' for p in players[yonma*4:])}\n"
+        to_playername = lambda player: player if isinstance(player, str) else (player.nickname or 'AI')
+        msg = f"- **Yonma Hanchan ({YH_TOURNAMENT_ID})**: {', '.join(map(to_playername, players[:yonma*4]))}\n"
+        msg += f"- **Sanma Hanchan ({SH_TOURNAMENT_ID})**: {', '.join(map(to_playername, players[yonma*4:]))}\n"
         return header, msg
 
     @app_commands.command(name="check_queues", description=f"Check to see if everyone is queued up")
-    async def check_queues(self, interaction: Interaction):
+    async def check_queues(self, interaction: Interaction, check_voice_channel: Optional[bool]):
         await interaction.response.defer()
         yh_players = await self._get_queued_players(YH_NAME)
         yt_players = await self._get_queued_players(YT_NAME)
@@ -303,7 +305,12 @@ class LonghornRiichiUtilities(commands.Cog):
                     msg += f"- **{lobby} ({lobby_id})**: {', '.join(p.nickname or 'AI' for p in players)}\n"
         else:
             # otherwise, partition everyone up into tables and give a suggestion of who goes where
-            header, msg = self._split_queued_players(yh_players + yt_players + sh_players + st_players)
+            if check_voice_channel == True:
+                voice_channel = await self.bot.fetch_channel(VOICE_CHANNEL_ID)
+                assert isinstance(voice_channel, VoiceChannel)
+                header, msg = self._split_queued_players([member.name for member in voice_channel.members])
+            else:
+                header, msg = self._split_queued_players(yh_players + yt_players + sh_players + st_players)
 
         if len(msg) > 0:
             green = Colour.from_str("#1EA51E")
