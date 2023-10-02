@@ -14,6 +14,10 @@ class EventPoster(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.timezone = datetime.timezone(datetime.timedelta(hours=-5)) # CST = UTC-5
+        with open("images/sunday_cover_image.png", "rb") as f:
+            self.sunday_image = f.read()
+        with open("images/friday_cover_image.png", "rb") as f:
+            self.friday_image = f.read()
 
     async def post_sunday_event(self):
         today = datetime.date.today()
@@ -27,6 +31,7 @@ class EventPoster(commands.Cog):
             end_time = datetime.datetime.combine(date=next_sunday, time=six_pm, tzinfo=self.timezone),
             entity_type = discord.EntityType.external,
             privacy_level = discord.PrivacyLevel.guild_only,
+            image = self.sunday_image,
             location = "WCP Student Activity Center, Room 2.120")
 
     async def post_friday_event(self):
@@ -41,6 +46,7 @@ class EventPoster(commands.Cog):
             end_time = datetime.datetime.combine(date=next_friday, time=ten_pm, tzinfo=self.timezone),
             entity_type = discord.EntityType.external,
             privacy_level = discord.PrivacyLevel.guild_only,
+            image = self.friday_image,
             location = "Mahjong Soul")
 
     @tasks.loop(hours=24)

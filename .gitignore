@@ -17,3 +17,6 @@ cached_games/*
 
 # cache
 cached_results/*
+
+# images
+images/*
