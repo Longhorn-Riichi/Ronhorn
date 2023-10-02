@@ -396,16 +396,17 @@ class LonghornRiichiUtilities(commands.Cog):
             await interaction.followup.send(content=f"Successfully {'enabled' if enabled else 'disabled'} auto-matching for {lobby.value}.")
         else:
             await interaction.followup.send(content=f"Failed to {'enable' if enabled else 'disable'} auto-matching for {lobby.value}.")
-    @app_commands.command(name="enter_scores", description=f"Enter scores for an IRL game, starting with the East player. Only usable by @{OFFICER_ROLE}.")
+
+    @app_commands.command(name="enter_scores", description=f"Enter scores for an IRL game. Will check if points add up. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(game_type="Hanchan or tonpuu?",
-                           player1="The East player you want to record the score for.",
-                           score1="Score for player 1.",
-                           player2="The South player you want to record the score for.",
-                           score2="Score for player 2.",
-                           player3="The West player you want to record the score for.",
-                           score3="Score for player 3.",
-                           player4="The (optional) North player you want to record the score for.",
-                           score4="Score for player 4.",
+                           east_player="The East player you want to record the score for.",
+                           east_score="The East player's score.",
+                           south_player="The South player you want to record the score for.",
+                           south_score="The South player's score.",
+                           west_player="The West player you want to record the score for.",
+                           west_score="The West player's score.",
+                           north_player="The (optional) North player you want to record the score for.",
+                           north_score="The North player's score.",
                            riichi_sticks="(optional) Number of riichi sticks left on the table.")
     @app_commands.choices(game_type=[
         app_commands.Choice(name="Hanchan", value="Hanchan"),
@@ -414,24 +415,25 @@ class LonghornRiichiUtilities(commands.Cog):
     @app_commands.checks.has_role(OFFICER_ROLE)
     async def enter_scores(self, interaction: Interaction,
                                  game_type: app_commands.Choice[str],
-                                 player1: discord.Member, score1: int,
-                                 player2: discord.Member, score2: int,
-                                 player3: discord.Member, score3: int,
-                                 player4: Optional[discord.Member] = None, score4: Optional[int] = None,
+                                 east_player: discord.Member, east_score: int,
+                                 south_player: discord.Member, south_score: int,
+                                 west_player: discord.Member, west_score: int,
+                                 north_player: Optional[discord.Member] = None, north_score: Optional[int] = None,
                                  riichi_sticks: int = 0):
         await interaction.response.defer()
         try:
-            if player4 is None:
+            if north_player is None:
                 expected_total = 3*35000
-                players = [player1, player2, player3]
-                scores = [score1, score2, score3]
+                players = [east_player, south_player, west_player]
+                scores = [east_score, south_score, west_score]
                 game_style = "Sanma"
             else:
-                if score4 is None:
-                    return await interaction.followup.send(content=f"Error: must enter Player 4's score.")
+                if north_score is None:
+                    return await interaction.followup.send(content=f"Error: must enter North player's score for a yonma game.")
+                assert north_score is not None
                 expected_total = 4*25000
-                players = [player1, player2, player3, player4]
-                scores = [score1, score2, score3, score4]
+                players = [east_player, south_player, west_player, north_player]
+                scores = [east_score, south_score, west_score, north_score]
                 game_style = "Yonma"
 
             total_score = sum(scores) + 1000*riichi_sticks
@@ -459,7 +461,7 @@ class LonghornRiichiUtilities(commands.Cog):
                               "- **1st**: {}: {}\n" \
                               "- **2nd**: {}: {}\n" \
                               "- **3rd**: {}: {}"
-            if player4 is not None:
+            if north_player is not None:
                 score_printout += "\n- **4th**: {}: {}"
 
             await interaction.followup.send(content=score_printout.format(*player_score_strings))
