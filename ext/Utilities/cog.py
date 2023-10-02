@@ -63,7 +63,7 @@ class LonghornRiichiUtilities(commands.Cog):
     =====================================================
     """
 
-    @app_commands.command(name="help", description="show help about club online games")
+    @app_commands.command(name="help", description="Learn how to play online club games.")
     async def help(self, interaction: Interaction):
         await interaction.response.send_message(
             content=(
@@ -78,6 +78,58 @@ class LonghornRiichiUtilities(commands.Cog):
                 "4. You can **follow** the lobbies for easier access.\n"
                 "Helpful commands for when people need to be AFK (do NOT abuse!):\n"
                 "`/terminate_own_game`, `/pause_own_game`, `/unpause_own_game`"),
+            ephemeral=True)
+
+    @app_commands.command(name="help_commands", description="Learn how to use slash commands.")
+    async def help_commands(self, interaction: Interaction):
+        command_help = [
+            "### Registration:",
+            "- `/register`: Register your Discord account with the club. Registration is required to show up on the club leaderboard. You must enter a preferred name, and optionally your Mahjong Soul account. Can be used to update your existing registration.",
+            "- `/unregister`: Removes your own registration (from `/register`)",
+            "### Information:",
+            "- `/info`: Look up a player's club info (e.g. Mahjong Soul ID).",
+            "- `/stats`: Look up a player's club stats (e.g. leaderboard placement).",
+            "- `/parse`: Display a summary of the provided game log link. Has an option to display winning and starting hands.",
+            "- `/nodocchi`: Get a Nodocchi link for a given tenhou.net username.",
+            "- `/amae_koromo`: Get an Amae-Koromo link for a given Mahjong Soul username.",
+            "### Lobby commands:",
+            "- `/check_queues`: Checks to see if everyone is queued up in the Mahjong Soul club lobbies. Has an option to check the voice channel for players instead.",
+            "- `/start_queued_games`: Start games for everyone queued up in the Mahjong Soul club lobbies.",
+            "### In-game commands (do not abuse):",
+            "- `/terminate_own_game`: Terminate the game you are currently in.",
+            "- `/pause_own_game`: Pause the game you are currently in.",
+            "- `/unpause_own_game`: Unpause the paused game you were in.",
+            "### Other:",
+            "- `/injustice`: Analyze the provided game log link for instances of *mahjong injustice*.",
+            "- `/skill`: Analyze the provided game log link for instances of *mahjong skill*.",
+            "- `/display`: Write a message, replacing mahjong notation (like 123p 3z3Z3z) with mahjong tile emotes.",
+        ]
+        green = Colour.from_str("#1EA51E")
+        await interaction.response.send_message(
+            content="List of commands:", embed=Embed(description="\n".join(command_help), colour=green),
+            ephemeral=True)
+
+    @app_commands.command(name="help_officer_commands", description="Learn how to use slash commands (for officers).")
+    @app_commands.checks.has_role(OFFICER_ROLE)
+    async def help_officer_commands(self, interaction: Interaction):
+        command_help = [
+            "### Registration:",
+            "- `/unregister_other`: Unregister a given Discord user.",
+            "- `/update_membership`: Updates a given Discord user's paid membership status.",
+            "- `/replace_role`: Remove or replace a provided role for everyone with that role. Used to give <@&1103562892097376308> to all the <@&922743943337218048>s.",
+            "### Lobby commands:",
+            "- `/toggle_auto_match`: Enable or disable auto-matching for a given lobby.",
+            "### In-game commands:",
+            "- `/terminate_any_game`: Terminate the game a given player is in.",
+            "- `/pause_any_game`: Pause the game a given player is in.",
+            "- `/unpause_any_game`: Unpause the game a given player is in.",
+            "### Submitting games:",
+            "- `/enter_scores`: Submit an IRL game to the leaderboard, given the scores of each player. If the given scores don't total up to the expected total score, the submission is rejected.",
+            "- `/submit_game`: Submit an online game to the leaderboard, given a link to the game's log.",
+        ]
+        green = Colour.from_str("#1EA51E")
+        await interaction.response.send_message(
+            content="List of officer commands:", embed=Embed(description="\n".join(command_help), colour=green),
             ephemeral=True)
 
     @app_commands.command(name="terminate_any_game", description=f"Terminate the game of the specified player. Only usable by @{OFFICER_ROLE}.")
@@ -290,7 +342,7 @@ class LonghornRiichiUtilities(commands.Cog):
         msg += f"- **Sanma Hanchan ({SH_TOURNAMENT_ID})**: {name_list_to_str(player_names[yonma*4:])}\n"
         return header, msg
 
-    @app_commands.command(name="check_queues", description=f"Check to see if everyone is queued up")
+    @app_commands.command(name="check_queues", description=f"Check to see if everyone is queued up on Mahjong Soul.")
     @app_commands.describe(
         check_voice_channel="Whether to check the voice channel for players instead.",
         exclude1="A player who wishes to not be included in the check.",
@@ -337,7 +389,7 @@ class LonghornRiichiUtilities(commands.Cog):
         else:
             await interaction.followup.send(content=header)
 
-    @app_commands.command(name="start_queued_games", description=f"Start games for all queued players in each tournament lobby.")
+    @app_commands.command(name="start_queued_games", description=f"Start games for everyone queued up in the Mahjong Soul club lobbies.")
     async def start_queued_games(self, interaction: Interaction):
         await interaction.response.defer()
         yh_players = await self._get_queued_players(YH_NAME)
@@ -377,7 +429,7 @@ class LonghornRiichiUtilities(commands.Cog):
     async def _toggle_auto_match(self, lobby_name: str, enabled: bool):
         await self.get_cog(lobby_name).manager.call("updateContestGameRule", auto_match=enabled)
 
-    @app_commands.command(name="toggle_auto_match", description=f"Test command")
+    @app_commands.command(name="toggle_auto_match", description=f"Enable or disable auto-matching for a given lobby. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(
         lobby="Which lobby do you want to configure?",
         enabled="True if you want to enable auto matching")
@@ -497,7 +549,7 @@ class LonghornRiichiUtilities(commands.Cog):
     @app_commands.describe(old_role="The role to be removed/replaced",
                            new_role="The new role to replace the old one with")
     @app_commands.checks.has_role(OFFICER_ROLE)
-    async def new_season_setup(self, interaction: Interaction, old_role: discord.Role, new_role: Optional[discord.Role]):
+    async def replace_role(self, interaction: Interaction, old_role: discord.Role, new_role: Optional[discord.Role]):
         """
         This is good for scenarios like replacing @Paid Member with @Past Paid Member
         """
@@ -620,7 +672,7 @@ class GlobalUtilities(commands.Cog):
         majsoul_id = result[0]["id"]
         await interaction.followup.send(content=f"https://amae-koromo.sapk.ch/player/{majsoul_id}")
 
-    @app_commands.command(name="display", description=f"Display mahjong tiles in place of the mahjong notation like 123p 3z3Z3z")
+    @app_commands.command(name="display", description=f"Write a message, replacing mahjong notation (like 123p 3z3Z3z) with mahjong tile emotes.")
     @app_commands.describe(text="The text containing mahjong tiles to display")
     async def display(self, interaction: Interaction, text: str):
         await interaction.response.send_message(replace_text(text))
