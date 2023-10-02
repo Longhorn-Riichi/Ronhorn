@@ -6,6 +6,10 @@ import logging
 from discord.ext import commands, tasks
 from typing import *
 
+from global_stuff import assert_getenv
+
+GUILD_ID: int = int(assert_getenv("guild_id"))
+
 class EventPoster(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -57,18 +61,14 @@ class EventPoster(commands.Cog):
             print("Posting friday event!")
             await self.post_friday_event()
 
-    async def async_setup(self, guild_id: int):
-        self.guild = await self.bot.fetch_guild(guild_id)
-        print("Hello World!")
+    async def async_setup(self):
+        self.guild = await self.bot.fetch_guild(GUILD_ID)
         await self.try_post_events()
 
 
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{EventPoster.__name__}`...")
-    with open('event_poster_servers.json', 'r') as file:
-        event_poster_servers = json.load(file)
-    for guild_id in event_poster_servers.values():
-        cog = EventPoster(bot)
-        asyncio.create_task(cog.async_setup(guild_id))
-        await bot.add_cog(cog, guilds=[discord.Object(id=guild_id)])
+    cog = EventPoster(bot)
+    asyncio.create_task(cog.async_setup())
+    await bot.add_cog(cog, guilds=[discord.Object(id=GUILD_ID)])

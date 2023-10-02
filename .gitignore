@@ -3,7 +3,6 @@ config.env
 gs_service_account.json
 injustice_servers.json
 slash_commands_servers.json
-event_poster_servers.json
 
 # generated local files
 Pipfile.lock
