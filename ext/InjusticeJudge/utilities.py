@@ -270,20 +270,26 @@ async def draw_graph(link: str) -> BytesIO:
     font_path = "fonts/Arial Unicode MS.ttf"
     fm.fontManager.addfont(font_path)
     font_prop = fm.FontProperties(fname=font_path)
-    plt.rcParams['font.family'] = font_prop.get_name()
+    plt.rcParams["font.family"] = font_prop.get_name()
+    plt.rcParams["font.size"] = 24
+    plt.rcParams["text.color"] = "gray"
+    plt.rcParams["xtick.color"] = "gray"
+    plt.rcParams["ytick.color"] = "gray"
+    plt.rcParams["figure.figsize"] = [12.8, 8.4]
     plt.xticks(rotation=45, ha="right")
-    plt.margins(0)
+    plt.margins(0.02)
+    plt.box(False)
 
     # draw the graph
     rounds = [""] + [round_name(kyoku.round, kyoku.honba) for kyoku in kyokus]
     scores = [[kyoku.start_scores[i] for kyoku in kyokus] + [game_metadata.game_score[i]] for i in range(game_metadata.num_players)]
-    colors = ["red", "blue", "green", "purple"]
+    colors = ["orangered", "gold", "forestgreen", "darkviolet"]
     for name, score, color in zip(game_metadata.name, scores, colors):
-        plt.plot(rounds, score, label=name, color=color, alpha=0.8)
-        plt.annotate(str(score[-1]), (rounds[-1], score[-1]), textcoords="offset points", xytext=(5,0), va="center")
-    plt.grid(linestyle='--', linewidth=1.0)
-    plt.axhline(0, color='black', linewidth=1.0)
-    plt.legend(loc="upper center", bbox_to_anchor=(0.5, 1.15), ncol=game_metadata.num_players)
+        plt.plot(rounds, score, label=name, color=color, alpha=0.8, linewidth=8)
+        plt.annotate(str(score[-1]), (rounds[-1], score[-1]), textcoords="offset points", xytext=(10,0), va="center")
+    plt.grid(linestyle="--", linewidth=1.0)
+    plt.axhline(0, color="gray", linewidth=4.0)
+    plt.legend(loc="upper center", bbox_to_anchor=(0.5, 1.15), framealpha=0, ncol=range(game_metadata.num_players), handlelength=0.04)
     plt.tight_layout()
 
     # return as a BytesIO object
