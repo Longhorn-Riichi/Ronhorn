@@ -1,12 +1,13 @@
 import logging
 import json
 import discord
+from io import BytesIO
 from discord.ext import commands
 from discord import app_commands, Colour, Embed, Interaction
 from typing import *
 
 # InjusticeJudge imports
-from .utilities import analyze_game, long_followup, parse_game
+from .utilities import analyze_game, draw_graph, long_followup, parse_game, parse_link
 from global_stuff import slash_commands_guilds
 
 class Injustice(commands.Cog):
@@ -72,16 +73,22 @@ class Injustice(commands.Cog):
 class ParseLog(commands.Cog):
     @app_commands.command(name="parse", description=f"Print out the results of a game.")  # type: ignore[arg-type]
     @app_commands.describe(link="Link to the game to describe (Mahjong Soul or tenhou.net).",
-                           display_hands="Display all hands, or just mangan+ hands?")
+                           display_hands="Display all hands, or just mangan+ hands?",
+                           display_graph="Display a graph summary of the game?")
     @app_commands.choices(display_hands=[
         app_commands.Choice(name="Mangan+ hands and starting hands", value="Mangan+ hands and starting hands"),
         app_commands.Choice(name="Mangan+ hands", value="Mangan+ hands"),
         app_commands.Choice(name="All winning hands and starting hands", value="All winning hands and starting hands"),
         app_commands.Choice(name="All winning hands", value="All winning hands")])
-    async def parse(self, interaction: Interaction, link: str, display_hands: Optional[app_commands.Choice[str]] = None):
+    async def parse(self, interaction: Interaction, link: str, display_hands: Optional[app_commands.Choice[str]] = None, display_graph: Optional[bool] = None):
         await interaction.response.defer()
         header, ret = await parse_game(link, display_hands.value if display_hands is not None else None)
         await long_followup(interaction, ret, header)
+        if display_graph:
+            image = await draw_graph(link)
+            identifier, _ = parse_link(link)
+            file = discord.File(fp=image, filename=f"game-{identifier}.png")
+            await interaction.channel.send(file=file)  # type: ignore[union-attr]
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{ParseLog.__name__}`...")

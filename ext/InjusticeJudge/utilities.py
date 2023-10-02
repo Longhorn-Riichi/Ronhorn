@@ -1,16 +1,19 @@
 import re
-from typing import *
+import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
+from io import BytesIO
 from global_stuff import account_manager
 from modules.pymjsoul.proto import liqi_combined_pb2 as proto
 from discord import Colour, Embed, Interaction
+from typing import *
 
 # InjusticeJudge imports
 from google.protobuf.json_format import MessageToDict  # type: ignore[import]
-from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_tenhou, parse_majsoul, save_cache, parse_wrapped_bytes, GameMetadata
+from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_majsoul, parse_majsoul_link, parse_tenhou, parse_tenhou_link, save_cache, parse_wrapped_bytes, GameMetadata
 from modules.InjusticeJudge.injustice_judge.injustices import evaluate_game
 from modules.InjusticeJudge.injustice_judge.classes2 import Kyoku
 from modules.InjusticeJudge.injustice_judge.constants import KO_TSUMO_SCORE, OYA_TSUMO_SCORE, TRANSLATE, YAOCHUUHAI
-from modules.InjusticeJudge.injustice_judge.display import ph, pt, short_round_name
+from modules.InjusticeJudge.injustice_judge.display import ph, pt, round_name, short_round_name
 
 async def long_followup(interaction: Interaction, chunks: List[str], header: str):
     """Followup with a long message by breaking it into multiple messages"""
@@ -260,3 +263,47 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
             ret[-1] += to_add
 
     return header, ret
+
+async def draw_graph(link: str) -> BytesIO:
+    kyokus, game_metadata, player = await parse_game_link(link)
+    # setup matplotlib
+    font_path = "fonts/Arial Unicode MS.ttf"
+    fm.fontManager.addfont(font_path)
+    font_prop = fm.FontProperties(fname=font_path)
+    plt.rcParams['font.family'] = font_prop.get_name()
+    plt.xticks(rotation=45, ha="right")
+    plt.margins(0)
+
+    # draw the graph
+    rounds = [""] + [round_name(kyoku.round, kyoku.honba) for kyoku in kyokus]
+    scores = [[kyoku.start_scores[i] for kyoku in kyokus] + [game_metadata.game_score[i]] for i in range(game_metadata.num_players)]
+    colors = ["red", "blue", "green", "purple"]
+    for name, score, color in zip(game_metadata.name, scores, colors):
+        plt.plot(rounds, score, label=name, color=color, alpha=0.8)
+        plt.annotate(str(score[-1]), (rounds[-1], score[-1]), textcoords="offset points", xytext=(5,0), va="center")
+    plt.grid(linestyle='--', linewidth=1.0)
+    plt.axhline(0, color='black', linewidth=1.0)
+    plt.legend(loc="upper center", bbox_to_anchor=(0.5, 1.15), ncol=game_metadata.num_players)
+    plt.tight_layout()
+
+    # return as a BytesIO object
+    buf = BytesIO()
+    plt.savefig(buf, format="png", transparent=True)
+    buf.seek(0)
+    plt.cla()
+    plt.clf()
+    return buf
+
+def parse_link(link: str) -> Tuple[str, Optional[int]]:
+    try:
+        return parse_tenhou_link(link)
+    except:
+        pass
+
+    try:
+        identifier, _, player_seat = parse_majsoul_link(link)
+        return identifier, player_seat
+    except:
+        pass
+
+    raise Exception(f"Could not parse link: {link}")
