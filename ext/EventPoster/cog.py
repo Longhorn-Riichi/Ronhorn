@@ -26,6 +26,7 @@ class EventPoster(commands.Cog):
             start_time = datetime.datetime.combine(date=next_sunday, time=two_pm, tzinfo=self.timezone),
             end_time = datetime.datetime.combine(date=next_sunday, time=six_pm, tzinfo=self.timezone),
             entity_type = discord.EntityType.external,
+            privacy_level = discord.PrivacyLevel.guild_only,
             location = "WCP Student Activity Center, Room 2.120")
 
     async def post_friday_event(self):
@@ -39,6 +40,7 @@ class EventPoster(commands.Cog):
             start_time = datetime.datetime.combine(date=next_friday, time=eight_pm, tzinfo=self.timezone),
             end_time = datetime.datetime.combine(date=next_friday, time=ten_pm, tzinfo=self.timezone),
             entity_type = discord.EntityType.external,
+            privacy_level = discord.PrivacyLevel.guild_only,
             location = "Mahjong Soul")
 
     @tasks.loop(hours=24)
