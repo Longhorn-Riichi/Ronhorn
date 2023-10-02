@@ -15,12 +15,12 @@ class EventPoster(commands.Cog):
         today = datetime.date.today()
         next_sunday = today + datetime.timedelta(days=((6 - today.weekday() - 1) % 7) + 1)
         two_pm = datetime.time(hour=14)
-        four_pm = datetime.time(hour=16)
+        six_pm = datetime.time(hour=18)
         await self.guild.create_scheduled_event(
             name = "Riichi Sunday",
             description = "This is our weekly meetup, where we'll be **teaching and playing** Riichi! The meeting location is WCP Student Activity Center, room 2.120, 2-4 PM. We can play more after 4 PM in the same building.",
             start_time = datetime.datetime.combine(date=next_sunday, time=two_pm, tzinfo=self.timezone),
-            end_time = datetime.datetime.combine(date=next_sunday, time=four_pm, tzinfo=self.timezone),
+            end_time = datetime.datetime.combine(date=next_sunday, time=six_pm, tzinfo=self.timezone),
             entity_type = discord.EntityType.external,
             location = "WCP Student Activity Center, Room 2.120")
 
