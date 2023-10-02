@@ -280,13 +280,32 @@ async def draw_graph(link: str) -> BytesIO:
     plt.margins(0.02)
     plt.box(False)
 
-    # draw the graph
+    # collect data
     rounds = [""] + [round_name(kyoku.round, kyoku.honba) for kyoku in kyokus]
     scores = [[kyoku.start_scores[i] for kyoku in kyokus] + [game_metadata.game_score[i]] for i in range(game_metadata.num_players)]
     colors = ["orangered", "gold", "forestgreen", "darkviolet"]
-    for name, score, color in zip(game_metadata.name, scores, colors):
+
+    # calculate offsets for annotations (so numbers don't overlap)
+    min_score = min(score for scores_per_round in scores for score in scores_per_round)
+    max_score = max(score for scores_per_round in scores for score in scores_per_round)
+    min_separation = (max_score - min_score) / 12
+    check_closeness = True
+    gas = 1000
+    yoffsets = [0] * game_metadata.num_players
+    while check_closeness and gas >= 0:
+        check_closeness = False
+        gas -= 1
+        final_scores = sorted((scores_per_round[-1], i) for i, scores_per_round in enumerate(scores))
+        for (s1, i1), (s2, i2) in zip(final_scores[:-1], final_scores[1:]):
+            if (s2 + yoffsets[i2]) - (s1 + yoffsets[i1]) < min_separation:
+                check_closeness = True
+                yoffsets[i1] -= 100
+                yoffsets[i2] += 100
+
+    # draw the graph
+    for name, score, color, yoffset in zip(game_metadata.name, scores, colors, yoffsets):
         plt.plot(rounds, score, label=name, color=color, alpha=0.8, linewidth=8)
-        plt.annotate(str(score[-1]), (rounds[-1], score[-1]), textcoords="offset points", xytext=(10,0), va="center")
+        plt.annotate(str(score[-1]), (rounds[-1], score[-1]), textcoords="offset points", xytext=(10,yoffset//plt.rcParams["figure.dpi"]), va="center")
     plt.grid(linestyle="--", linewidth=1.0)
     plt.axhline(0, color="gray", linewidth=4.0)
     plt.legend(loc="upper center", bbox_to_anchor=(0.5, 1.15), framealpha=0, ncol=range(game_metadata.num_players), handlelength=0.04)
