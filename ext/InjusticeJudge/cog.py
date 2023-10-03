@@ -29,7 +29,6 @@ class Injustice(commands.Cog):
         app_commands.Choice(name="North", value="North"),
         app_commands.Choice(name="All", value="All")])
     async def injustice(self, interaction: Interaction, link: str, player: Optional[app_commands.Choice[str]]):
-        await interaction.response.defer()
         if player is None:
             player_set = set()
         elif player.value == "All":
