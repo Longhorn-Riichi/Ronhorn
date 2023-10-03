@@ -303,11 +303,11 @@ async def draw_graph(link: str) -> BytesIO:
                 yoffsets[i2] += 100
 
     # draw the graph
+    plt.grid(linestyle="--", linewidth=1.0)
+    plt.axhline(0, color="gray", linewidth=4.0)
     for name, score, color, yoffset in zip(game_metadata.name, scores, colors, yoffsets):
         plt.plot(rounds, score, label=name, color=color, alpha=0.8, linewidth=8, solid_capstyle="round")
         plt.annotate(str(score[-1]), (rounds[-1], score[-1]), textcoords="offset points", xytext=(10,yoffset//plt.rcParams["figure.dpi"]), va="center")
-    plt.grid(linestyle="--", linewidth=1.0)
-    plt.axhline(0, color="gray", linewidth=4.0)
     plt.legend(loc="upper center", bbox_to_anchor=(0.5, 1.15), framealpha=0, ncol=range(game_metadata.num_players), handlelength=0.04)
     plt.tight_layout()
 
