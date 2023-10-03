@@ -3,10 +3,11 @@ import json
 import discord
 from io import BytesIO
 from discord.ext import commands
-from discord import app_commands, Colour, Embed, Interaction
+from discord import app_commands, ui, ButtonStyle, Colour, Embed, Interaction
 from typing import *
 
 # InjusticeJudge imports
+from .commands import _parse, _injustice, _skill
 from .utilities import analyze_game, draw_graph, long_followup, parse_game, parse_link
 from global_stuff import slash_commands_guilds
 
@@ -30,45 +31,17 @@ class Injustice(commands.Cog):
     async def injustice(self, interaction: Interaction, link: str, player: Optional[app_commands.Choice[str]]):
         await interaction.response.defer()
         if player is None:
-            injustices = await analyze_game(link)
-            player_str = "player specified in the link"
+            player_set = set()
         elif player.value == "All":
-            try:
-                injustices = await analyze_game(link, {0,1,2,3})
-            except:
-                injustices = await analyze_game(link, {0,1,2})
-            player_str = f"all players"
+            player_set = {0,1,2,3}
         else:
-            dir_map = ["East", "South", "West", "North"]
-            try:
-                injustices = await analyze_game(link, {dir_map.index(player.value)})
-            except Exception as e:
-                if player.value == "North":
-                    await interaction.followup.send(content="Error: can't specify North player for a 3-player game.")
-                else:
-                    raise e
-            player_str = f"starting {player.value} player"
-        if injustices == []:
-            injustices = [f"No injustices detected for the {player_str}.\n"
-                           "Specify another player with the `player` option in `/injustice`.\n"
-                           "Did we miss an injustice? Contribute ideas [here](https://github.com/Longhorn-Riichi/InjusticeJudge/issues/1)!"]
-        as_player_string = "yourself" if player is None else "all players" if player.value == "All" else player.name
-        header = f"Input: {link}\nAnalysis result for **{as_player_string}**:"
-        await long_followup(interaction, injustices, header)
+            player_set = {["East", "South", "West", "North"].index(player.value)}
+        await _injustice(interaction, link, player_set)
 
     @app_commands.command(name="skill", description="Display instances of pure mahjong skill in a given game.")  # type: ignore[arg-type]
     @app_commands.describe(link="Link to the game to analyze (Mahjong Soul or tenhou.net)")
     async def skill(self, interaction: Interaction, link: str):
-        await interaction.response.defer()
-        try:
-            skills = await analyze_game(link, specified_players={0,1,2,3}, look_for={"skill"})
-        except:
-            skills = await analyze_game(link, specified_players={0,1,2}, look_for={"skill"})
-        if skills == []:
-            skills = [f"No skills detected for any player.\n"
-                       "Did we miss a skill? Contribute ideas [here](https://github.com/Longhorn-Riichi/InjusticeJudge/issues/10)!"]
-        header = f"Input: {link}\nSkills everyone pulled off this game:"
-        await long_followup(interaction, skills, header)
+        await _skill(interaction, link, {0,1,2,3})
 
 class ParseLog(commands.Cog):
     @app_commands.command(name="parse", description=f"Print out the results of a game.")  # type: ignore[arg-type]
@@ -81,14 +54,7 @@ class ParseLog(commands.Cog):
         app_commands.Choice(name="All winning hands and starting hands", value="All winning hands and starting hands"),
         app_commands.Choice(name="All winning hands", value="All winning hands")])
     async def parse(self, interaction: Interaction, link: str, display_hands: Optional[app_commands.Choice[str]] = None, display_graph: Optional[bool] = None):
-        await interaction.response.defer()
-        header, ret = await parse_game(link, display_hands.value if display_hands is not None else None)
-        await long_followup(interaction, ret, header)
-        if display_graph:
-            image = await draw_graph(link)
-            identifier, _ = parse_link(link)
-            file = discord.File(fp=image, filename=f"game-{identifier}.png")
-            await interaction.channel.send(file=file)  # type: ignore[union-attr]
+        await _parse(interaction, link, display_hands.value if display_hands is not None else None, display_graph)
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{ParseLog.__name__}`...")

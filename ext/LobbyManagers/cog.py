@@ -9,6 +9,7 @@ from typing import *
 
 from modules.mahjongsoul.contest_manager import ContestManager
 from global_stuff import assert_getenv, account_manager, registry, raw_scores, registry_lock, raw_scores_lock
+from .command_view import CommandSuggestionView
 
 BOT_CHANNEL_ID: int        = int(assert_getenv("bot_channel_id"))
 GUILD_ID: int              = int(assert_getenv("guild_id"))
@@ -107,7 +108,7 @@ class LobbyManager(commands.Cog):
         #       total_point (adopt the algorithm of `enter_scores` command)
         seat_player_dict = {a.seat: (a.account_id, a.nickname) for a in record.accounts}
 
-        player_scores_rendered = ["Game concluded! You can `/parse` the link below:"] # to be newline-separated
+        player_scores_rendered = ["Game concluded!"] # to be newline-separated
         player_scores_rendered.append(f"https://mahjongsoul.game.yo-star.com/?paipu={uuid}")
 
         timestamp = str(datetime.datetime.now()).split(".")[0]
@@ -160,7 +161,10 @@ class LobbyManager(commands.Cog):
             resp = await self.add_game_to_leaderboard(msg.game_uuid)
         except Exception as e:
             return await self.bot_channel.send(content="Error: " + str(e))
-        await self.bot_channel.send(content=resp, suppress_embeds=True)
+
+        link = f"https://mahjongsoul.game.yo-star.com/?paipu={msg.game_uuid}"
+        view = CommandSuggestionView(link, interaction, parse_enabled=True, injustice_enabled=True, skill_enabled=True)
+        await self.bot_channel.send(content=resp, suppress_embeds=True, view=view)
 
     """
     =====================================================
