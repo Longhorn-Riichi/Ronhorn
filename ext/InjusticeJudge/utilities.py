@@ -65,9 +65,10 @@ async def parse_game_link(link: str, specified_players: Set[int] = set()) -> Tup
 async def analyze_game(link: str, specified_players: Set[int] = set(), look_for: Set[str] = {"injustice"}) -> List[str]:
     try:
         kyokus, game_metadata, players = await parse_game_link(link, specified_players)
-    except:
+        return [result for kyoku in kyokus for result in evaluate_game(kyoku, players, game_metadata.name, look_for)]
+    except Exception as e:
         kyokus, game_metadata, players = await parse_game_link(link, specified_players - {3})
-    return [result for kyoku in kyokus for result in evaluate_game(kyoku, players, game_metadata.name, look_for)]
+        return [result for kyoku in kyokus for result in evaluate_game(kyoku, players, game_metadata.name, look_for)]
 
 async def fetch_majsoul(link: str):
     """
