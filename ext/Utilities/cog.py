@@ -564,16 +564,13 @@ class LonghornRiichiUtilities(commands.Cog):
                 await member.add_roles(new_role)
             await interaction.followup.send(content=f"Replaced the role `@{old_role}` with `@{new_role}` for everyone.")
 
-    @app_commands.command(name="submit_game", description=f"Submit a Mahjong Soul club game to the leaderboard. Only usable by @{OFFICER_ROLE}.")
-    @app_commands.describe(link="The Mahjong Soul club game link to submit.")
-    @app_commands.checks.has_role(OFFICER_ROLE)
-    async def submit_game(self, interaction: Interaction, link: str):
-        await interaction.response.defer()
+    async def _submit_game(self, interaction: Interaction, link: str) -> str:
         # extract the uuid from the game link
         try:
             uuid = parse_majsoul_link(link)[0]
         except:
-            return await interaction.followup.send(content="Error: expected mahjong soul link starting with \"https://mahjongsoul.game.yo-star.com/?paipu=\".")
+            await interaction.followup.send(content="Error: expected mahjong soul link starting with \"https://mahjongsoul.game.yo-star.com/?paipu=\".")
+            return ""
         try:
             # get the game record
             record_list = await account_manager.get_game_results([uuid])
@@ -587,8 +584,26 @@ class LonghornRiichiUtilities(commands.Cog):
                 raise Exception(f"/submit_game was given a game which wasn't played in our lobby. (uid={contest_uid})\n{link}")
             resp = await self.get_cog(uid_to_name[contest_uid]).add_game_to_leaderboard(uuid, record)
         except Exception as e:
-            return await interaction.followup.send(content="Error: " + str(e))
-        await interaction.followup.send(content=f"Successfully submitted the game to {uid_to_name[contest_uid]} leaderboard.\n" + resp, suppress_embeds=True)
+            await interaction.followup.send(content="Error: " + str(e))
+            return ""
+        return f"Successfully submitted the game to {uid_to_name[contest_uid]} leaderboard.\n" + resp
+
+    @app_commands.command(name="submit_game", description=f"Submit a Mahjong Soul club game to the leaderboard. Only usable by @{OFFICER_ROLE}.")
+    @app_commands.describe(link1="A Mahjong Soul club game link to submit.",
+                           link2="A Mahjong Soul club game link to submit.",
+                           link3="A Mahjong Soul club game link to submit.",
+                           link4="A Mahjong Soul club game link to submit.")
+    @app_commands.checks.has_role(OFFICER_ROLE)
+    async def submit_game(self, interaction: Interaction, link1: str, link2: Optional[str], link3: Optional[str], link4: Optional[str]):
+        await interaction.response.defer()
+        # extract the uuid from the game link
+        for i, link in enumerate((link1, link2, link3, link4)):
+            if link is not None:
+                resp = await self._submit_game(interaction, link)
+                if i == 0:
+                    await interaction.followup.send(content=resp, suppress_embeds=True)  # type: ignore[union-attr]
+                else:
+                    await interaction.channel.send(content=resp, suppress_embeds=True)  # type: ignore[union-attr]
 
     # @app_commands.command(name="info", description=f"Look up a player's club info (e.g. Mahjong Soul ID).")
     # @app_commands.describe(server_member="The player to lookup.")
