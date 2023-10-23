@@ -29,6 +29,7 @@ class Injustice(commands.Cog):
         app_commands.Choice(name="North", value="North"),
         app_commands.Choice(name="All", value="All")])
     async def injustice(self, interaction: Interaction, link: str, player: Optional[app_commands.Choice[str]]):
+        await interaction.response.defer()
         if player is None:
             player_set = set()
         elif player.value == "All":
@@ -40,6 +41,7 @@ class Injustice(commands.Cog):
     @app_commands.command(name="skill", description="Display instances of pure mahjong skill in a given game.")  # type: ignore[arg-type]
     @app_commands.describe(link="Link to the game to analyze (Mahjong Soul or tenhou.net)")
     async def skill(self, interaction: Interaction, link: str):
+        await interaction.response.defer()
         await _skill(interaction, link, {0,1,2,3})
 
 class ParseLog(commands.Cog):
@@ -53,6 +55,7 @@ class ParseLog(commands.Cog):
         app_commands.Choice(name="All winning hands and starting hands", value="All winning hands and starting hands"),
         app_commands.Choice(name="All winning hands", value="All winning hands")])
     async def parse(self, interaction: Interaction, link: str, display_hands: Optional[app_commands.Choice[str]] = None, display_graph: Optional[bool] = None):
+        await interaction.response.defer()
         await _parse(interaction, link, display_hands.value if display_hands is not None else None, display_graph)
 
 async def setup(bot: commands.Bot):

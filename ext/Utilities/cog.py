@@ -267,11 +267,10 @@ class LonghornRiichiUtilities(commands.Cog):
         real_name=f"Your preferred, real-life name (no more than {REGISTRY_NAME_LENGTH} characters)",
         friend_id="(optional) Mahjong Soul friend ID. Find it in the Friends tab; this is not your username.")
     async def register(self, interaction: Interaction, real_name: str, friend_id: Optional[int] = None):
+        await interaction.response.defer()
         if len(real_name) > REGISTRY_NAME_LENGTH:
             await interaction.response.send_message(f"Please keep your preferred name within {REGISTRY_NAME_LENGTH} characters and `/register` again.", ephemeral=True)
             return
-
-        await interaction.response.defer()
         assert isinstance(interaction.user, discord.Member)
         try:
             response = await self._register(real_name, interaction.user, friend_id)
@@ -291,8 +290,8 @@ class LonghornRiichiUtilities(commands.Cog):
 
     @app_commands.command(name="unregister", description="Remove your registered information.")
     async def unregister(self, interaction: Interaction):
-        assert isinstance(interaction.user, discord.Member)
         await interaction.response.defer()
+        assert isinstance(interaction.user, discord.Member)
         response = await self._unregister(interaction.user)
         await interaction.followup.send(content=response)
 

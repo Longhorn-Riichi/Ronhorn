@@ -4,7 +4,6 @@ from discord import app_commands, ui, ButtonStyle, Colour, Embed, Interaction
 from typing import *
 
 async def _parse(interaction: Interaction, link: str, display_hands: Optional[str] = None, display_graph: Optional[bool] = None):
-    await interaction.response.defer()
     header, ret = await parse_game(link, display_hands)
     await long_followup(interaction, ret, header)
     if display_graph:
@@ -14,7 +13,6 @@ async def _parse(interaction: Interaction, link: str, display_hands: Optional[st
         await interaction.channel.send(file=file)  # type: ignore[union-attr]
 
 async def _injustice(interaction: Interaction, link: str, player_set: Set[int]):
-    await interaction.response.defer()
     if len(player_set) == 0:
         player_name = "yourself"
         player_str = "the player specified in the link"
@@ -33,7 +31,6 @@ async def _injustice(interaction: Interaction, link: str, player_set: Set[int]):
     await long_followup(interaction, injustices, header)
 
 async def _skill(interaction: Interaction, link: str, player_set: Set[int]):
-    await interaction.response.defer()
     skills = await analyze_game(link, specified_players=player_set, look_for={"skill"})
     if skills == []:
         skills = [f"No skills detected for any player.\n"
