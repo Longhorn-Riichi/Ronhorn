@@ -49,7 +49,7 @@ class EventPoster(commands.Cog):
             image = self.friday_image,
             location = "Mahjong Soul")
 
-    @tasks.loop(hours=24)
+    @tasks.loop(hours=24, reconnect=True)
     async def try_post_events(self):
         events = await self.guild.fetch_scheduled_events()
         sunday_event_exists = False
@@ -60,6 +60,8 @@ class EventPoster(commands.Cog):
                 sunday_event_exists = True
             elif weekday == 4:
                 friday_event_exists = True
+
+        print("Looking to post weekly events...")
 
         if not sunday_event_exists:
             print("Posting sunday event!")
@@ -72,6 +74,16 @@ class EventPoster(commands.Cog):
     async def async_setup(self):
         self.guild = await self.bot.fetch_guild(GUILD_ID)
         await self.try_post_events()
+        self.try_post_events.start()
+
+    # ensure bot is ready before try_post_events is called
+    @try_post_events.before_loop
+    async def try_post_events_ready(self):
+        await self.bot.wait_until_ready()
+
+    @try_post_events.error
+    async def try_post_events_error(self, error):
+        print(f"Error in posting events: {error}")
 
 
 
