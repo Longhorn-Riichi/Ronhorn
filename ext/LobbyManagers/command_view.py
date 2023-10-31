@@ -40,6 +40,7 @@ class CommandSuggestionView(ui.View):
 
     @ui.button(label="/parse", style=ButtonStyle.blurple, row=0)
     async def parse_button(self, interaction: Interaction, button: ui.Button) -> None:
+        await interaction.response.defer()
         await _parse(interaction, self.link, None, True)
         print("parse clicked")
         button.disabled = True
@@ -48,6 +49,7 @@ class CommandSuggestionView(ui.View):
 
     @ui.button(label="/injustice", style=ButtonStyle.blurple, row=0)
     async def injustice_button(self, interaction: Interaction, button: ui.Button) -> None:
+        await interaction.response.defer()
         await _injustice(interaction, self.link, {0,1,2,3})
         print("injustice clicked")
         button.disabled = True
@@ -56,6 +58,7 @@ class CommandSuggestionView(ui.View):
 
     @ui.button(label="/skill", style=ButtonStyle.blurple, row=0)
     async def skill_button(self, interaction: Interaction, button: ui.Button) -> None:
+        await interaction.response.defer()
         await _skill(interaction, self.link, {0,1,2,3})
         print("skill clicked")
         button.disabled = True
