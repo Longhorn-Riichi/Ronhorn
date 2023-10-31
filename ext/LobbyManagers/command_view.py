@@ -1,18 +1,16 @@
 
 from io import BytesIO
-from discord import app_commands, ui, ButtonStyle, Interaction
+from discord import app_commands, ui, ButtonStyle, Interaction, Message
 from ..InjusticeJudge.commands import _parse, _injustice, _skill
 
 class CommandSuggestionView(ui.View):
     def __init__(self, link: str, 
-                       original_interaction: Interaction,
                        parse_enabled: bool = True,
                        injustice_enabled: bool = True,
                        skill_enabled: bool = True,
-                       timeout: float = 60):
+                       timeout: float = 60) -> None:
         super().__init__(timeout = timeout)
         self.link = link
-        self.original_interaction = original_interaction
         self.parse_enabled = parse_enabled
         self.injustice_enabled = injustice_enabled
         self.skill_enabled = skill_enabled
@@ -24,21 +22,24 @@ class CommandSuggestionView(ui.View):
                     self.remove_item(child)
                 elif child.label == "/skill" and not skill_enabled:
                     self.remove_item(child)
+    def set_message(self, message: Message) -> None:
+        self.message = message
 
-    async def on_timeout(self):
+    async def on_timeout(self) -> None:
         await self.remove_view()
 
-    async def remove_view(self):
-        await self.original_interaction.edit_original_response(view=None)
+    async def remove_view(self) -> None:
+        await self.message.edit(view=None)
         self.stop()
-    async def update_view(self):
+
+    async def update_view(self) -> None:
         if not (self.parse_enabled or self.injustice_enabled or self.skill_enabled):
             await self.remove_view()
         else:
-            await self.original_interaction.edit_original_response(view=self)
+            await self.message.edit(view=self)
 
     @ui.button(label="/parse", style=ButtonStyle.blurple, row=0)
-    async def parse_button(self, interaction: Interaction, button: ui.Button):
+    async def parse_button(self, interaction: Interaction, button: ui.Button) -> None:
         await _parse(interaction, self.link, None, True)
         print("parse clicked")
         button.disabled = True
@@ -46,7 +47,7 @@ class CommandSuggestionView(ui.View):
         await self.update_view()
 
     @ui.button(label="/injustice", style=ButtonStyle.blurple, row=0)
-    async def injustice_button(self, interaction: Interaction, button: ui.Button):
+    async def injustice_button(self, interaction: Interaction, button: ui.Button) -> None:
         await _injustice(interaction, self.link, {0,1,2,3})
         print("injustice clicked")
         button.disabled = True
@@ -54,7 +55,7 @@ class CommandSuggestionView(ui.View):
         await self.update_view()
 
     @ui.button(label="/skill", style=ButtonStyle.blurple, row=0)
-    async def skill_button(self, interaction: Interaction, button: ui.Button):
+    async def skill_button(self, interaction: Interaction, button: ui.Button) -> None:
         await _skill(interaction, self.link, {0,1,2,3})
         print("skill clicked")
         button.disabled = True

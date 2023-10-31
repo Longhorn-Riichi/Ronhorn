@@ -147,12 +147,15 @@ class LobbyManager(commands.Cog):
     """
 
     async def on_NotifyContestMatchingPlayer(self, _, msg):
-        self.manager.logger.info(f"Player joined match for {self.game_type}: {msg}")
+        if msg.type == 1: # join
+            self.manager.logger.info(f"Player joined matching for {self.game_type}: {msg}")
+        if msg.type == 2: # exit (unqueued or entered game)
+            self.manager.logger.info(f"Player exited matching for {self.game_type}: {msg}")
 
     async def on_NotifyContestGameStart(self, _, msg):
         self.manager.logger.info(f"Match started for {self.game_type}: {msg}")
         seat_name = ["East", "South", "West", "North"]
-        nicknames = " | ".join([f"{p.nickname or 'AI'} ({seat_name[p.seat]}" for p in msg.game_info.players])
+        nicknames = " | ".join([f"{p.nickname or 'AI'} ({s})" for s, p in zip(seat_name, msg.game_info.players)])
         await self.bot_channel.send(f"{self.game_type} game started! Players:\n{nicknames}.")
 
     async def on_NotifyContestGameEnd(self, _, msg):
@@ -163,8 +166,9 @@ class LobbyManager(commands.Cog):
             return await self.bot_channel.send(content="Error: " + str(e))
 
         link = f"https://mahjongsoul.game.yo-star.com/?paipu={msg.game_uuid}"
-        view = CommandSuggestionView(link, interaction, parse_enabled=True, injustice_enabled=True, skill_enabled=True)
-        await self.bot_channel.send(content=resp, suppress_embeds=True, view=view)
+        view = CommandSuggestionView(link, parse_enabled=True, injustice_enabled=True, skill_enabled=True)
+        message = await self.bot_channel.send(content=resp, suppress_embeds=True, view=view)
+        view.set_message(message)
 
     """
     =====================================================

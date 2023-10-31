@@ -104,6 +104,8 @@ class MajsoulChannel():
                 await asyncio.sleep(ping_interval)
         except asyncio.CancelledError:
             self.logger.info("`sustain` task cancelled")
+        except Exception as e:
+            self.logger.info(f"Exception occurred in `sustain` task: {e}")
 
     async def subscribe(self, name, cb):
         async with self._subscriptions_lock:
@@ -124,6 +126,8 @@ class MajsoulChannel():
                     logging.debug(f"Notification for {name} had no subscribers.")
         except asyncio.CancelledError:
             self.logger.info("`eventloop` task cancelled")
+        except Exception as e:
+            self.logger.info(f"Exception occurred in `eventloop` task: {e}")
 
     async def listen(self):
         '''
@@ -172,6 +176,8 @@ class MajsoulChannel():
                         resEvent.set()
         except asyncio.CancelledError:
             self.logger.info("`listen` task cancelled")
+        except Exception as e:
+            self.logger.info(f"Exception occurred in `listen` task: {e}")
 
     async def close(self):
         await self.websocket.close()
