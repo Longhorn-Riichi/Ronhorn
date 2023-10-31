@@ -29,14 +29,14 @@ class CommandSuggestionView(ui.View):
         await self.remove_view()
 
     async def remove_view(self) -> None:
-        await self.message.edit(view=None)
+        await self.message.edit(view=None, suppress=True)
         self.stop()
 
     async def update_view(self) -> None:
         if not (self.parse_enabled or self.injustice_enabled or self.skill_enabled):
             await self.remove_view()
         else:
-            await self.message.edit(view=self)
+            await self.message.edit(view=self, suppress=True)
 
     @ui.button(label="/parse", style=ButtonStyle.blurple, row=0)
     async def parse_button(self, interaction: Interaction, button: ui.Button) -> None:
