@@ -3,7 +3,7 @@ from .utilities import analyze_game, draw_graph, long_followup, parse_game, pars
 from discord import app_commands, ui, ButtonStyle, Colour, Embed, Interaction
 from typing import *
 
-async def _parse(interaction: Interaction, link: str, display_hands: Optional[str] = None, display_graph: Optional[bool] = None):
+async def _parse(interaction: Interaction, link: str, display_hands: Optional[str] = None, display_graph: Optional[bool] = None) -> None:
     header, ret = await parse_game(link, display_hands)
     await long_followup(interaction, ret, header)
     if display_graph:
@@ -12,7 +12,7 @@ async def _parse(interaction: Interaction, link: str, display_hands: Optional[st
         file = discord.File(fp=image, filename=f"game-{identifier}.png")
         await interaction.channel.send(file=file)  # type: ignore[union-attr]
 
-async def _injustice(interaction: Interaction, link: str, player_set: Set[int]):
+async def _injustice(interaction: Interaction, link: str, player_set: Set[int]) -> None:
     if len(player_set) == 0:
         player_name = "yourself"
         player_str = "the player specified in the link"
@@ -30,7 +30,7 @@ async def _injustice(interaction: Interaction, link: str, player_set: Set[int]):
     header = f"Input: {link}\nAnalysis result for **{player_name}**:"
     await long_followup(interaction, injustices, header)
 
-async def _skill(interaction: Interaction, link: str, player_set: Set[int]):
+async def _skill(interaction: Interaction, link: str, player_set: Set[int]) -> None:
     skills = await analyze_game(link, specified_players=player_set, look_for={"skill"})
     if skills == []:
         skills = [f"No skills detected for any player.\n"
