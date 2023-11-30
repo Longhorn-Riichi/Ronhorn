@@ -204,6 +204,17 @@ class LonghornRiichiUtilities(commands.Cog):
     async def unpause_own_game(self, interaction: Interaction, lobby: app_commands.Choice[str]):
         await self.get_cog(lobby.value).unpause_own_game(interaction)
         
+    @app_commands.command(name="test_command", description=f"Test command")
+    async def test_command(self, interaction: Interaction, server_member: discord.Member):
+        await interaction.response.send_message(server_member.discriminator == "0")
+    
+    def get_discord_name(self, member: discord.Member) -> str:
+        discord_name = member.name
+        # add "#1234" if it exists
+        if member.discriminator != "0":
+            discord_name += "#" + member.discriminator
+        return discord_name
+
     async def _register(self, name: str, server_member: discord.Member, friend_id: Optional[int]) -> str:
         """
         Add player to the registry, removing any existing registration first.
@@ -212,7 +223,7 @@ class LonghornRiichiUtilities(commands.Cog):
         Returns the response string.
         """
         paid_membership = "no"
-        discord_name = server_member.name
+        discord_name = self.get_discord_name(server_member)
         
         existing_friend_id: Optional[int] = None
         mahjongsoul_nickname = None
@@ -278,8 +289,9 @@ class LonghornRiichiUtilities(commands.Cog):
         except Exception as e:
             await interaction.followup.send(content=str(e))
 
+
     async def _unregister(self, server_member: discord.Member) -> str:
-        discord_name = server_member.name
+        discord_name = self.get_discord_name(server_member)
         async with registry_lock:
             found_cell: gspread.cell.Cell = registry.find(discord_name, in_column=2)
             if found_cell is None:
@@ -531,7 +543,7 @@ class LonghornRiichiUtilities(commands.Cog):
                                       server_member: discord.Member,
                                       membership: app_commands.Choice[str]):
         await interaction.response.defer(ephemeral=True)
-        discord_name = server_member.name
+        discord_name = self.get_discord_name(server_member)
         async with registry_lock:
             found_cell = registry.find(discord_name, in_column=2)
             if found_cell is None:
@@ -609,7 +621,7 @@ class LonghornRiichiUtilities(commands.Cog):
     # async def info(self, interaction: Interaction, server_member: discord.Member):
     #     await interaction.response.defer(ephemeral=True)
     #     try:
-    #         discord_name = server_member.name
+    #         discord_name = self.get_discord_name(server_member)
     #         discord_name = server_member.mention
     #         found_cell = registry.find(discord_name, in_column=2)
     #         if found_cell is None:
@@ -630,7 +642,7 @@ class LonghornRiichiUtilities(commands.Cog):
     # async def stats(self, interaction: Interaction, server_member: discord.Member):
     #     await interaction.response.defer()
     #     try:
-    #         discord_name = server_member.name
+    #         discord_name = self.get_discord_name(server_member)
     #         discord_name = server_member.mention
     #         found_cell = registry.find(discord_name, in_column=2)
     #         if found_cell is None:
