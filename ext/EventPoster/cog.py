@@ -3,6 +3,7 @@ import datetime
 import discord
 import json
 import logging
+import zoneinfo
 from discord.ext import commands, tasks
 from typing import *
 
@@ -13,7 +14,7 @@ GUILD_ID: int = int(assert_getenv("guild_id"))
 class EventPoster(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.timezone = datetime.timezone(datetime.timedelta(hours=-5)) # CST = UTC-5
+        self.timezone = zoneinfo.ZoneInfo("US/Central")
         with open("images/sunday_cover_image.png", "rb") as f:
             self.sunday_image = f.read()
         with open("images/friday_cover_image.png", "rb") as f:
