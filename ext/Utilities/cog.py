@@ -114,6 +114,7 @@ class LonghornRiichiUtilities(commands.Cog):
     async def help_officer_commands(self, interaction: Interaction):
         command_help = [
             "### Registration:",
+            "- `/register_other`: Register a given Discord user.",
             "- `/unregister_other`: Unregister a given Discord user.",
             "- `/update_membership`: Updates a given Discord user's paid membership status.",
             "- `/replace_role`: Remove or replace a provided role for everyone with that role. Used to give <@&1103562892097376308> to all the <@&922743943337218048>s.",
@@ -289,6 +290,16 @@ class LonghornRiichiUtilities(commands.Cog):
         except Exception as e:
             await interaction.followup.send(content=str(e))
 
+    @app_commands.command(name="register_other", description=f"Register the given server member. Only usable by @{OFFICER_ROLE}.")
+    @app_commands.describe(
+        server_member="The server member you want to register.",
+        real_name=f"The given member's preferred, real-life name (no more than {REGISTRY_NAME_LENGTH} characters)",
+        friend_id="(optional) Mahjong Soul friend ID. Find it in the Friends tab; this is not your username.")
+    @app_commands.checks.has_role(OFFICER_ROLE)
+    async def register_other(self, interaction: Interaction, server_member: discord.Member, real_name: str, friend_id: Optional[int] = None):
+        await interaction.response.defer()
+        response = await self._register(real_name, server_member, friend_id)
+        await interaction.followup.send(content=response)
 
     async def _unregister(self, server_member: discord.Member) -> str:
         discord_name = self.get_discord_name(server_member)
