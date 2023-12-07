@@ -26,4 +26,6 @@ links = {
     "pon pon ron and hell wait": "http://tenhou.net/4/?log=2023042300gm-000b-18940-d986a355",
     "rinshan 4 dora": "https://mahjongsoul.game.yo-star.com/?paipu=230916-474cf754-e36c-438b-886f-d88ed3e27a28",
     "daiminkan rinshan": "http://tenhou.net/4/?log=2023092110gm-000b-18940-501ea72b",
+    "4 kan draw": "https://mahjongsoul.game.yo-star.com/?paipu=231208-5c7ff410-02be-45e0-bcd4-a0abd9a5e147_a884587472",
+    "triple ron 2": "https://mahjongsoul.game.yo-star.com/?paipu=210222-6a7ea797-7cdb-4792-8486-794d20809675_a925205472",
 }
