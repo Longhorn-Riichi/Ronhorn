@@ -12,7 +12,7 @@ from google.protobuf.json_format import MessageToDict  # type: ignore[import]
 from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_majsoul, parse_majsoul_link, parse_tenhou, parse_tenhou_link, save_cache, parse_wrapped_bytes, GameMetadata
 from modules.InjusticeJudge.injustice_judge.injustices import evaluate_game
 from modules.InjusticeJudge.injustice_judge.classes2 import Kyoku
-from modules.InjusticeJudge.injustice_judge.constants import KO_TSUMO_SCORE, OYA_TSUMO_SCORE, TRANSLATE, YAOCHUUHAI
+from modules.InjusticeJudge.injustice_judge.constants import DORA_INDICATOR, KO_TSUMO_SCORE, OYA_TSUMO_SCORE, TRANSLATE, YAOCHUUHAI
 from modules.InjusticeJudge.injustice_judge.display import ph, pt, round_name, short_round_name
 
 async def long_followup(interaction: Interaction, chunks: List[str], header: str):
@@ -200,9 +200,9 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
                         final_tile = kyokus[i].final_discard if kyokus[i].result[0] == "ron" else kyokus[i].final_draw
                         if "starting" in display_hands:
                             result_string += CODE_BLOCK_PREFIX
-
+                            starting_dora_indicators = [DORA_INDICATOR[dora] for dora in kyokus[i].starting_doras if dora not in {51,52,53}]
                             result_string += kyokus[i].haipai[w].print_hand_details(
-                                                ukeire=kyokus[i].haipai_ukeire[w],
+                                                ukeire=kyokus[i].hands[w].ukeire(starting_dora_indicators),
                                                 final_tile=final_tile,
                                                 furiten=kyokus[i].furiten[w],
                                                 doras=kyokus[i].doras,
@@ -211,12 +211,12 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
                             result_string += f"↓ ({len(kyokus[i].pond[w])} discards)"
                         result_string += CODE_BLOCK_PREFIX
                         result_string += kyokus[i].hands[w].print_hand_details(
-                                                ukeire=kyokus[i].final_ukeire[w],
+                                                ukeire=kyokus[i].get_ukeire(w),
                                                 final_tile=final_tile,
                                                 furiten=kyokus[i].furiten[w],
                                                 doras=kyokus[i].doras,
                                                 uras=kyokus[i].doras)
-        elif result_type == "draw":
+        elif result_type in {"draw", "ryuukyoku"}:
             score_delta = results[0].score_delta
             draw_name = results[0].name
             # check that there are any winners/losers at all
@@ -257,6 +257,8 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
 
                     result_string += CODE_BLOCK_PREFIX
                     result_string += f"{ph(declarer_hand)} ({count_unique_terminals(declarer_hand)} unique terminals)"
+        else:
+            assert False, f"unknown result type {result_type} for round {round_name(rnd, honba)}"
 
         # add to the end of ret[-1] unless that makes it too long,
         # in which case we append a new string to ret
