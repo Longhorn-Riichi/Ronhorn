@@ -200,7 +200,7 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
                         final_tile = kyokus[i].final_discard if kyokus[i].result[0] == "ron" else kyokus[i].final_draw
                         if "starting" in display_hands:
                             result_string += CODE_BLOCK_PREFIX
-                            starting_dora_indicators = [DORA_INDICATOR[dora] for dora in kyokus[i].starting_doras if dora not in {51,52,53}]
+                            starting_dora_indicators = [DORA_INDICATOR[dora] for dora in kyokus[i].get_starting_doras() if dora not in {51,52,53}]
                             result_string += kyokus[i].haipai[w].print_hand_details(
                                                 ukeire=kyokus[i].hands[w].ukeire(starting_dora_indicators),
                                                 final_tile=final_tile,

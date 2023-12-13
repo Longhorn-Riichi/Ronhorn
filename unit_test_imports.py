@@ -28,4 +28,11 @@ links = {
     "daiminkan rinshan": "http://tenhou.net/4/?log=2023092110gm-000b-18940-501ea72b",
     "4 kan draw": "https://mahjongsoul.game.yo-star.com/?paipu=231208-5c7ff410-02be-45e0-bcd4-a0abd9a5e147_a884587472",
     "triple ron 2": "https://mahjongsoul.game.yo-star.com/?paipu=210222-6a7ea797-7cdb-4792-8486-794d20809675_a925205472",
+    "chankan double yakuman": "https://mahjongsoul.game.yo-star.com/?paipu=231211-34a5f476-3101-4c75-9948-b17716e7dc63_a884587472",
+    "majsoul big honba": "https://mahjongsoul.game.yo-star.com/?paipu=230824-46250624-ed86-43c9-a719-039edc4b051f",
+    "tenhou big honba": "https://mahjongsoul.game.yo-star.com/?paipu=230824-46250624-ed86-43c9-a719-039edc4b051f",
+    # "tenhou shuugi": "https://tenhou.net/4/?log=2023080110gm-0601-13070-b293af73",
+    "tenhou sanma": "https://tenhou.net/4/?log=2023081610gm-0099-0000-6e203a73&tw=2",
+    "tenhou double ron pao with honba": "https://tenhou.net/3/?log=2016090115gm-0089-0000-8d300f3c&tw=0&ts=1",
+    "shousuushi denied": "https://mahjongsoul.game.yo-star.com/?paipu=230814-90607dc4-3bfd-4241-a1dc-2c639b630db3_a878761203",
 }
