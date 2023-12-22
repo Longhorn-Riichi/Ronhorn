@@ -49,7 +49,6 @@ class MajsoulChannel():
         self._subscriptions_lock = asyncio.Lock()
 
         self.MostRecentNotify = None
-        self.Notifications = asyncio.Queue()
         self.log_messages = log_messages
 
         self.sustain_task: Optional[asyncio.Task] = None
@@ -86,6 +85,7 @@ class MajsoulChannel():
     async def connect(self, uri):
         self.uri = uri
 
+        self.Notifications = asyncio.Queue()
         self.websocket = await websockets.connect(self.uri)
 
         self.logger.info(f'Connected to {self.uri}')

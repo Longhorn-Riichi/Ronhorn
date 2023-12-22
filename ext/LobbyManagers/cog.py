@@ -176,7 +176,7 @@ class LobbyManager(commands.Cog):
     =====================================================
     """
 
-    def get_member_mjs_nickname(self, discord_name: str) -> str | None:
+    def get_member_mjs_nickname(self, discord_name: str) -> Optional[str]:
         found_cell: gspread.cell.Cell = registry.find(discord_name, in_column=DISCORD_NAME_COL)
         if found_cell is None:
             # No player with given Discord name found; returning None

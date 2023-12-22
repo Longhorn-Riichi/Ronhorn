@@ -8,7 +8,7 @@ from modules.pymjsoul.proto import liqi_combined_pb2
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError, InvalidStatusCode
 
 # MS_MANAGER_WSS_ENDPOINT: `__MJ_DHS_WS__` from https://www.maj-soul.com/dhs/js/config.js
-MS_MANAGER_WSS_ENDPOINT = "wss://gateway-v2.maj-soul.com/contest_ws_gateway"
+MS_MANAGER_WSS_ENDPOINT = "wss://common-v2.maj-soul.com/contest_ws_gateway"
 EAST = 0
 SOUTH = 1
 WEST = 2

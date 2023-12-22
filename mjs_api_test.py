@@ -85,7 +85,7 @@ async def test_contest_manager_api(method_name, **params):
     mjs_password = os.environ.get("test_mjs_password")
     contest_unique_id = int(os.environ.get("test_contest_unique_id"))
 
-    async with MahjongSoulAPI("wss://gateway-v2.maj-soul.com/contest_ws_gateway") as api:
+    async with MahjongSoulAPI("wss://common-v2.maj-soul.com/contest_ws_gateway") as api:
         print("Calling loginContestManager...")
         res1 = await api.call("loginContestManager", account=mjs_username, password=hmac.new(b"lailai", mjs_password.encode(), hashlib.sha256).hexdigest(), type=0)
         print("Calling manageContest...")
@@ -143,6 +143,14 @@ async def test_account_manager_api(method_name, **params):
         print(f"{res}")
 
 if __name__ == "__main__":
+    import datetime
+    yesterday = datetime.datetime.now() + datetime.timedelta(days=-1)
+    ninety_days_later = datetime.datetime.now() + datetime.timedelta(days=89)
+    asyncio.run(test_contest_manager_api(
+        "updateContestGameRule",
+        start_time = int(yesterday.timestamp()),
+        finish_time = int(ninety_days_later.timestamp())))
+
     # asyncio.run(test_contest_manager_api("searchAccountByPattern", query_nicknames=["Kalanchloe"]))
     # asyncio.run(test_contest_manager_api("searchAccountByNickname", query_nicknames=["Kalanchloe"]))
     # asyncio.run(test_contest_manager_api("searchAccountByNickname", query_nicknames=["Kalanchloe"]))
@@ -160,19 +168,22 @@ if __name__ == "__main__":
     #     "fetchGameRecord",
     #     game_uuid="230818-91f270e2-1ece-4a0b-a712-cb160acfe7e5",
     #     client_version_string="web-0.10.269"))
-    asyncio.run(test_account_manager_api(
-        "fetchGameRecordsDetail",
-        uuid_list=[
-            "230814-90607dc4-3bfd-4241-a1dc-2c639b630db3",
-            "230818-91f270e2-1ece-4a0b-a712-cb160acfe7e5"]))
+    # asyncio.run(test_account_manager_api(
+    #     "fetchGameRecordsDetail",
+    #     uuid_list=[
+    #         "230814-90607dc4-3bfd-4241-a1dc-2c639b630db3",
+    #         "230818-91f270e2-1ece-4a0b-a712-cb160acfe7e5"]))
     # asyncio.run(test_account_manager_api(
     #     "fetchGameRecordsDetail",
     #     uuid_list=[
     #         "230814-90607dc4-3bfd-4241-a1dc-2c639b631234"])) # false game record
+
+
+
 
     # f = open(f"cached_results/fetchContestGameRecords-2023-08-18 20:03:43.json", 'rb')
     # record = proto.ResFetchCustomizedContestGameRecordList()  # type: ignore[attr-defined]
     # record.ParseFromString(f.read())
     # print(record)
 
-    pass
+    # pass
