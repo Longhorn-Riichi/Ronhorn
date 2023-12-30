@@ -342,4 +342,4 @@ def parse_link(link: str) -> Tuple[str, Optional[int]]:
     except:
         pass
 
-    raise Exception(f"Could not parse link: {link}")
+    return link
