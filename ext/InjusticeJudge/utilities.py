@@ -342,4 +342,4 @@ def parse_link(link: str) -> Tuple[str, Optional[int]]:
     except:
         pass
 
-    return link
+    return link, 0
