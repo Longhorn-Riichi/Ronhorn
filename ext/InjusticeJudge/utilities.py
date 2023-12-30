@@ -9,7 +9,7 @@ from typing import *
 
 # InjusticeJudge imports
 from google.protobuf.json_format import MessageToDict  # type: ignore[import]
-from modules.InjusticeJudge.injustice_judge.fetch import fetch_tenhou, parse_majsoul, parse_majsoul_link, parse_tenhou, parse_tenhou_link, save_cache, parse_wrapped_bytes, GameMetadata
+from modules.InjusticeJudge.injustice_judge.fetch import parse_majsoul, parse_majsoul_link, fetch_riichicity, parse_riichicity, fetch_tenhou, parse_tenhou, parse_tenhou_link, save_cache, parse_wrapped_bytes, GameMetadata
 from modules.InjusticeJudge.injustice_judge.injustices import evaluate_game
 from modules.InjusticeJudge.injustice_judge.classes2 import Kyoku
 from modules.InjusticeJudge.injustice_judge.constants import DORA_INDICATOR, KO_TSUMO_SCORE, OYA_TSUMO_SCORE, TRANSLATE, YAOCHUUHAI
@@ -47,16 +47,21 @@ async def parse_game_link(link: str, specified_players: Set[int] = set()) -> Tup
         if metadata["name"][3] == "":
             assert player < 3 or all(p < 3 for p in specified_players), "Can't specify North player in a sanma game"
         kyokus, parsed_metadata = parse_tenhou(tenhou_log, metadata)
-    elif "mahjongsoul" in link or "maj-soul" or "majsoul" in link:
+    elif "mahjongsoul" in link or "maj-soul" in link or "majsoul" in link:
         # EN: `mahjongsoul.game.yo-star.com`; CN: `maj-soul.com`; JP: `mahjongsoul.com`
         # Old CN (?): http://majsoul.union-game.com/0/?paipu=190303-335e8b25-7f5c-4bd1-9ac0-249a68529e8d_a93025901
         majsoul_log, metadata, player = await fetch_majsoul(link)
         if len(metadata["accounts"]) == 3:
             assert player < 3 or all(p < 3 for p in specified_players), "Can't specify North player in a sanma game"
         kyokus, parsed_metadata = parse_majsoul(majsoul_log, metadata)
+    elif len(link) == 20: # riichi city log id
+        riichicity_log, metadata = fetch_riichicity(link)
+        kyokus, parsed_metadata = parse_riichicity(riichicity_log, metadata)
+        player = 0
     else:
         raise Exception("expected tenhou link similar to `tenhou.net/0/?log=`"
-                        " or mahjong soul link similar to `mahjongsoul.game.yo-star.com/?paipu=`")
+                        " or mahjong soul link similar to `mahjongsoul.game.yo-star.com/?paipu=`"
+                        " or 20-character riichi city log id like `cjc3unuai08d9qvmstjg`")
     kyokus[-1].is_final_round = True
     if len(specified_players) == 0:
         specified_players = {player}
