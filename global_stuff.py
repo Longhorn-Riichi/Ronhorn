@@ -3,6 +3,7 @@ import asyncio
 import dotenv
 import json
 import discord
+import logging
 from os import getenv
 from modules.mahjongsoul.account_manager import AccountManager
 
@@ -33,3 +34,6 @@ account_manager = AccountManager(
 with open('slash_commands_servers.json', 'r') as file:
     slash_commands_servers = json.load(file)
 slash_commands_guilds = [discord.Object(id=id) for id in slash_commands_servers.values()]
+
+# logging
+logger = logging.getLogger("Log")

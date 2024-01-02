@@ -2,7 +2,7 @@ import re
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 from io import BytesIO
-from global_stuff import account_manager
+from global_stuff import account_manager, logger
 from modules.pymjsoul.proto import liqi_combined_pb2 as proto
 from discord import Colour, Embed, Interaction
 from typing import *
@@ -17,6 +17,7 @@ from modules.InjusticeJudge.injustice_judge.display import ph, pt, round_name, s
 
 async def long_followup(interaction: Interaction, chunks: List[str], header: str):
     """Followup with a long message by breaking it into multiple messages"""
+    logger.info("Running long_followup")
     ret = [""]
     for to_add in chunks:
         to_add += "\n"
@@ -26,9 +27,17 @@ async def long_followup(interaction: Interaction, chunks: List[str], header: str
         else:
             ret[-1] += to_add
     green = Colour.from_str("#1EA51E")
-    await interaction.followup.send(content=header, embed=Embed(description=ret[0], colour=green))
-    for embed in [Embed(description=text, colour=green) for text in ret[1:]]:
-        await interaction.channel.send(embed=embed)  # type: ignore[union-attr]
+    if len(ret) > 1 and interaction.channel is None:
+        header += "\n**NOTE:** message is cut off! Ronhorn has no access to the channel to post follow-up messages"
+    if interaction.followup is not None:
+        await interaction.followup.send(content=header, embed=Embed(description=ret[0], colour=green))
+    else:
+        logger.info("Error in long_followup: interaction.followup was None")
+    if interaction.channel is not None:
+        for embed in [Embed(description=text, colour=green) for text in ret[1:]]:
+            await interaction.channel.send(embed=embed)  # type: ignore[union-attr]
+    else:
+        logger.info("Error in long_followup: interaction.channel was None")
 
 """
 =====================================================
@@ -43,20 +52,29 @@ async def parse_game_link(link: str, specified_players: Set[int] = set()) -> Tup
     AccountManager (to avoid logging in for each fetch)
     """
     if "tenhou.net/" in link:
+        logger.info("  fetching tenhou log")
         tenhou_log, metadata, player = fetch_tenhou(link)
+        logger.info("  tenhou log fetched")
         if metadata["name"][3] == "":
             assert player < 3 or all(p < 3 for p in specified_players), "Can't specify North player in a sanma game"
         kyokus, parsed_metadata = parse_tenhou(tenhou_log, metadata)
+        logger.info("  tenhou log parsed")
     elif "mahjongsoul" in link or "maj-soul" in link or "majsoul" in link:
         # EN: `mahjongsoul.game.yo-star.com`; CN: `maj-soul.com`; JP: `mahjongsoul.com`
         # Old CN (?): http://majsoul.union-game.com/0/?paipu=190303-335e8b25-7f5c-4bd1-9ac0-249a68529e8d_a93025901
+        logger.info("  fetching majsoul log")
         majsoul_log, metadata, player = await fetch_majsoul(link)
+        logger.info("  majsoul log fetched")
         if len(metadata["accounts"]) == 3:
             assert player < 3 or all(p < 3 for p in specified_players), "Can't specify North player in a sanma game"
         kyokus, parsed_metadata = parse_majsoul(majsoul_log, metadata)
+        logger.info("  majsoul log parsed")
     elif len(link) == 20: # riichi city log id
+        logger.info("  fetching riichicity log")
         riichicity_log, metadata = fetch_riichicity(link)
+        logger.info("  riichicity log fetched")
         kyokus, parsed_metadata = parse_riichicity(riichicity_log, metadata)
+        logger.info("  riichicity log parsed")
         player = 0
     else:
         raise Exception("expected tenhou link similar to `tenhou.net/0/?log=`"
@@ -70,9 +88,11 @@ async def parse_game_link(link: str, specified_players: Set[int] = set()) -> Tup
 async def analyze_game(link: str, specified_players: Set[int] = set(), look_for: Set[str] = {"injustice"}) -> List[str]:
     try:
         kyokus, game_metadata, players = await parse_game_link(link, specified_players)
+        logger.info("  game link parsed")
         return [result for kyoku in kyokus for result in evaluate_game(kyoku, players, game_metadata.name, look_for)]
     except Exception as e:
         kyokus, game_metadata, players = await parse_game_link(link, specified_players - {3})
+        logger.info("  game link parsed (sanma)")
         return [result for kyoku in kyokus for result in evaluate_game(kyoku, players, game_metadata.name, look_for)]
 
 async def fetch_majsoul(link: str):

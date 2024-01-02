@@ -2,10 +2,12 @@
 from global_stuff import assert_getenv, account_manager
 
 from os import execl
+import asyncio
 import discord
 from discord import app_commands, Interaction
 from discord.ext import commands
 import logging
+from global_stuff import slash_commands_guilds
 
 # INFO level captures all except DEBUG log messages.
 # the FileHandler by default appends to the given file
@@ -43,6 +45,10 @@ bot = commands.Bot(
 async def on_ready():
     logging.info(f"{bot.user} is now online.")
 
+@bot.event
+async def on_guild_join(guild):
+    await bot.tree.sync(guild=guild)
+
 # bot commands (non-slash; only for the admin/owner)
 @bot.command(name='sync', hidden=True)
 @commands.is_owner()
@@ -50,6 +56,13 @@ async def sync(ctx: commands.Context):
     # note that global commands need to be explicitly copied to the guild
     await bot.tree.sync(guild=ctx.guild)
     await ctx.send(f"Synced slash commands exclusive to this server ({ctx.guild.name}).")
+
+@bot.command(name='sync_server', hidden=True)
+@commands.is_owner()
+async def sync_server(ctx: commands.Context, guild_id: str):
+    guild = bot.get_guild(int(guild_id))
+    await bot.tree.sync(guild=guild)
+    await ctx.send(f"Synced slash commands for guild {guild_id} ({guild.name}).")
 
 @bot.command(name='sync_global', hidden=True)
 @commands.is_owner()
@@ -72,15 +85,15 @@ async def restart(ctx: commands.Context):
 @bot.command(name='load', hidden=True)
 @commands.is_owner()
 async def load_extension(ctx: commands.Context, extension_name: str): 
+    await ctx.send(f"Loading extension: {extension_name}.")
     await bot.load_extension(extension_name)
-
     await ctx.send(f"Loaded extension: {extension_name}.")
 
 @bot.command(name='unload', hidden=True)
 @commands.is_owner()
 async def unload_extension(ctx: commands.Context, extension_name: str): 
+    await ctx.send(f"Unloading extension: {extension_name}.")
     await bot.unload_extension(extension_name)
-
     await ctx.send(f"Unloaded extension: {extension_name}.")
 
 @bot.command(name='reload', hidden=True)
@@ -128,9 +141,18 @@ async def setup_hook():
     # note that extensions should be loaded before the slash commands
     # are synched. Here we ensure that by only allowing manual synching
     # once the bot finishes loading (i.e., `setup_hook()` has been called)
-    await account_manager.connect_and_login()
-    for extension in EXTENSIONS:
-        await bot.load_extension(extension)
+
+    # run login task in background
+    account_manager_login = asyncio.create_task(account_manager.connect_and_login())
+
+    # load extensions in parallel
+    try:
+        await asyncio.gather(*[bot.load_extension(extension) for extension in EXTENSIONS])
+    except Exception as e:
+        logging.info(str(e))
+    
+    await account_manager_login
+
 bot.setup_hook = setup_hook
 bot.remove_command('help')
 

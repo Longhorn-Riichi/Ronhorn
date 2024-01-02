@@ -86,7 +86,7 @@ class MajsoulChannel():
         self.uri = uri
 
         self.Notifications = asyncio.Queue()
-        self.websocket = await websockets.connect(self.uri)
+        self.websocket = await websockets.connect(self.uri, open_timeout=None, close_timeout=None)
 
         self.logger.info(f'Connected to {self.uri}')
 
