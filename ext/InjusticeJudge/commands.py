@@ -18,22 +18,22 @@ async def _parse(interaction: Interaction, link: str, display_hands: Optional[st
         await interaction.channel.send(file=file)  # type: ignore[union-attr]
         logger.info("  graph sent")
 
-async def _injustice(interaction: Interaction, link: str, player_set: Set[int]) -> None:
+async def _injustice(interaction: Interaction, link: str, player_set: Set[int], nickname: Optional[str] = None) -> None:
     logger.info("Running injustice")
-    if len(player_set) == 0:
+    injustices, specified_players = await analyze_game(link, player_set, nickname=nickname)
+    logger.info("  game parsed")
+    if len(specified_players) == 0 and len(link) == 20: # riichi city link with no specified players
+        # return await interaction.followup.send(content="For riichi city injustices, you must specify the player seat (will fix this later)")
+        specified_players = {0} # default to East
+    if len(specified_players) == 0:
         player_name = "yourself"
         player_str = "the player specified in the link"
-        if len(link) == 20: # riichi city link
-            return await interaction.followup.send(content="For riichi city links, you must specify the player seat (will fix this later)")
-    elif len(player_set) == 1:
-        player_name = ["East", "South", "West", "North"][next(iter(player_set))]
+    elif len(specified_players) == 1:
+        player_name = ["East", "South", "West", "North"][next(iter(specified_players))]
         player_str = f"the starting {player_name} player"
     else:
         player_name = "all players"
         player_str = "all players"
-    logger.info("  got players")
-    injustices = await analyze_game(link, player_set)
-    logger.info("  game parsed")
     if injustices == []:
         injustices = [f"No injustices detected for {player_str}.\n"
                        "Specify another player with the `player` option in `/injustice`.\n"
@@ -44,7 +44,7 @@ async def _injustice(interaction: Interaction, link: str, player_set: Set[int]) 
 
 async def _skill(interaction: Interaction, link: str, player_set: Set[int]) -> None:
     logger.info("Running skill")
-    skills = await analyze_game(link, specified_players=player_set, look_for={"skill"})
+    skills, _ = await analyze_game(link, specified_players=player_set, look_for={"skill"})
     logger.info("  game parsed")
     if skills == []:
         skills = [f"No skills detected for any player.\n"

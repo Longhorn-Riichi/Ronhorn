@@ -45,7 +45,7 @@ Modified InjusticeJudge Functions
 =====================================================
 """
 
-async def parse_game_link(link: str, specified_players: Set[int] = set()) -> Tuple[List[Kyoku], GameMetadata, Set[int]]:
+async def parse_game_link(link: str, specified_players: Set[int] = set(), nickname: Optional[str]=None) -> Tuple[List[Kyoku], GameMetadata, Set[int]]:
     """
     basically the same as the exposed `parse_game_link()` of the InjusticeJudge,
     but with the `fetch_majsoul` part substituted out so we can use our own
@@ -56,8 +56,8 @@ async def parse_game_link(link: str, specified_players: Set[int] = set()) -> Tup
         tenhou_log, metadata, player = fetch_tenhou(link)
         logger.info("  tenhou log fetched")
         if metadata["name"][3] == "":
-            assert player < 3 or all(p < 3 for p in specified_players), "Can't specify North player in a sanma game"
-        kyokus, parsed_metadata = parse_tenhou(tenhou_log, metadata)
+            assert player != 3 or all(p != 3 for p in specified_players), "Can't specify North player in a sanma game"
+        kyokus, parsed_metadata, parsed_player_seat = parse_tenhou(tenhou_log, metadata, nickname)
         logger.info("  tenhou log parsed")
     elif "mahjongsoul" in link or "maj-soul" in link or "majsoul" in link:
         # EN: `mahjongsoul.game.yo-star.com`; CN: `maj-soul.com`; JP: `mahjongsoul.com`
@@ -66,34 +66,38 @@ async def parse_game_link(link: str, specified_players: Set[int] = set()) -> Tup
         majsoul_log, metadata, player = await fetch_majsoul(link)
         logger.info("  majsoul log fetched")
         if len(metadata["accounts"]) == 3:
-            assert player < 3 or all(p < 3 for p in specified_players), "Can't specify North player in a sanma game"
-        kyokus, parsed_metadata = parse_majsoul(majsoul_log, metadata)
+            assert player != 3 or all(p != 3 for p in specified_players), "Can't specify North player in a sanma game"
+        kyokus, parsed_metadata, parsed_player_seat = parse_majsoul(majsoul_log, metadata, nickname)
         logger.info("  majsoul log parsed")
     elif len(link) == 20: # riichi city log id
         logger.info("  fetching riichicity log")
         riichicity_log, metadata = fetch_riichicity(link)
         logger.info("  riichicity log fetched")
-        kyokus, parsed_metadata = parse_riichicity(riichicity_log, metadata)
+        kyokus, parsed_metadata, parsed_player_seat = parse_riichicity(riichicity_log, metadata, nickname)
         logger.info("  riichicity log parsed")
-        player = 0
+        player = None
     else:
         raise Exception("expected tenhou link similar to `tenhou.net/0/?log=`"
                         " or mahjong soul link similar to `mahjongsoul.game.yo-star.com/?paipu=`"
                         " or 20-character riichi city log id like `cjc3unuai08d9qvmstjg`")
     kyokus[-1].is_final_round = True
     if len(specified_players) == 0:
-        specified_players = {player}
+        if parsed_player_seat is not None:
+            specified_players = {parsed_player_seat}
+        elif player is not None:
+            specified_players = {player}
     return kyokus, parsed_metadata, specified_players
 
-async def analyze_game(link: str, specified_players: Set[int] = set(), look_for: Set[str] = {"injustice"}) -> List[str]:
+async def analyze_game(link: str, specified_players: Set[int] = set(), look_for: Set[str] = {"injustice"}, nickname: Optional[str] = None) -> Tuple[List[str], Set[int]]:
+    """Same analyze_game as fetch.py, but returns specified_players"""
     try:
-        kyokus, game_metadata, players = await parse_game_link(link, specified_players)
-        logger.info("  game link parsed")
-        return [result for kyoku in kyokus for result in evaluate_game(kyoku, players, game_metadata.name, look_for)]
+        kyokus, game_metadata, specified_players = await parse_game_link(link, specified_players, nickname)
+        logger.info(f"  game link parsed (players: {specified_players})")
+        return [result for kyoku in kyokus for result in evaluate_game(kyoku, specified_players, game_metadata.name, look_for)], specified_players
     except Exception as e:
-        kyokus, game_metadata, players = await parse_game_link(link, specified_players - {3})
+        kyokus, game_metadata, specified_players = await parse_game_link(link, specified_players - {3}, nickname)
         logger.info("  game link parsed (sanma)")
-        return [result for kyoku in kyokus for result in evaluate_game(kyoku, players, game_metadata.name, look_for)]
+        return [result for kyoku in kyokus for result in evaluate_game(kyoku, specified_players, game_metadata.name, look_for)], specified_players
 
 async def fetch_majsoul(link: str):
     """

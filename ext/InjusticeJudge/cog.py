@@ -21,14 +21,15 @@ class Injustice(commands.Cog):
 
     @app_commands.command(name="injustice", description="Display the injustices in a given game.")  # type: ignore[arg-type]
     @app_commands.describe(link="Link to the game to analyze (Mahjong Soul or tenhou.net)",
-                           player="(optional) The seat to analyze the game from. Determined using the link, but defaults to East.")
+                           player="(optional) The seat to analyze the game from. Determined using the link, but defaults to East.",
+                           nickname="(optional) Alternatively, you may specify your in-game nickname to determine the seat to analyze.")
     @app_commands.choices(player=[
         app_commands.Choice(name="East", value="East"),
         app_commands.Choice(name="South", value="South"),
         app_commands.Choice(name="West", value="West"),
         app_commands.Choice(name="North", value="North"),
         app_commands.Choice(name="All", value="All")])
-    async def injustice(self, interaction: Interaction, link: str, player: Optional[app_commands.Choice[str]]):
+    async def injustice(self, interaction: Interaction, link: str, player: Optional[app_commands.Choice[str]], nickname: Optional[str]):
         await interaction.response.defer()
         if player is None:
             player_set = set()
@@ -36,7 +37,7 @@ class Injustice(commands.Cog):
             player_set = {0,1,2,3}
         else:
             player_set = {["East", "South", "West", "North"].index(player.value)}
-        await _injustice(interaction, link, player_set)
+        await _injustice(interaction, link, player_set, nickname)
 
     @app_commands.command(name="skill", description="Display instances of pure mahjong skill in a given game.")  # type: ignore[arg-type]
     @app_commands.describe(link="Link to the game to analyze (Mahjong Soul or tenhou.net)")
