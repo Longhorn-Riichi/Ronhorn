@@ -12,8 +12,9 @@ from google.protobuf.json_format import MessageToDict  # type: ignore[import]
 from modules.InjusticeJudge.injustice_judge.fetch import parse_majsoul, parse_majsoul_link, fetch_riichicity, parse_riichicity, fetch_tenhou, parse_tenhou, parse_tenhou_link, save_cache, parse_wrapped_bytes, GameMetadata
 from modules.InjusticeJudge.injustice_judge.injustices import evaluate_game
 from modules.InjusticeJudge.injustice_judge.classes2 import Kyoku
-from modules.InjusticeJudge.injustice_judge.constants import DORA_INDICATOR, KO_TSUMO_SCORE, OYA_TSUMO_SCORE, TRANSLATE, YAOCHUUHAI
+from modules.InjusticeJudge.injustice_judge.constants import KO_TSUMO_SCORE, OYA_TSUMO_SCORE, TRANSLATE, YAOCHUUHAI
 from modules.InjusticeJudge.injustice_judge.display import ph, pt, round_name, short_round_name
+from modules.InjusticeJudge.injustice_judge.utils import to_dora_indicator
 
 async def long_followup(interaction: Interaction, chunks: List[str], header: str):
     """Followup with a long message by breaking it into multiple messages"""
@@ -135,10 +136,10 @@ async def fetch_majsoul(link: str):
             data=record.SerializeToString())
 
     parsed = parse_wrapped_bytes(record.data)[1]
-    if parsed.actions != []:
-        actions = [parse_wrapped_bytes(action.result) for action in parsed.actions if len(action.result) > 0]
+    if parsed.actions != []:  # type: ignore[attr-defined]
+        actions = [parse_wrapped_bytes(action.result) for action in parsed.actions if len(action.result) > 0]  # type: ignore[attr-defined]
     else:
-        actions = [parse_wrapped_bytes(record) for record in parsed.records]
+        actions = [parse_wrapped_bytes(record) for record in parsed.records]  # type: ignore[attr-defined]
     
     player = 0
     if link.count("_") == 2:
@@ -229,7 +230,7 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
                         final_tile = kyokus[i].final_discard if kyokus[i].result[0] == "ron" else kyokus[i].final_draw
                         if "starting" in display_hands:
                             result_string += CODE_BLOCK_PREFIX
-                            starting_dora_indicators = [DORA_INDICATOR[dora] for dora in kyokus[i].get_starting_doras() if dora not in {51,52,53}]
+                            starting_dora_indicators = [to_dora_indicator(dora, game_metadata.num_players) for dora in kyokus[i].get_starting_doras() if dora not in {51,52,53}]
                             result_string += kyokus[i].haipai[w].print_hand_details(
                                                 ukeire=kyokus[i].hands[w].ukeire(starting_dora_indicators),
                                                 final_tile=final_tile,
