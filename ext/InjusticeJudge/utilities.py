@@ -300,7 +300,7 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
 
     return header, ret
 
-async def draw_graph(link: str) -> BytesIO:
+async def draw_graph(link: str, display_graph: Optional[str] = None) -> BytesIO:
     kyokus, game_metadata, player = await parse_game_link(link)
     # setup matplotlib
     font_path = "fonts/Arial Unicode MS.ttf"
@@ -319,6 +319,10 @@ async def draw_graph(link: str) -> BytesIO:
     # collect data
     rounds = [""] + [round_name(kyoku.round, kyoku.honba) for kyoku in kyokus]
     scores = [[kyoku.start_scores[i] for kyoku in kyokus] + [game_metadata.game_score[i]] for i in range(game_metadata.num_players)]
+    scaling_unit: float = 100
+    if display_graph == "Scores with placement bonus":
+        scores = list(zip(*(list(game_metadata.rules.apply_placement_bonus(score)) for score in zip(*scores))))
+        scaling_unit = 0.2
     colors = ["orangered", "gold", "forestgreen", "darkviolet"]
 
     # calculate offsets for annotations (so numbers don't overlap)
@@ -327,7 +331,7 @@ async def draw_graph(link: str) -> BytesIO:
     min_separation = (max_score - min_score) / 12
     check_closeness = True
     gas = 1000
-    yoffsets = [0] * game_metadata.num_players
+    yoffsets: List[float] = [0] * game_metadata.num_players
     while check_closeness and gas >= 0:
         check_closeness = False
         gas -= 1
@@ -335,15 +339,15 @@ async def draw_graph(link: str) -> BytesIO:
         for (s1, i1), (s2, i2) in zip(final_scores[:-1], final_scores[1:]):
             if (s2 + yoffsets[i2]) - (s1 + yoffsets[i1]) < min_separation:
                 check_closeness = True
-                yoffsets[i1] -= 100
-                yoffsets[i2] += 100
-
+                yoffsets[i1] -= scaling_unit
+                yoffsets[i2] += scaling_unit
     # draw the graph
     plt.grid(linestyle="--", linewidth=1.0)
     plt.axhline(0, color="gray", linewidth=4.0)
     for name, score, color, yoffset in zip(game_metadata.name, scores, colors, yoffsets):
+        yoffset *= 100/scaling_unit
         plt.plot(rounds, score, label=name, color=color, alpha=0.8, linewidth=8, solid_capstyle="round")
-        plt.annotate(str(score[-1]), (rounds[-1], score[-1]), textcoords="offset points", xytext=(10,yoffset//plt.rcParams["figure.dpi"]), va="center")
+        plt.annotate(str(score[-1]), (rounds[-1], score[-1]), textcoords="offset points", xytext=(10,yoffset//plt.rcParams["figure.dpi"]), va="center", color=color)
     plt.legend(loc="upper center", bbox_to_anchor=(0.5, 1.15), framealpha=0, ncol=range(game_metadata.num_players), handlelength=0.04)
     plt.tight_layout()
 

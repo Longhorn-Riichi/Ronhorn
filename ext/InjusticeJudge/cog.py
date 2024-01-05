@@ -54,10 +54,16 @@ class ParseLog(commands.Cog):
         app_commands.Choice(name="Mangan+ hands and starting hands", value="Mangan+ hands and starting hands"),
         app_commands.Choice(name="Mangan+ hands", value="Mangan+ hands"),
         app_commands.Choice(name="All winning hands and starting hands", value="All winning hands and starting hands"),
-        app_commands.Choice(name="All winning hands", value="All winning hands")])
-    async def parse(self, interaction: Interaction, link: str, display_hands: Optional[app_commands.Choice[str]] = None, display_graph: Optional[bool] = None):
+        app_commands.Choice(name="All winning hands", value="All winning hands")],
+                          display_graph=[
+        app_commands.Choice(name="Scores only", value="Scores only"),
+        app_commands.Choice(name="Scores with placement bonus", value="Scores with placement bonus")])
+    async def parse(self, interaction: Interaction, link: str, display_hands: Optional[app_commands.Choice[str]] = None, display_graph: Optional[app_commands.Choice[str]] = None):
         await interaction.response.defer()
-        await _parse(interaction, link, display_hands.value if display_hands is not None else None, display_graph)
+        await _parse(interaction,
+                     link,
+                     display_hands.value if display_hands is not None else None,
+                     display_graph.value if display_graph is not None else None)
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{ParseLog.__name__}`...")

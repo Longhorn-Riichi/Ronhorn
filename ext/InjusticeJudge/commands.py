@@ -4,14 +4,14 @@ from discord import app_commands, ui, ButtonStyle, Colour, Embed, Interaction
 from global_stuff import account_manager, logger
 from typing import *
 
-async def _parse(interaction: Interaction, link: str, display_hands: Optional[str] = None, display_graph: Optional[bool] = None) -> None:
+async def _parse(interaction: Interaction, link: str, display_hands: Optional[str] = None, display_graph: Optional[str] = None) -> None:
     logger.info("Running parse...")
     header, ret = await parse_game(link, display_hands)
     logger.info("  game parsed")
     await long_followup(interaction, ret, header)
     logger.info("  response sent")
-    if display_graph:
-        image = await draw_graph(link)
+    if display_graph is not None:
+        image = await draw_graph(link, display_graph)
         logger.info("  graph drawn")
         identifier, _ = parse_link(link)
         file = discord.File(fp=image, filename=f"game-{identifier}.png")
