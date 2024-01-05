@@ -321,7 +321,7 @@ async def draw_graph(link: str, display_graph: Optional[str] = None) -> BytesIO:
     scores = [[kyoku.start_scores[i] for kyoku in kyokus] + [game_metadata.game_score[i]] for i in range(game_metadata.num_players)]
     scaling_unit: float = 100
     if display_graph == "Scores with placement bonus":
-        scores = list(zip(*(list(game_metadata.rules.apply_placement_bonus(score)) for score in zip(*scores))))
+        scores = list(zip(*(list(game_metadata.rules.apply_placement_bonus(round, score)) for round, score in zip([0] + [kyoku.round for kyoku in kyokus], zip(*scores)))))
         scaling_unit = 0.2
     colors = ["orangered", "gold", "forestgreen", "darkviolet"]
 
@@ -347,7 +347,11 @@ async def draw_graph(link: str, display_graph: Optional[str] = None) -> BytesIO:
     for name, score, color, yoffset in zip(game_metadata.name, scores, colors, yoffsets):
         yoffset *= 100/scaling_unit
         plt.plot(rounds, score, label=name, color=color, alpha=0.8, linewidth=8, solid_capstyle="round")
-        plt.annotate(str(score[-1]), (rounds[-1], score[-1]), textcoords="offset points", xytext=(10,yoffset//plt.rcParams["figure.dpi"]), va="center", color=color)
+        # display end score
+        plt.annotate(str(score[-1]), (rounds[-1], score[-1]), textcoords="offset points", xytext=(10,yoffset/plt.rcParams["figure.dpi"]), va="center", color=color)
+        if display_graph == "Scores with placement bonus":
+            # display starting placement bonus, too
+            plt.annotate(str(int(score[0])), (rounds[0], score[0]), textcoords="offset points", xytext=(0,10), va="center", ha="center")
     plt.legend(loc="upper center", bbox_to_anchor=(0.5, 1.15), framealpha=0, ncol=range(game_metadata.num_players), handlelength=0.04)
     plt.tight_layout()
 
