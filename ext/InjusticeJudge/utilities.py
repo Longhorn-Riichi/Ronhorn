@@ -189,7 +189,7 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
     num_players = game_metadata.num_players
     header = f"Result of game {link}:\n"
     seat_names = [pt(t) for t in range(41,45)]
-    header += ", ".join("{} {}: {} ({:+.1f})".format(d,p,g,f/1000.0) for p,d,g,f in sorted(list(zip(player_names, seat_names, game_scores, final_scores))[:num_players], key=lambda z: -z[3]))
+    header += ", ".join("{} {}: {} ({:+.1f})".format(d,p,g,f) for p,d,g,f in sorted(list(zip(player_names, seat_names, game_scores, final_scores))[:num_players], key=lambda z: -z[3]))
     ret = [""]
     for i, rnd, honba, game_results in [(i, kyoku.round, kyoku.honba, kyoku.result) for i, kyoku in enumerate(kyokus)]:
         result_type, *results = game_results
