@@ -9,7 +9,6 @@ from typing import *
 # InjusticeJudge imports
 from .commands import _parse, _injustice, _skill
 from .utilities import analyze_game, draw_graph, long_followup, parse_game, parse_link
-from global_stuff import slash_commands_guilds
 
 class Injustice(commands.Cog):
     """
@@ -67,6 +66,9 @@ class ParseLog(commands.Cog):
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{ParseLog.__name__}`...")
+    with open('slash_commands_servers.json', 'r') as file:
+        slash_commands_servers = json.load(file)
+    slash_commands_guilds = [discord.Object(id=id) for id in slash_commands_servers.values()]
     await bot.add_cog(ParseLog(), guilds=slash_commands_guilds)
 
     logging.info(f"Loading cog `{Injustice.__name__}`...")

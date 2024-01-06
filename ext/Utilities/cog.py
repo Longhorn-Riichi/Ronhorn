@@ -3,12 +3,13 @@ import discord
 import gspread
 import logging
 import requests
+import json
 from discord.ext import commands
 from discord import app_commands, Colour, Embed, Interaction, VoiceChannel
 from typing import *
 from ext.LobbyManagers.cog import LobbyManager
 from .display_hand import replace_text
-from global_stuff import account_manager, assert_getenv, registry, raw_scores, registry_lock, raw_scores_lock, slash_commands_guilds
+from global_stuff import account_manager, assert_getenv, registry, raw_scores, registry_lock, raw_scores_lock
 from modules.InjusticeJudge.injustice_judge.fetch import parse_majsoul_link
 
 GUILD_ID: int                 = int(assert_getenv("guild_id"))
@@ -716,10 +717,11 @@ class GlobalUtilities(commands.Cog):
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{LonghornRiichiUtilities.__name__}`...")
-    instance = LonghornRiichiUtilities(bot)
-    await bot.add_cog(instance, guild=discord.Object(id=GUILD_ID))
+    await bot.add_cog(LonghornRiichiUtilities(bot), guild=discord.Object(id=GUILD_ID))
 
     logging.info(f"Loading cog `{GlobalUtilities.__name__}`...")
-    instance = GlobalUtilities(bot)
-    await bot.add_cog(instance, guilds=slash_commands_guilds)
+    with open('slash_commands_servers.json', 'r') as file:
+        slash_commands_servers = json.load(file)
+    slash_commands_guilds = [discord.Object(id=id) for id in slash_commands_servers.values()]
+    await bot.add_cog(GlobalUtilities(bot), guilds=slash_commands_guilds)
 
