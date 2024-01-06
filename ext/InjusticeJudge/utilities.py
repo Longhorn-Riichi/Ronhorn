@@ -15,7 +15,7 @@ from modules.InjusticeJudge.injustice_judge.injustices import evaluate_game
 from modules.InjusticeJudge.injustice_judge.classes2 import Kyoku
 from modules.InjusticeJudge.injustice_judge.constants import KO_TSUMO_SCORE, OYA_TSUMO_SCORE, TRANSLATE, YAOCHUUHAI
 from modules.InjusticeJudge.injustice_judge.display import ph, pt, round_name, short_round_name
-from modules.InjusticeJudge.injustice_judge.utils import to_dora_indicator
+from modules.InjusticeJudge.injustice_judge.utils import calc_ko_oya_points, to_dora_indicator
 
 async def long_followup(interaction: Interaction, chunks: List[str], header: str):
     """Followup with a long message by breaking it into multiple messages"""
@@ -201,8 +201,9 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
                 dama = "dama " if result.dama else ""
                 if result_type == "tsumo":
                     result_string += f"{player_names[result.winner]} {dama}tsumos"
-                    ko = KO_TSUMO_SCORE[result.score.han][result.score.fu]  # type: ignore[index]
-                    oya = OYA_TSUMO_SCORE[result.score.han][result.score.fu]  # type: ignore[index]
+                    points = result.score.to_points()
+                    # reverse-calculate the ko and oya parts of the total points
+                    ko, oya = calc_ko_oya_points(points, num_players=num_players, is_dealer=result.winner==rnd%4)
                     if ko == oya:
                         result_string += f" for `{result.score.to_points()}({ko}∀)`"
                     else:
