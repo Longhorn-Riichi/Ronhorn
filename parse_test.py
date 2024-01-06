@@ -6,8 +6,8 @@ async def test_injustice():
     # this took me so long to debug... I tried to make my own AccountManager, while
     # `utilities.py` was using the one from `global_stuff`... UGH.
     # uncomment the two lines below if the games are not cached yet
-    from global_stuff import account_manager
-    await account_manager.connect_and_login()
+    from global_stuff import account_manager, load_mjs_account_manager
+    await load_mjs_account_manager()
     print("===============================")
     for reason, link in links.items():
         print("reason: ", reason, "\n-----------")

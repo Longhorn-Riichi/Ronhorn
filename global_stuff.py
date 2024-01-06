@@ -1,5 +1,8 @@
 import asyncio
 import logging
+import dotenv
+
+dotenv.load_dotenv("config.env")
 
 def assert_getenv(name: str) -> str:
     from os import getenv
