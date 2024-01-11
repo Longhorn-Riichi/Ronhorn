@@ -710,6 +710,30 @@ class GlobalUtilities(commands.Cog):
         majsoul_id = result[0]["id"]
         await interaction.followup.send(content=f"https://amae-koromo.sapk.ch/player/{majsoul_id}")
 
+    @app_commands.command(name="msstats", description=f"Fetch the stats for a given Mahjong Soul username.")
+    @app_commands.describe(majsoul_name="The Mahjong Soul name to lookup.")
+    @app_commands.choices(game_type=[
+        app_commands.Choice(name="Yonma Hanchan", value="Yonma Hanchan"),
+        app_commands.Choice(name="Yonma Tonpuu", value="Yonma Tonpuu"),
+        app_commands.Choice(name="Sanma Hnchan", value="Sanma Hnchan"),
+        app_commands.Choice(name="Sanma Tonpuu", value="Sanma Tonpuu")])
+    async def msstats(self, interaction: Interaction, majsoul_name: str, game_type: app_commands.Choice[str]):
+        await interaction.response.defer()
+        result = requests.get(url=f"https://5-data.amae-koromo.com/api/v2/pl4/search_player/{majsoul_name}").json()
+        if len(result) == 0:
+            return await interaction.followup.send(content=f"Error: could not find player {majsoul_name}")
+        majsoul_id = result[0]["id"]
+        stats = await account_manager.get_stats(majsoul_id)
+
+        green = Colour.from_str("#1EA51E")
+        embed = Embed(title=f"**{game_type.value}** stats for player **{majsoul_name}**", colour=green)
+        if game_type.value in stats:
+            for k, v in stats[game_type.value].items():
+                embed.add_field(name=k, value=v, inline=True)
+            await interaction.followup.send(embed=embed)
+        else:
+            await interaction.followup.send(content=f"{majsoul_name} has no {game_type.value} games on record.")
+
     @app_commands.command(name="display", description=f"Write a message, replacing mahjong notation (like 123p 3z3Z3z) with mahjong tile emotes.")
     @app_commands.describe(text="The text containing mahjong tiles to display")
     async def display(self, interaction: Interaction, text: str):
