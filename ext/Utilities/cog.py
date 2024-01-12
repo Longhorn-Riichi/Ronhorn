@@ -844,8 +844,10 @@ class GlobalUtilities(commands.Cog):
                     registry = {}
                 with open("player_registry.json", "rb") as file:
                     registry = json.load(file)
-                majsoul_name = registry[user.name]["ms_name"]
-                majsoul_id = registry[user.name]["ms_id"]
+            if user.name not in registry or "ms_name" not in registry[user.name]:
+                return await interaction.followup.send(content=f"Error: first register your Mahjong Soul friend code with </register_stats:1195388249791799366>!")
+            majsoul_name = registry[user.name]["ms_name"]
+            majsoul_id = registry[user.name]["ms_id"]
         assert majsoul_name is not None
         assert majsoul_id is not None
 
@@ -917,8 +919,10 @@ class GlobalUtilities(commands.Cog):
                     registry = {}
                 with open("player_registry.json", "rb") as file:
                     registry = json.load(file)
-                riichicity_name = registry[user.name]["rc_name"]
-                riichicity_id = registry[user.name]["rc_friendcode"]
+            if user.name not in registry or "rc_name" not in registry[user.name]:
+                return await interaction.followup.send(content=f"Error: first register your Riichi City username with </register_stats:1195388249791799366>!")
+            riichicity_name = registry[user.name]["rc_name"]
+            riichicity_id = registry[user.name]["rc_friendcode"]
         assert riichicity_name is not None
         assert riichicity_id is not None
 

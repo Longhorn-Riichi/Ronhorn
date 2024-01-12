@@ -5,7 +5,7 @@ import logging
 from io import BytesIO
 from global_stuff import account_manager
 from modules.pymjsoul.proto import liqi_combined_pb2 as proto
-from discord import Colour, Embed, Interaction
+from discord import Colour, Embed, Interaction, Message, ui
 from typing import *
 
 # InjusticeJudge imports
@@ -17,7 +17,7 @@ from modules.InjusticeJudge.injustice_judge.constants import KO_TSUMO_SCORE, OYA
 from modules.InjusticeJudge.injustice_judge.display import ph, pt, round_name, short_round_name
 from modules.InjusticeJudge.injustice_judge.utils import calc_ko_oya_points, to_dora_indicator
 
-async def long_followup(interaction: Interaction, chunks: List[str], header: str):
+async def long_followup(interaction: Interaction, chunks: List[str], header: str, view: Optional[ui.View] = None) -> Message:
     """Followup with a long message by breaking it into multiple messages"""
     logging.info("Running long_followup")
     ret = [""]
@@ -32,14 +32,18 @@ async def long_followup(interaction: Interaction, chunks: List[str], header: str
     if len(ret) > 1 and interaction.channel is None:
         header += "\n**NOTE:** message is cut off! Ronhorn has no access to the channel to post follow-up messages"
     if interaction.followup is not None:
-        await interaction.followup.send(content=header, embed=Embed(description=ret[0], colour=green))
+        if view is not None:
+            last_message = await interaction.followup.send(content=header, embed=Embed(description=ret[0], colour=green), wait=True, view=view)
+        else:
+            last_message = await interaction.followup.send(content=header, embed=Embed(description=ret[0], colour=green), wait=True)
     else:
         logging.info("Error in long_followup: interaction.followup was None")
     if interaction.channel is not None:
         for embed in [Embed(description=text, colour=green) for text in ret[1:]]:
-            await interaction.channel.send(embed=embed)  # type: ignore[union-attr]
+            last_message = await interaction.channel.send(embed=embed)  # type: ignore[assignment, union-attr]
     else:
         logging.info("Error in long_followup: interaction.channel was None")
+    return last_message
 
 """
 =====================================================

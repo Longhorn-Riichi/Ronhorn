@@ -8,6 +8,8 @@ from typing import *
 # InjusticeJudge imports
 from .commands import _parse, _injustice, _skill
 from .utilities import analyze_game, draw_graph, long_followup, parse_game, parse_link
+from .command_view import CommandSuggestionView
+
 
 class Injustice(commands.Cog):
     """
@@ -63,15 +65,39 @@ class ParseLog(commands.Cog):
                      display_hands.value if display_hands is not None else None,
                      display_graph.value if display_graph is not None else None)
 
-async def setup(bot: commands.Bot):
-    logging.info(f"Loading cog `{ParseLog.__name__}`...")
-    with open('slash_commands_servers.json', 'r') as file:
-        slash_commands_servers = json.load(file)
-    slash_commands_guilds = [discord.Object(id=id) for id in slash_commands_servers.values()]
-    await bot.add_cog(ParseLog(), guilds=slash_commands_guilds)
+class ParseLogWithButtons(commands.Cog):
+    @app_commands.command(name="parse", description=f"Print out the results of a game.")  # type: ignore[arg-type]
+    @app_commands.describe(link="Link to the game to describe (Mahjong Soul or tenhou.net).",
+                           display_hands="Display all hands, or just mangan+ hands?",
+                           display_graph="Display a graph summary of the game?")
+    @app_commands.choices(display_hands=[
+        app_commands.Choice(name="Mangan+ hands and starting hands", value="Mangan+ hands and starting hands"),
+        app_commands.Choice(name="Mangan+ hands", value="Mangan+ hands"),
+        app_commands.Choice(name="All winning hands and starting hands", value="All winning hands and starting hands"),
+        app_commands.Choice(name="All winning hands", value="All winning hands")],
+                          display_graph=[
+        app_commands.Choice(name="Scores only", value="Scores only"),
+        app_commands.Choice(name="Scores with placement bonus", value="Scores with placement bonus")])
+    async def parse(self, interaction: Interaction, link: str, display_hands: Optional[app_commands.Choice[str]] = None, display_graph: Optional[app_commands.Choice[str]] = None):
+        await interaction.response.defer()
+        view = CommandSuggestionView(link, parse_enabled=False, injustice_enabled=True, skill_enabled=True)
+        first_message = await _parse(interaction,
+                                     link,
+                                     display_hands.value if display_hands is not None else None,
+                                     display_graph.value if display_graph is not None else None,
+                                     view)
+        view.set_message(first_message)
 
+async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{Injustice.__name__}`...")
     with open('injustice_servers.json', 'r') as file:
         injustice_servers = json.load(file)
     injustice_guilds = [discord.Object(id=id) for id in injustice_servers.values()]
     await bot.add_cog(Injustice(), guilds=injustice_guilds)
+
+    logging.info(f"Loading cog `{ParseLog.__name__}`...")
+    with open('slash_commands_servers.json', 'r') as file:
+        slash_commands_servers = json.load(file)
+    slash_commands_guilds = [discord.Object(id=id) for id in slash_commands_servers.values()]
+    await bot.add_cog(ParseLogWithButtons(), guilds=list(set(slash_commands_guilds) & set(injustice_guilds)))
+    await bot.add_cog(ParseLog(), guilds=list(set(slash_commands_guilds) - set(injustice_guilds)))

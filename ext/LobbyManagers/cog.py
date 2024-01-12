@@ -9,7 +9,7 @@ from typing import *
 
 from modules.mahjongsoul.contest_manager import ContestManager
 from global_stuff import assert_getenv, account_manager, registry, raw_scores, registry_lock, raw_scores_lock
-from .command_view import CommandSuggestionView
+from ..InjusticeJudge.command_view import CommandSuggestionView
 
 BOT_CHANNEL_ID: int        = int(assert_getenv("bot_channel_id"))
 GUILD_ID: int              = int(assert_getenv("guild_id"))
