@@ -180,13 +180,11 @@ class AccountManager(MajsoulChannel):
         return res.record_list
 
     async def get_account(self, friend_id: int) -> Optional[Tuple[str, int]]:
-        # res = await self.call("searchAccountByPattern", pattern=str(friend_id))
-        # print(res)
-        # if not res.decode_id:
-        #     return None
-        # res2 = await self.call("fetchMultiAccountBrief", account_id_list=[res.decode_id])
-        res2 = await self.call("fetchMultiAccountBrief", account_id_list=[118325554])
-        print(res2)
+        res = await self.call("searchAccountByPattern", pattern=str(friend_id))
+        print(res)
+        if not res.decode_id:
+            return None
+        res2 = await self.call("fetchMultiAccountBrief", account_id_list=[res.decode_id])
         if len(res2.players) == 0:
             return None
         return res2.players[0].nickname, res2.players[0].account_id
