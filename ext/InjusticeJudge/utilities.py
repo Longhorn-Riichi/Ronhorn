@@ -32,15 +32,18 @@ async def long_followup(interaction: Interaction, chunks: List[str], header: str
     if len(ret) > 1 and interaction.channel is None:
         header += "\n**NOTE:** message is cut off! Ronhorn has no access to the channel to post follow-up messages"
     if interaction.followup is not None:
-        if view is not None:
+        if view is not None and len(ret) == 1:
             last_message = await interaction.followup.send(content=header, embed=Embed(description=ret[0], colour=green), wait=True, view=view)
         else:
             last_message = await interaction.followup.send(content=header, embed=Embed(description=ret[0], colour=green), wait=True)
     else:
         logging.info("Error in long_followup: interaction.followup was None")
     if interaction.channel is not None:
-        for embed in [Embed(description=text, colour=green) for text in ret[1:]]:
-            last_message = await interaction.channel.send(embed=embed)  # type: ignore[assignment, union-attr]
+        for i, embed in enumerate([Embed(description=text, colour=green) for text in ret[1:]]):
+            if view is not None and i == len(ret) - 2:
+                last_message = await interaction.channel.send(embed=embed, view=view)  # type: ignore[assignment, union-attr]
+            else:
+                last_message = await interaction.channel.send(embed=embed)  # type: ignore[assignment, union-attr]
     else:
         logging.info("Error in long_followup: interaction.channel was None")
     return last_message
