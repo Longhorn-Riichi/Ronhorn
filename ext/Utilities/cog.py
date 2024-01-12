@@ -1,8 +1,11 @@
+import asyncio
 import datetime
 import discord
 import gspread
 import logging
 import requests
+import urllib3
+import os
 import json
 from discord.ext import commands
 from discord import app_commands, Colour, Embed, Interaction, VoiceChannel
@@ -37,6 +40,7 @@ class LonghornRiichiUtilities(commands.Cog):
     Utility commands specific to Longhorn Riichi
     """
     def __init__(self, bot: commands.Bot):
+        self.player_registry_lock = asyncio.Lock()
         self.bot = bot
 
     """
@@ -231,6 +235,7 @@ class LonghornRiichiUtilities(commands.Cog):
         mahjongsoul_nickname = None
         mahjongsoul_account_id = None
         async with registry_lock:
+            assert registry is not None
             # Delete any existing registration
             found_cell: gspread.cell.Cell = registry.find(discord_name, in_column=2)
             cell_existed = found_cell is not None
@@ -245,14 +250,12 @@ class LonghornRiichiUtilities(commands.Cog):
         if friend_id is None:
             friend_id = existing_friend_id
         elif friend_id != existing_friend_id:
-            # Fetch Mahjong Soul details using one of the lobby managers
-            res = await self.get_cog(ST_NAME).manager.call("searchAccountByEid", eids = [friend_id])
-            # if no account found, then `res` won't have a `search_result` field, but it won't
-            # have an `error`` field, either (i.e., it's not an error!).
-            if not res.search_result:
+            assert account_manager is not None
+            result = await account_manager.get_account(friend_id)
+            if result is None:
                 raise Exception(f"Couldn't find Mahjong Soul account for this friend ID: {friend_id}")
-            mahjongsoul_nickname = res.search_result[0].nickname
-            mahjongsoul_account_id = res.search_result[0].account_id
+            mahjongsoul_nickname = result[0]
+            mahjongsoul_account_id = result[1]
 
         data = [name,
                 discord_name,
@@ -710,29 +713,182 @@ class GlobalUtilities(commands.Cog):
         majsoul_id = result[0]["id"]
         await interaction.followup.send(content=f"https://amae-koromo.sapk.ch/player/{majsoul_id}")
 
-    @app_commands.command(name="msstats", description=f"Fetch the stats for a given Mahjong Soul username.")
-    @app_commands.describe(majsoul_name="The Mahjong Soul name to lookup.")
+    @app_commands.command(name="display", description=f"Write a message, replacing mahjong notation (like 123p 3z3Z3z) with mahjong tile emotes.")
+    @app_commands.describe(text="The text containing mahjong tiles to display")
+    async def display(self, interaction: Interaction, text: str):
+        await interaction.response.send_message(replace_text(text))
+
+    @app_commands.command(name="register_stats", description=f"Register your (Mahjong Soul, tenhou.net, Riichi City) id for /stats.")
+    @app_commands.describe(majsoul_friend_code="Mahjong Soul friend code to register.",
+                           # tenhou_name="tenhou.net username to register.",
+                           riichicity_name="Riichi City username to register. (case-insensitive)",
+                           riichicity_friend_code="Alternatively, register with Riichi City friend code.",
+                           )
+    async def register_stats(self, interaction: Interaction,
+                                   majsoul_friend_code: Optional[int],
+                                   # tenhou_name: Optional[str],
+                                   riichicity_name: Optional[str],
+                                   riichicity_friend_code: Optional[int]):
+        await interaction.response.defer(ephemeral=True)
+        tenhou_name = None # no way to get tenhou stats outside of nodocchi so we will ignore tenhou.net
+        async with registry_lock:
+            if not os.path.isfile("player_registry.json"):
+                registry = {}
+            with open("player_registry.json", "rb") as file:
+                registry = json.load(file)
+            discord_name = interaction.user.name
+            if discord_name not in registry:
+                registry[discord_name] = {}
+
+            updated = {}
+            if majsoul_friend_code is not None:
+                assert account_manager is not None
+                result = await account_manager.get_account(majsoul_friend_code)
+                if result is None:
+                    raise Exception(f"Invalid Mahjong soul friend code {majsoul_friend_code}")
+                registry[discord_name]["ms_name"] = result[0]
+                registry[discord_name]["ms_id"] = result[1]
+                registry[discord_name]["ms_friendcode"] = majsoul_friend_code
+                updated["Mahjong Soul"] = registry[discord_name]["ms_name"]
+            if tenhou_name is not None:
+                registry[discord_name]["tenhou_name"] = tenhou_name
+                updated["tenhou.net"] = registry[discord_name]["tenhou_name"]
+            if riichicity_name is not None or riichicity_friend_code is not None:
+                query = str(riichicity_friend_code) if riichicity_friend_code is not None else riichicity_name
+                SID = os.getenv("rc_sid")
+                assert SID is not None
+                results = requests.post(
+                    url="http://13.112.183.79/mixed_client/findFriend",
+                    headers={
+                        "Cookies": "{\"sid\":\"" + SID + "\"}",
+                        "User-Agent": urllib3.util.SKIP_HEADER,  # type: ignore[attr-defined]
+                        "Accept-Encoding": urllib3.util.SKIP_HEADER,  # type: ignore[attr-defined]
+                        "Connection": "close",
+                    },
+                    data="{\"findType\":2,\"content\":\"" + query + "\"}").json()
+                if results["code"] != 0:
+                    raise Exception(f"Error {results['code']}: {results['message']}")
+                registry[discord_name]["rc_name"] = results["data"]["friendList"][0]["nickname"]
+                registry[discord_name]["rc_friendcode"] = results["data"]["friendList"][0]["userID"]
+                updated["Riichi City"] = registry[discord_name]["rc_name"]
+            with open("player_registry.json", "wb") as file:
+                file.write(json.dumps(registry, ensure_ascii=False).encode("utf-8"))
+
+        out_header = f"Updated your registration for {' and '.join(updated.keys())}:"
+        green = Colour.from_str("#1EA51E")
+        embed = Embed(description="Registered accounts:", colour=green)
+        for k, v in {"Mahjong Soul": "ms_name", "tenhou.net": "tenhou_name", "Riichi City": "rc_name"}.items():
+            if v in registry[discord_name]:
+                embed.add_field(name=f"**{k}**", value=registry[discord_name][v], inline=True)
+        await interaction.followup.send(content=out_header, embed=embed)
+
+    @app_commands.command(name="ms_stats", description=f"Fetch Mahjong Soul stats for yourself or someone else.")
+    @app_commands.describe(game_type="Game type to display stats for.",
+                           user="(optional) Discord user to display stats for (if they've registered their Mahjong Soul account)",
+                           majsoul_name="(optional) The Mahjong Soul name to lookup. Must have games played in Gold room or higher")
     @app_commands.choices(game_type=[
         app_commands.Choice(name="Yonma Hanchan", value="Yonma Hanchan"),
         app_commands.Choice(name="Yonma Tonpuu", value="Yonma Tonpuu"),
-        app_commands.Choice(name="Sanma Hnchan", value="Sanma Hnchan"),
+        app_commands.Choice(name="Sanma Hanchan", value="Sanma Hanchan"),
         app_commands.Choice(name="Sanma Tonpuu", value="Sanma Tonpuu")])
-    async def msstats(self, interaction: Interaction, majsoul_name: str, game_type: app_commands.Choice[str]):
+    async def ms_stats(self, interaction: Interaction, game_type: app_commands.Choice[str], user: Optional[discord.Member], majsoul_name: Optional[str]):
         await interaction.response.defer()
-        result = requests.get(url=f"https://5-data.amae-koromo.com/api/v2/pl4/search_player/{majsoul_name}").json()
-        if len(result) == 0:
-            return await interaction.followup.send(content=f"Error: could not find player {majsoul_name}")
-        majsoul_id = result[0]["id"]
+        majsoul_id = None
+        if user is None and majsoul_name is not None:
+            result = requests.get(url=f"https://5-data.amae-koromo.com/api/v2/pl4/search_player/{majsoul_name}").json()
+            if len(result) == 0:
+                return await interaction.followup.send(content=f"Error: could not find player {majsoul_name}")
+            majsoul_id = result[0]["id"]
+        if user is None:
+            assert isinstance(interaction.user, discord.Member)
+            user = interaction.user
+        if majsoul_id is None:
+            async with registry_lock:
+                if not os.path.isfile("player_registry.json"):
+                    registry = {}
+                with open("player_registry.json", "rb") as file:
+                    registry = json.load(file)
+                majsoul_name = registry[user.name]["ms_name"]
+                majsoul_id = registry[user.name]["ms_id"]
+        assert majsoul_name is not None
+        assert majsoul_id is not None
+
+        assert account_manager is not None
         stats = await account_manager.get_stats(majsoul_id)
 
         green = Colour.from_str("#1EA51E")
-        embed = Embed(title=f"**{game_type.value}** stats for player **{majsoul_name}**", colour=green)
+        embed = Embed(title=f"**{game_type.value}** stats for Mahjong Soul player **{majsoul_name}**", colour=green)
         if game_type.value in stats:
             for k, v in stats[game_type.value].items():
                 embed.add_field(name=k, value=v, inline=True)
             await interaction.followup.send(embed=embed)
         else:
             await interaction.followup.send(content=f"{majsoul_name} has no {game_type.value} games on record.")
+
+    def get_riichicity_stats(self, riichicity_id: int, game_type: str) -> Dict[str, Any]:
+        SID = os.getenv("rc_sid")
+        assert SID is not None
+        num_rounds = 1 if "Tonpuu" in game_type else 2
+        player_count = 3 if "Sanma" in game_type else 4
+        results = requests.post(
+            url="http://13.112.183.79/stats/userDetailStatsV2",
+            headers={
+                "Cookies": "{\"sid\":\"" + SID + "\"}",
+                "User-Agent": urllib3.util.SKIP_HEADER,  # type: ignore[attr-defined]
+                "Accept-Encoding": urllib3.util.SKIP_HEADER,  # type: ignore[attr-defined]
+                "Connection": "close",
+            },
+            data="{\"gameplay\":1001,\"dataType\":0,\"stageType\":[1,2,3,4],\"playerCount\":" + str(player_count) + ",\"userID\":" + str(riichicity_id) + ",\"round\":[" + str(num_rounds) + "]}").json()
+        if results["code"] != 0:
+            raise Exception(f"Error {results['code']}: {results['message']}")
+
+        import numpy
+        m = results["data"][0]
+        stats = {}
+        stats["Total games"] = m["totalEndTimes"]
+        placements_raw = [m[p + "Times"] for p in ["first", "second", "third", "fourth"]]
+        placements = [round(100 * p / m["totalEndTimes"], 2) for p in placements_raw]
+        stats["Avg score"] = round(m["huTotalScore"] / m["huTotalCount"])
+        stats["Avg rank"] = round(numpy.average([1,2,3,4], weights=placements), 2)
+        stats["Win rate"] = str(round(100 * m["huTotalCount"]/m["gameCount"], 2)) + "%"
+        stats["Tsumo rate"] = str(round(100 * m["ziMoCount"]/m["huTotalCount"], 2)) + "%"
+        stats["Deal-in rate"] = str(round(100 * m["chongTotalCount"]/m["gameCount"], 2)) + "%"
+        stats["Call rate"] = str(round(100 * m["existFuLouCount"]/m["gameCount"], 2)) + "%"
+        stats["Riichi rate"] = str(round(100 * m["existLiZhiCount"]/m["gameCount"], 2)) + "%"
+        return stats
+
+    @app_commands.command(name="rc_stats", description=f"Fetch Riichi City stats for yourself or someone else.")
+    @app_commands.describe(game_type="Game type to display stats for.",
+                           user="(optional) Discord user to display stats for (if they've registered their Riichi City account)")
+    @app_commands.choices(game_type=[
+        app_commands.Choice(name="Yonma Hanchan", value="Yonma Hanchan"),
+        app_commands.Choice(name="Yonma Tonpuu", value="Yonma Tonpuu"),
+        app_commands.Choice(name="Sanma Hanchan", value="Sanma Hanchan"),
+        app_commands.Choice(name="Sanma Tonpuu", value="Sanma Tonpuu")])
+    async def rc_stats(self, interaction: Interaction, game_type: app_commands.Choice[str], user: Optional[discord.Member], majsoul_name: Optional[str]):
+        await interaction.response.defer()
+        riichicity_id = None
+        if user is None:
+            assert isinstance(interaction.user, discord.Member)
+            user = interaction.user
+        if riichicity_id is None:
+            async with registry_lock:
+                if not os.path.isfile("player_registry.json"):
+                    registry = {}
+                with open("player_registry.json", "rb") as file:
+                    registry = json.load(file)
+                riichicity_name = registry[user.name]["rc_name"]
+                riichicity_id = registry[user.name]["rc_friendcode"]
+        assert riichicity_name is not None
+        assert riichicity_id is not None
+
+        stats = self.get_riichicity_stats(riichicity_id, game_type.value)
+
+        green = Colour.from_str("#1EA51E")
+        embed = Embed(title=f"**{game_type.value}** stats for Riichi City player **{riichicity_name}**", colour=green)
+        for k, v in stats.items():
+            embed.add_field(name=k, value=v, inline=True)
+        await interaction.followup.send(embed=embed)
 
     @app_commands.command(name="display", description=f"Write a message, replacing mahjong notation (like 123p 3z3Z3z) with mahjong tile emotes.")
     @app_commands.describe(text="The text containing mahjong tiles to display")

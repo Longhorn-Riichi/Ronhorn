@@ -40,8 +40,8 @@ async def load_mjs_account_manager():
     global account_manager
     from modules.mahjongsoul.account_manager import AccountManager
     account_manager = AccountManager(
-        mjs_username=assert_getenv("mjs_sh_username"),
-        mjs_password=assert_getenv("mjs_sh_password"))
+        mjs_uid=assert_getenv("mjs_sh_uid"),
+        mjs_token=assert_getenv("mjs_sh_token"))
 
     await asyncio.sleep(0) # yield thread
     account_manager_login = asyncio.create_task(account_manager.connect_and_login())

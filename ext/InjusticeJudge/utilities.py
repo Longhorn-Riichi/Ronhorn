@@ -127,6 +127,7 @@ async def fetch_majsoul(link: str):
         record = proto.ResGameRecord()  # type: ignore[attr-defined]
         record.ParseFromString(f.read())
     except Exception:
+        assert account_manager is not None
         record = await account_manager.call(
             "fetchGameRecord",
             game_uuid=identifier,

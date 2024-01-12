@@ -9,6 +9,7 @@ Pipfile.lock
 **/__pycache__
 log.txt
 cached_games/*
+player_registry.json
 
 # may result from installing protobuf-cli with npm
 **/package.json

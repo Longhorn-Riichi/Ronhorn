@@ -9,20 +9,63 @@ from modules.pymjsoul.proto import liqi_combined_pb2
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError, InvalidStatusCode
 
 MS_CHINESE_WSS_ENDPOINT = "wss://gateway-hw.maj-soul.com:443/gateway"
+MS_ENGLISH_WSS_ENDPOINT = "wss://mjusgs.mahjongsoul.com:9663/"
 
 class AccountManager(MajsoulChannel):
     """
     wraps around the `MajsoulChannel` class. The main point is so
     we can directly fetch a single game's result
     """
-    def __init__(self, mjs_username: str, mjs_password: str, log_messages=False, logger_name="Account Manager"):
+    def __init__(self, mjs_username: Optional[str]=None, mjs_password: Optional[str]=None, mjs_uid: Optional[str]=None, mjs_token: Optional[str]=None, log_messages=False, logger_name="Account Manager"):
         self.mjs_username = mjs_username
         self.mjs_password = mjs_password
+        self.mjs_uid = mjs_uid
+        self.mjs_token = mjs_token
+        self.use_cn = self.mjs_username is not None and self.mjs_password is not None
+        self.use_en = self.mjs_uid is not None and self.mjs_token is not None
+        if not self.use_cn and not self.use_en:
+            raise Exception("Account manager was initialized without login credentials!")
+
         self.client_version_string: Optional[str] = None # obtained in `login`, useful for certain calls like `fetchGameRecord`
         super().__init__(proto=liqi_combined_pb2, log_messages=log_messages, logger_name=logger_name)
         self.huge_ping_task: Optional[asyncio.Task] = None
     
     async def login(self):
+        """
+        this is its own method so it can be used again without having to establish
+        another WSS connection (e.g., when we were logged out outside of this module)
+        NOTE: this method starts the `huge_ping` task. It should be canceled before
+        reusing this method.
+        NOTE: use `super().call()` to avoid infinite errors
+        """
+        if self.use_cn:
+            await self.login_cn()
+        elif self.use_en:
+            await self.login_en()
+
+        self.huge_ping_task = asyncio.create_task(self.huge_ping())
+    
+    async def login_en(self):
+        UID = self.mjs_uid
+        TOKEN = self.mjs_token
+        MS_VERSION = requests.get(url="https://mahjongsoul.game.yo-star.com/version.json").json()["version"][:-2]
+        self.logger.info("Calling heatbeat...")
+        await super().call("heatbeat")
+        self.logger.info("Requesting initial access token...")
+        USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/110.0"
+        access_token = requests.post(url="https://passport.mahjongsoul.com/user/login", headers={"User-Agent": USER_AGENT, "Referer": "https://mahjongsoul.game.yo-star.com/"}, data={"uid":UID,"token":TOKEN,"deviceId":f"web|{UID}"}).json()["accessToken"]
+        self.logger.info("Requesting oauth access token...")
+        oauth_token = (await super().call("oauth2Auth", type=7, code=access_token, uid=UID, client_version_string=f"web-{MS_VERSION}")).access_token
+        self.logger.info("Calling heatbeat...")
+        await super().call("heatbeat")
+        self.logger.info("Calling oauth2Check...")
+        assert (await super().call("oauth2Check", type=7, access_token=oauth_token)).has_account, "couldn't find account with oauth2Check"
+        self.logger.info("Calling oauth2Login...")
+        client_device_info = {"platform": "pc", "hardware": "pc", "os": "mac", "is_browser": True, "software": "Firefox", "sale_platform": "web"}
+        await super().call("oauth2Login", type=7, access_token=oauth_token, reconnect=False, device=client_device_info, random_key=str(uuid.uuid1()), client_version={"resource": f"{MS_VERSION}.w"}, currency_platforms=[], client_version_string=f"web-{MS_VERSION}", tag="en")
+        self.logger.info(f"`login` with token successful!")
+
+    async def login_cn(self):
         """
         this is its own method so it can be used again without having to establish
         another WSS connection (e.g., when we were logged out outside of this module)
@@ -48,8 +91,6 @@ class AccountManager(MajsoulChannel):
         
         self.logger.info(f"`login` with {self.mjs_username} successful!")
 
-        self.huge_ping_task = asyncio.create_task(self.huge_ping())
-    
     async def huge_ping(self, huge_ping_interval=14400):
         """
         this task tries to call `heatbeat` every 4 hours so we know when
@@ -72,7 +113,10 @@ class AccountManager(MajsoulChannel):
         Connect to the Chinese game server and login with username and password.
         """
         try:
-            await self.connect(MS_CHINESE_WSS_ENDPOINT)
+            if self.use_cn:
+                await self.connect(MS_CHINESE_WSS_ENDPOINT)
+            else:
+                await self.connect(MS_ENGLISH_WSS_ENDPOINT)
             await self.login()
         except InvalidStatusCode as e:
             self.logger.error("Failed to login for Lobby. Is Mahjong Soul currently undergoing maintenance?")
@@ -135,9 +179,21 @@ class AccountManager(MajsoulChannel):
             uuid_list=uuid_list)
         return res.record_list
 
+    async def get_account(self, friend_id: int) -> Optional[Tuple[str, int]]:
+        # res = await self.call("searchAccountByPattern", pattern=str(friend_id))
+        # print(res)
+        # if not res.decode_id:
+        #     return None
+        # res2 = await self.call("fetchMultiAccountBrief", account_id_list=[res.decode_id])
+        res2 = await self.call("fetchMultiAccountBrief", account_id_list=[118325554])
+        print(res2)
+        if len(res2.players) == 0:
+            return None
+        return res2.players[0].nickname, res2.players[0].account_id
+
     async def get_stats(self, account_id: int):
-        record = await self.call("fetchAccountStatisticInfo", account_id=account_id)
-        ranked = record.detail_data.rank_statistic
+        res = await self.call("fetchAccountStatisticInfo", account_id=account_id)
+        ranked = res.detail_data.rank_statistic
         import numpy
         modes = {1: "Yonma Tonpuu", 2: "Yonma Hanchan", 11: "Sanma Tonpuu", 12: "Sanma Hanchan"}
         ends = {0: "0", 1: "1", 2: "tsumo", 3: "ron", 4: "deal-in", 5: "5"}
