@@ -1,7 +1,6 @@
 import logging
 import json
 import discord
-from io import BytesIO
 from discord.ext import commands
 from discord import app_commands, ui, ButtonStyle, Colour, Embed, Interaction
 from typing import *

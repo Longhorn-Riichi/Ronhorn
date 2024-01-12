@@ -1,5 +1,3 @@
-
-from io import BytesIO
 from discord import app_commands, ui, ButtonStyle, Interaction, Message
 from ..InjusticeJudge.commands import _parse, _injustice, _skill
 

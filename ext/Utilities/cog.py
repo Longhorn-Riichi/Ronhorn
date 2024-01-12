@@ -7,6 +7,10 @@ import requests
 import urllib3
 import os
 import json
+import matplotlib.pyplot as plt
+from matplotlib.cbook import get_sample_data
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from io import BytesIO
 from discord.ext import commands
 from discord import app_commands, Colour, Embed, Interaction, VoiceChannel
 from typing import *
@@ -782,6 +786,38 @@ class GlobalUtilities(commands.Cog):
                 embed.add_field(name=f"**{k}**", value=registry[discord_name][v], inline=True)
         await interaction.followup.send(content=out_header, embed=embed)
 
+    def draw_ms_trendline(self, data):
+        plt.rcParams["font.size"] = 36
+        plt.rcParams["text.color"] = "orange"
+        plt.rcParams["xtick.color"] = "gray"
+        plt.rcParams["ytick.color"] = "gray"
+        data = [(3, False), (1, True), (4, False), (2, False), (2, False), (2, False), (3, False), (2, False), (4, False), (2, False)]
+        plt.figure(figsize=(20, 4))
+        plt.plot(range(10), [rank for rank, _ in data], marker="o", markersize=28, color="orange", linestyle="-", linewidth=8)
+
+        fn = get_sample_data(os.path.join(os.getcwd(), "images/sunglasses_cat.png"), asfileobj=False)
+        ax = plt.gca()
+        sunglasses_cat = OffsetImage(plt.imread(fn, format='png'), zoom=0.15)
+        for x, (rank, sunglasses) in zip(range(10), data):
+            if sunglasses:
+                ax.add_artist(AnnotationBbox(sunglasses_cat, (x, rank), frameon=False, box_alignment=(0.5, 0.5)))
+
+        ax.invert_yaxis()
+        plt.yticks(range(1, 5), ["1st", "2nd", "3rd", "4th"])
+        plt.ylim(4.5, 0.5)
+        plt.grid(axis="y")
+        plt.tick_params(axis="x", which="both", bottom=False, top=False, labelbottom=False)
+        plt.box(False)
+        plt.tight_layout()
+
+        # return as a BytesIO object
+        buf = BytesIO()
+        plt.savefig(buf, format="png", transparent=True, bbox_inches="tight")
+        buf.seek(0)
+        plt.cla()
+        plt.clf()
+        return buf
+
     @app_commands.command(name="ms_stats", description=f"Fetch Mahjong Soul stats for yourself or someone else.")
     @app_commands.describe(game_type="Game type to display stats for.",
                            user="(optional) Discord user to display stats for (if they've registered their Mahjong Soul account)",
@@ -815,13 +851,17 @@ class GlobalUtilities(commands.Cog):
 
         assert account_manager is not None
         stats = await account_manager.get_stats(majsoul_id)
+        trendline_key = "Yonma recents" if "Yonma" in game_type.value else "Sanma recents"
+        trendline = discord.File(fp=self.draw_ms_trendline(stats[trendline_key]), filename=f"trendline.png")
 
         green = Colour.from_str("#1EA51E")
         embed = Embed(title=f"**{game_type.value}** stats for Mahjong Soul player **{majsoul_name}**", colour=green)
+        embed.set_image(url='attachment://trendline.png')
+
         if game_type.value in stats:
             for k, v in stats[game_type.value].items():
                 embed.add_field(name=k, value=v, inline=True)
-            await interaction.followup.send(embed=embed)
+            await interaction.followup.send(file=trendline, embed=embed)
         else:
             await interaction.followup.send(content=f"{majsoul_name} has no {game_type.value} games on record.")
 
