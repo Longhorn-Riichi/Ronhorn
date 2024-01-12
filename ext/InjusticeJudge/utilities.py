@@ -95,6 +95,8 @@ async def parse_game_link(link: str, specified_players: Set[int] = set(), nickna
             specified_players = {parsed_player_seat}
         elif player is not None:
             specified_players = {player}
+        else:
+            specified_players = {0}
     return kyokus, parsed_metadata, specified_players
 
 async def analyze_game(link: str, specified_players: Set[int] = set(), look_for: Set[str] = {"injustice"}, nickname: Optional[str] = None) -> Tuple[List[str], Set[int]]:
