@@ -854,12 +854,13 @@ class GlobalUtilities(commands.Cog):
         assert account_manager is not None
         stats = await account_manager.get_stats(majsoul_id)
         timestamp = str(datetime.datetime.now()).split(".")[0]
+        trendline_filename = f"trendline-{majsoul_id}-{timestamp}.png"
         trendline_key = "Yonma recents" if "Yonma" in game_type.value else "Sanma recents"
-        trendline = discord.File(fp=self.draw_ms_trendline(stats[trendline_key]), filename=f"trendline-{majsoul_id}-{timestamp}.png")
+        trendline = discord.File(fp=self.draw_ms_trendline(stats[trendline_key]), filename=trendline_filename)
 
         green = Colour.from_str("#1EA51E")
         embed = Embed(title=f"**{game_type.value}** stats for Mahjong Soul player **{majsoul_name}**", colour=green)
-        embed.set_image(url='attachment://trendline.png')
+        embed.set_image(url=f"attachment://{trendline_filename}")
 
         if game_type.value in stats:
             for k, v in stats[game_type.value].items():
