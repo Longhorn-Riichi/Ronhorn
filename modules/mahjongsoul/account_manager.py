@@ -195,12 +195,18 @@ class AccountManager(MajsoulChannel):
         import numpy
         modes = {1: "Yonma Tonpuu", 2: "Yonma Hanchan", 11: "Sanma Tonpuu", 12: "Sanma Hanchan"}
         ends = {0: "0", 1: "1", 2: "tsumo", 3: "ron", 4: "deal-in", 5: "5"}
-        stats: Dict[str, Any] = {m: {} for m in modes.values()}
+        stats: Dict[str, Any] = {m: {"Total games": 0} for m in modes.values()}
         for m in ranked.total_statistic.all_level_statistic.game_mode:
             s = stats[modes[m.mode]]
             s["Total games"] = m.game_count_sum
             placements = [round(100 * p / m.game_count_sum, 2) for p in m.game_final_position]
             round_ends = {ends[e.type]: e.sum for e in m.round_end}
+            if "ron" not in round_ends:
+                round_ends["ron"] = 0
+            if "tsumo" not in round_ends:
+                round_ends["tsumo"] = 0
+            if "deal-in" not in round_ends:
+                round_ends["deal-in"] = 0
             s["Avg score"] = round(m.dadian_sum / (round_ends["ron"] + round_ends["tsumo"]))
             s["Avg rank"] = round(numpy.average([1,2,3,4], weights=placements), 2)
             s["Win rate"] = str(round(100 * (round_ends["ron"] + round_ends["tsumo"])/m.round_count_sum, 2)) + "%"

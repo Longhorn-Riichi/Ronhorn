@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import time
 import discord
 import gspread
 import logging
@@ -791,9 +792,8 @@ class GlobalUtilities(commands.Cog):
         plt.rcParams["text.color"] = "orange"
         plt.rcParams["xtick.color"] = "gray"
         plt.rcParams["ytick.color"] = "gray"
-        data = [(3, False), (1, True), (4, False), (2, False), (2, False), (2, False), (3, False), (2, False), (4, False), (2, False)]
         plt.figure(figsize=(20, 4))
-        plt.plot(range(10), [rank for rank, _ in data], marker="o", markersize=28, color="orange", linestyle="-", linewidth=8)
+        plt.plot(range(len(data)), [rank for rank, _ in data], marker="o", markersize=28, color="orange", linestyle="-", linewidth=8)
 
         fn = get_sample_data(os.path.join(os.getcwd(), "images/sunglasses_cat.png"), asfileobj=False)
         ax = plt.gca()
@@ -833,7 +833,7 @@ class GlobalUtilities(commands.Cog):
         if user is None and majsoul_name is not None:
             result = requests.get(url=f"https://5-data.amae-koromo.com/api/v2/pl4/search_player/{majsoul_name}").json()
             if len(result) == 0:
-                return await interaction.followup.send(content=f"Error: could not find player {majsoul_name}")
+                return await interaction.followup.send(content=f"Error: could not find player {majsoul_name}. This search only works for Gold room players and above.")
             majsoul_id = result[0]["id"]
         if user is None:
             assert isinstance(interaction.user, discord.Member)
@@ -853,19 +853,19 @@ class GlobalUtilities(commands.Cog):
 
         assert account_manager is not None
         stats = await account_manager.get_stats(majsoul_id)
-        timestamp = str(datetime.datetime.now()).split(".")[0]
-        trendline_filename = f"trendline-{majsoul_id}-{timestamp}.png"
-        trendline_key = "Yonma recents" if "Yonma" in game_type.value else "Sanma recents"
-        trendline = discord.File(fp=self.draw_ms_trendline(stats[trendline_key]), filename=trendline_filename)
+        trendline_filename = f"trendline-{majsoul_id}-{round(time.time())}.png"
+        trendline_data_key = "Yonma recents" if "Yonma" in game_type.value else "Sanma recents"
+        if trendline_data_key not in stats:
+            return await interaction.followup.send(content=f"No {game_type.value} games on record.")
+        trendline = discord.File(fp=self.draw_ms_trendline(data=stats[trendline_data_key]), filename=trendline_filename)
 
         green = Colour.from_str("#1EA51E")
         embed = Embed(title=f"**{game_type.value}** stats for Mahjong Soul player **{majsoul_name}**", colour=green)
-        embed.set_image(url=f"attachment://{trendline_filename}")
-
         if game_type.value in stats:
             for k, v in stats[game_type.value].items():
                 embed.add_field(name=k, value=v, inline=True)
-            await interaction.followup.send(file=trendline, embed=embed)
+            embed.set_image(url=f"attachment://{trendline_filename}")
+            await interaction.followup.send(embed=embed, file=trendline)
         else:
             await interaction.followup.send(content=f"{majsoul_name} has no {game_type.value} games on record.")
 
