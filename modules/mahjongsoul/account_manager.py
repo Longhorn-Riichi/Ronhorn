@@ -230,13 +230,23 @@ class AccountManager(MajsoulChannel):
             total_rounds = r.statistic.recent_round.total_count
             avg_pt = r.statistic.recent_20_hu_summary.average_hu_point
 
+            # all stats scale linearly
+
             # = k == A.liqi4 ? (f - 3000) / 5000 * 100 : (f - 4000) / 8000 * 100
+            # in yonma, 3000 avg points is 0 ATK, 8000 avg points is 100 ATK
+            # in sanma, 4000 avg points is 0 ATK, 12000 avg points is 100 ATK
             s1["ATK"] = s2["ATK"] = clamp((avg_pt-3000)/5000 if r.mahjong_category == 1 else (avg_pt-4000)/8000)
+
             # = (1.12 - v.recent_round.fangchong_count / v.recent_round.total_count * 3.4) * 100
+            # 32.94% deal-in rate is 0 DEF, 3.53% deal-in rate is 100 DEF
             s1["DEF"] = s2["DEF"] = clamp(1.12-(r.statistic.recent_round.fangchong_count/total_rounds*3.4))
+
             # = ((v.recent_round.rong_count + v.recent_round.zimo_count) / v.recent_round.total_count - 0.1) / 0.3 * 100
+            # 10% winrate is 0 SPD, 40% winrate is 100 SPD
             s1["SPD"] = s2["SPD"] = clamp((((r.statistic.recent_round.rong_count+r.statistic.recent_round.zimo_count)/total_rounds)-0.1)/0.3)
+
             # = v.recent_10_hu_summary.total_xuanshang / v.recent_10_hu_summary.total_fanshu * 1.5 * 100
+            # 0% lucky han is 0 LUK, 66.67% lucky han is 100 LUK
             s1["LUK"] = s2["LUK"] = clamp(r.statistic.recent_10_hu_summary.total_xuanshang / r.statistic.recent_10_hu_summary.total_fanshu * 1.5)
 
             if r.mahjong_category == 1:

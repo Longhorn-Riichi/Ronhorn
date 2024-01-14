@@ -27,10 +27,7 @@ class CommandSuggestionView(ui.View):
         await self.remove_view()
 
     async def remove_view(self) -> None:
-        if isinstance(self.message, WebhookMessage):
-            await self.message.edit(view=None)
-        else:
-            await self.message.edit(view=None, suppress=True)
+        await self.message.edit(view=None)
         self.stop()
 
     async def update_view(self) -> None:

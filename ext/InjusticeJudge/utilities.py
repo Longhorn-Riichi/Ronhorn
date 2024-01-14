@@ -324,6 +324,8 @@ async def draw_graph(link: str, display_graph: Optional[str] = None) -> BytesIO:
     plt.rcParams["xtick.color"] = "gray"
     plt.rcParams["ytick.color"] = "gray"
     plt.rcParams["figure.figsize"] = [12.8, 8.4]
+    plt.figure(figsize=(12, 7.5))
+
     plt.xticks(rotation=45, ha="right")
     plt.margins(0.02)
     plt.box(False)

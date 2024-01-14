@@ -121,6 +121,7 @@ class LobbyManager(commands.Cog):
             
             raw_score = p.part_point_1
             async with registry_lock:
+                assert registry is not None
                 found_cell: gspread.cell.Cell = registry.find(str(player_account_id), in_column=MJS_ACCOUNT_ID_COL)
                 if found_cell is not None:
                     discord_name = registry.cell(found_cell.row, DISCORD_NAME_COL).value
