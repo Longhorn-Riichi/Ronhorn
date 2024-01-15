@@ -333,16 +333,15 @@ async def draw_graph(link: str, display_graph: Optional[str] = None) -> BytesIO:
     # collect data
     rounds = [""] + [round_name(kyoku.round, kyoku.honba) for kyoku in kyokus]
     scores = [[kyoku.start_scores[i] for kyoku in kyokus] + [game_metadata.game_score[i]] for i in range(game_metadata.num_players)]
-    scaling_unit: float = 100
     if display_graph == "Scores with placement bonus":
         scores = list(zip(*(list(game_metadata.rules.apply_placement_bonus(round, score)) for round, score in zip([0] + [kyoku.round for kyoku in kyokus], zip(*scores)))))
-        scaling_unit = 0.2
     colors = ["orangered", "gold", "forestgreen", "darkviolet"]
 
     # calculate offsets for annotations (so numbers don't overlap)
     min_score = min(score for scores_per_round in scores for score in scores_per_round)
     max_score = max(score for scores_per_round in scores for score in scores_per_round)
     min_separation = (max_score - min_score) / 12
+    step_unit = min_separation / 24
     check_closeness = True
     gas = 1000
     yoffsets: List[float] = [0] * game_metadata.num_players
@@ -353,13 +352,13 @@ async def draw_graph(link: str, display_graph: Optional[str] = None) -> BytesIO:
         for (s1, i1), (s2, i2) in zip(final_scores[:-1], final_scores[1:]):
             if (s2 + yoffsets[i2]) - (s1 + yoffsets[i1]) < min_separation:
                 check_closeness = True
-                yoffsets[i1] -= scaling_unit
-                yoffsets[i2] += scaling_unit
+                yoffsets[i1] -= step_unit
+                yoffsets[i2] += step_unit
     # draw the graph
     plt.grid(linestyle="--", linewidth=1.0)
     plt.axhline(0, color="gray", linewidth=4.0)
     for name, score, color, yoffset in zip(game_metadata.name, scores, colors, yoffsets):
-        yoffset *= 100/scaling_unit
+        yoffset *= 100/step_unit
         plt.plot(rounds, score, label=name, color=color, alpha=0.8, linewidth=8, solid_capstyle="round")
         # display end score
         plt.annotate(str(score[-1]), (rounds[-1], score[-1]), textcoords="offset points", xytext=(10,yoffset/plt.rcParams["figure.dpi"]), va="center", color=color)
