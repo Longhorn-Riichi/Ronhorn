@@ -214,7 +214,7 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
                     points = result.score.to_points()
                     # reverse-calculate the ko and oya parts of the total points
                     ko, oya = calc_ko_oya_points(points, num_players=num_players, is_dealer=result.winner==rnd%4)
-                    if ko == oya:
+                    if oya == 0:
                         result_string += f" for `{result.score.to_points()}({ko}∀)`"
                     else:
                         result_string += f" for `{result.score.to_points()}({ko}/{oya})`"
@@ -240,7 +240,7 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
                     if "All" in display_hands or ("Mangan" in display_hands and not below_mangan):
                         w: int = result.winner
                         final_tile = kyokus[i].final_discard if kyokus[i].result[0] == "ron" else kyokus[i].final_draw
-                        if "starting" in display_hands:
+                        if "starting" in display_hands and len(kyokus[i].pond[w]) > 0:
                             result_string += CODE_BLOCK_PREFIX
                             starting_dora_indicators = [to_dora_indicator(dora, game_metadata.num_players) for dora in kyokus[i].get_starting_doras() if dora not in {51,52,53}]
                             result_string += kyokus[i].haipai[w].print_hand_details(

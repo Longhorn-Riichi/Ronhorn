@@ -36,9 +36,10 @@ links = {
     "tenhou double ron pao with honba": "https://tenhou.net/3/?log=2016090115gm-0089-0000-8d300f3c&tw=0&ts=1",
     "shousuushi denied": "https://mahjongsoul.game.yo-star.com/?paipu=230814-90607dc4-3bfd-4241-a1dc-2c639b630db3_a878761203",
     "deal-in tile was last discard": "https://tenhou.net/0/?log=2023121410gm-0089-0000-f96301cf&tw=1",
+    "absolutely rigged game": "https://tenhou.net/4/?log=2013111023gm-0061-0000-87740a4c",
     "1-man dora indicator": "cmbem26ai08d9bg1ipog",
-    "triple yakuman 1": "cjqg63e9nc734vt65up0",
-    "triple yakuman 2": "ckp41mm9nc724p58l5h0",
+    "triple yakuman": "cjqg63e9nc734vt65up0",
+    "multiple yakuman with pao": "ckp41mm9nc724p58l5h0",
     "double ron triple yakuman": "ckqe7eu9nc724p5nf4qg",
     "kokushi 13-sided": "cjcof6uai08d9qvom560",
     "sankantsu": "clt56lmai089tr9rprlg",
@@ -50,4 +51,5 @@ links = {
     "all terminals": "cl5e00mai08c502k3o90",
     "single wait suuankou": "cm6cj269nc741boj0nc0",
     "all green": "cm77fd6ai08d9bndgfm0",
+    "rinshan pao": "chobih69nc70955ui910",
 }
