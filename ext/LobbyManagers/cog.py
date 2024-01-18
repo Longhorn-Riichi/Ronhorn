@@ -167,7 +167,12 @@ class LobbyManager(commands.Cog):
             return await self.bot_channel.send(content="Error: " + str(e))
 
         link = f"https://mahjongsoul.game.yo-star.com/?paipu={msg.game_uuid}"
-        view = CommandSuggestionView(link, parse_enabled=True, injustice_enabled=True, skill_enabled=True)
+        view = CommandSuggestionView(link,
+                                     score_graph_enabled=True,
+                                     bonus_graph_enabled=True,
+                                     parse_enabled=True,
+                                     injustice_enabled=True,
+                                     skill_enabled=True)
         message = await self.bot_channel.send(content=resp, suppress_embeds=True, view=view)
         view.set_message(message)
 

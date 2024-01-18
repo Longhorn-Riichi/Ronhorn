@@ -80,13 +80,20 @@ class ParseLogWithButtons(commands.Cog):
         app_commands.Choice(name="Scores with placement bonus", value="Scores with placement bonus")])
     async def parse(self, interaction: Interaction, link: str, display_hands: Optional[app_commands.Choice[str]] = None, display_graph: Optional[app_commands.Choice[str]] = None):
         await interaction.response.defer()
-        view = CommandSuggestionView(link, parse_enabled=False, injustice_enabled=True, skill_enabled=True)
-        first_message = await _parse(interaction,
-                                     link,
-                                     display_hands.value if display_hands is not None else None,
-                                     display_graph.value if display_graph is not None else None,
-                                     view)
-        view.set_message(first_message)
+        score_graph_shown = display_graph is not None and display_graph.value == "Scores only"
+        bonus_graph_shown = display_graph is not None and display_graph.value == "Scores with placement bonus"
+        view = CommandSuggestionView(link,
+                                     score_graph_enabled=not score_graph_shown,
+                                     bonus_graph_enabled=not bonus_graph_shown,
+                                     parse_enabled=False,
+                                     injustice_enabled=True,
+                                     skill_enabled=True)
+        last_message = await _parse(interaction,
+                                    link,
+                                    display_hands.value if display_hands is not None else None,
+                                    display_graph.value if display_graph is not None else None,
+                                    view)
+        view.set_message(last_message)
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{Injustice.__name__}`...")
