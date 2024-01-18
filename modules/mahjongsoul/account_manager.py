@@ -190,16 +190,21 @@ class AccountManager(MajsoulChannel):
         return res2.players[0].nickname, res2.players[0].account_id
 
     async def get_stats(self, account_id: int):
+        import numpy
         res = await self.call("fetchAccountStatisticInfo", account_id=account_id)
         ranked = res.detail_data.rank_statistic
-        import numpy
+        res2 = await self.call("fetchAccountInfo", account_id=account_id)
+        yonma_rank, yonma_rank_pts = res2.account.level.id % 10000, res2.account.level.score
+        sanma_rank, sanma_rank_pts = res2.account.level3.id % 10000, res2.account.level3.score
         modes = {1: "Yonma Tonpuu", 2: "Yonma Hanchan", 11: "Sanma Tonpuu", 12: "Sanma Hanchan"}
-        ends = {0: "0", 1: "1", 2: "tsumo", 3: "ron", 4: "deal-in", 5: "5"}
-        stats: Dict[str, Any] = {m: {"Total games": 0} for m in modes.values()}
+        ends = {0: "abortive draw", 1: "ryuukyoku", 2: "tsumo", 3: "ron", 4: "deal-in", 5: "hit by tsumo"}
+        placement_names = ["1st", "2nd", "3rd", "4th", "Negative"]
+        stats: Dict[str, Any] = {m: {} for m in modes.values()}
         for m in ranked.total_statistic.all_level_statistic.game_mode:
             s = stats[modes[m.mode]]
-            s["Total games"] = m.game_count_sum
-            placements = [round(100 * p / m.game_count_sum, 2) for p in m.game_final_position]
+            is_yonma = "Yonma" in modes[m.mode]
+            placements = [p / m.game_count_sum for p in m.game_final_position]
+            placements.append(m.fly_count / m.game_count_sum)
             round_ends = {ends[e.type]: e.sum for e in m.round_end}
             if "ron" not in round_ends:
                 round_ends["ron"] = 0
@@ -207,13 +212,77 @@ class AccountManager(MajsoulChannel):
                 round_ends["tsumo"] = 0
             if "deal-in" not in round_ends:
                 round_ends["deal-in"] = 0
-            s["Avg score"] = round(m.dadian_sum / (round_ends["ron"] + round_ends["tsumo"]))
-            s["Avg rank"] = round(numpy.average([1,2,3,4], weights=placements), 2)
-            s["Win rate"] = str(round(100 * (round_ends["ron"] + round_ends["tsumo"])/m.round_count_sum, 2)) + "%"
-            s["Tsumo rate"] = str(round(100 * round_ends["tsumo"]/(round_ends["ron"] + round_ends["tsumo"]), 2)) + "%"
-            s["Deal-in rate"] = str(round(100 * (round_ends["deal-in"])/m.round_count_sum, 2)) + "%"
-            s["Call rate"] = str(round(100 * m.ming_count_sum/m.round_count_sum, 2)) + "%"
-            s["Riichi rate"] = str(round(100 * m.liqi_count_sum/m.round_count_sum, 2)) + "%"
+            total_wins = round_ends["ron"] + round_ends["tsumo"]
+            s["Placement"] = "\n".join(f"{n}: **{100*p:.2f}%**" for n, p in zip(placement_names, placements))
+
+            basic_stats = {}
+            basic_stats["Total games"] = m.game_count_sum
+            format_percent = lambda v: f"{100*v:.2f}%"
+            basic_stats["% Win"] = format_percent(total_wins/m.round_count_sum)
+            basic_stats["% Tsumo"] = format_percent(round_ends["tsumo"]/total_wins)
+            basic_stats["% Deal-in"] = format_percent(round_ends["deal-in"]/m.round_count_sum)
+            basic_stats["% Call"] = format_percent(m.ming_count_sum/m.round_count_sum)
+            basic_stats["% Riichi"] = format_percent(m.liqi_count_sum/m.round_count_sum)
+            basic_stats["% Draw"] = format_percent(round_ends["ryuukyoku"]/m.round_count_sum)
+            basic_stats["% Hit by Tsumo"] = format_percent(round_ends["hit by tsumo"]/m.round_count_sum)
+            s["Basic stats"] = "\n".join(f"{n}: **{v}**" for n, v in basic_stats.items())
+
+            misc_stats = {}
+            misc_stats["Avg win score"] = round(m.dadian_sum/total_wins)
+            misc_stats["Avg placement"] = round(numpy.average([1,2,3,4], weights=placements[:-1]), 2)
+            misc_stats["Avg turns to win"] = round(m.xun_count_sum/total_wins, 2)
+            misc_stats["Avg rounds/game"] = round(m.round_count_sum/m.game_count_sum, 2)
+            misc_stats["Highest honba"] = m.highest_lianzhuang
+            s["Misc stats"] = "\n".join(f"{n}: **{v}**" for n, v in misc_stats.items())
+
+            rank_stats: Dict[str, Any] = {}
+            RANKS: Dict[int, str] = {1: "Novice", 2: "Adept", 3: "Expert", 4: "Master", 5: "Saint", 7: "Celestial"}
+            RANK_PTS_GOAL: Dict[int, List[int]] = {
+                1: [0, 20, 80, 200],
+                2: [0, 600, 800, 1000],
+                3: [0, 1200, 1400, 2000],
+                4: [0, 2800, 3200, 3600],
+                5: [0, 4000, 6000, 9000],
+                }
+            rank: int = (yonma_rank if is_yonma else sanma_rank) // 100
+            stars: int = (yonma_rank if is_yonma else sanma_rank) % 100
+            rank_pts: int = yonma_rank_pts if is_yonma else sanma_rank_pts
+            if RANKS[rank] != "Celestial":
+                assert stars in {1,2,3}
+                rank_stats["Rank"] = RANKS[rank] + " (" + "★"*stars + ")"
+                rank_stats["Rank points"] = str(rank_pts) + "/" + str(RANK_PTS_GOAL[rank][stars])
+            else:
+                rank_stats["Rank"] = RANKS[rank] + " (Lv. " + str(stars) + ")"
+                rank_stats["Soul points"] = round(rank_pts/100, 1)
+            rank_stats["Avg rank pts/game"] = round(m.score_earn_sum/m.game_count_sum)
+            s["Ranking"] = "\n".join(f"{n}: **{v}**" for n, v in rank_stats.items())
+
+            # RANK_BONUS = {
+            #     "Yonma Tonpuu": [[10, 5, 0], [20, 10, 0], [40, 20, 0], [55, 30, 0], [60, 30, 0]],
+            #     "Yonma Hanchan": [[20, 10, 0], [40, 20, 0], [80, 40, 0], [110, 55, 0], [120, 60, 0]],
+            #     "Sanma Tonpuu": [[15, 0], [30, 0], [55, 0], [75, 0], [120, 0]],
+            #     "Sanma Hanchan": [[30, 0], [60, 0], [105, 0], [160, 0], [240, 0]]
+            # }
+            # FOURTH_PENALTY = {
+            #     "Yonma Tonpuu": [[0, 0, 0], [10, 20, 30], [40, 50, 60], [80, 90, 100], [110, 120, 130]],
+            #     "Yonma Hanchan": [[0, 0, 0], [20, 40, 60], [80, 100, 120], [165, 180, 195], [210, 225, 240]],
+            #     "Sanma Tonpuu": [[0, 0, 0], [10, 20, 30], [40, 50, 60], [80, 95, 110], [125, 140, 160]],
+            #     "Sanma Hanchan": [[0, 0, 0], [20, 40, 60], [80, 100, 120], [165, 190, 215], [240, 265, 290]]
+            # }
+            # if is_yonma:
+            #     uma = [15, 5, -5, -15]
+            #     starting_pts = 25000
+            # else:
+            #     uma = [15, 0, -15]
+            #     starting_pts = 35000
+            # rank_bonus = RANK_BONUS[modes[m.mode]][rank-1] + [FOURTH_PENALTY[modes[m.mode]][rank-1][stars-1]]
+            # parsed_rank_score = {r.rank: (r.score_sum, r.count) for r in m.rank_score}
+            # bonus = [u+b for u, b in zip(uma, rank_bonus)]
+            # delta_pts = {placement: score_sum - bonus[placement-1]*count for placement, (score_sum, count) in parsed_rank_score.items()}
+            # avg_final_score = round(starting_pts + 1000*sum(delta_pts.values())/m.game_count_sum)
+            # s["Misc stats"] += f"\nAvg game score: **{avg_final_score}**"
+            # NOTE: this assumes all games were played at the current rank, which is false
+            #       meaning that it severely underestimates the average score (e.g. -20k)
 
         for r in res.statistic_data:
             t = (r.mahjong_category, r.game_category, r.game_type)
@@ -232,22 +301,23 @@ class AccountManager(MajsoulChannel):
 
             # all stats scale linearly
 
-            # = k == A.liqi4 ? (f - 3000) / 5000 * 100 : (f - 4000) / 8000 * 100
-            # in yonma, 3000 avg points is 0 ATK, 8000 avg points is 100 ATK
-            # in sanma, 4000 avg points is 0 ATK, 12000 avg points is 100 ATK
-            s1["ATK"] = s2["ATK"] = clamp((avg_pt-3000)/5000 if r.mahjong_category == 1 else (avg_pt-4000)/8000)
+            radial_stats = {
+                # = k == A.liqi4 ? (f - 3000) / 5000 * 100 : (f - 4000) / 8000 * 100
+                # in yonma, 3000 avg points is 0 ATK, 8000 avg points is 100 ATK
+                # in sanma, 4000 avg points is 0 ATK, 12000 avg points is 100 ATK
+                "ATK": clamp((avg_pt-3000)/5000 if r.mahjong_category == 1 else (avg_pt-4000)/8000),
+                # = (1.12 - v.recent_round.fangchong_count / v.recent_round.total_count * 3.4) * 100
+                # 32.94% deal-in rate is 0 DEF, 3.53% deal-in rate is 100 DEF
+                "DEF": clamp(1.12-(r.statistic.recent_round.fangchong_count/total_rounds*3.4)),
+                # = ((v.recent_round.rong_count + v.recent_round.zimo_count) / v.recent_round.total_count - 0.1) / 0.3 * 100
+                # 10% winrate is 0 SPD, 40% winrate is 100 SPD
+                "SPD": clamp((((r.statistic.recent_round.rong_count+r.statistic.recent_round.zimo_count)/total_rounds)-0.1)/0.3),
+                # = v.recent_10_hu_summary.total_xuanshang / v.recent_10_hu_summary.total_fanshu * 1.5 * 100
+                # 0% lucky han is 0 LUK, 66.67% lucky han is 100 LUK
+                "LUK": clamp(r.statistic.recent_10_hu_summary.total_xuanshang / r.statistic.recent_10_hu_summary.total_fanshu * 1.5),
+            }
 
-            # = (1.12 - v.recent_round.fangchong_count / v.recent_round.total_count * 3.4) * 100
-            # 32.94% deal-in rate is 0 DEF, 3.53% deal-in rate is 100 DEF
-            s1["DEF"] = s2["DEF"] = clamp(1.12-(r.statistic.recent_round.fangchong_count/total_rounds*3.4))
-
-            # = ((v.recent_round.rong_count + v.recent_round.zimo_count) / v.recent_round.total_count - 0.1) / 0.3 * 100
-            # 10% winrate is 0 SPD, 40% winrate is 100 SPD
-            s1["SPD"] = s2["SPD"] = clamp((((r.statistic.recent_round.rong_count+r.statistic.recent_round.zimo_count)/total_rounds)-0.1)/0.3)
-
-            # = v.recent_10_hu_summary.total_xuanshang / v.recent_10_hu_summary.total_fanshu * 1.5 * 100
-            # 0% lucky han is 0 LUK, 66.67% lucky han is 100 LUK
-            s1["LUK"] = s2["LUK"] = clamp(r.statistic.recent_10_hu_summary.total_xuanshang / r.statistic.recent_10_hu_summary.total_fanshu * 1.5)
+            s1["Radial stats"] = s2["Radial stats"] = "\n".join(f"{n}: **{v}**" for n, v in radial_stats.items())
 
             if r.mahjong_category == 1:
                 stats["Yonma recents"] = [(g.rank, g.final_point >= 50000) for g in r.statistic.recent_10_game_result]
