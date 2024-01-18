@@ -10,12 +10,13 @@ from typing import *
 
 # InjusticeJudge imports
 from google.protobuf.json_format import MessageToDict  # type: ignore[import]
-from modules.InjusticeJudge.injustice_judge.fetch import parse_majsoul, parse_majsoul_link, fetch_riichicity, parse_riichicity, fetch_tenhou, parse_tenhou, parse_tenhou_link, save_cache, parse_wrapped_bytes, GameMetadata
+from modules.InjusticeJudge.injustice_judge.fetch import parse_majsoul, parse_majsoul_link, fetch_riichicity, parse_riichicity, fetch_tenhou, parse_tenhou, parse_tenhou_link, parse_wrapped_bytes
 from modules.InjusticeJudge.injustice_judge.injustices import evaluate_game
+from modules.InjusticeJudge.injustice_judge.classes import GameMetadata
 from modules.InjusticeJudge.injustice_judge.classes2 import Kyoku
-from modules.InjusticeJudge.injustice_judge.constants import KO_TSUMO_SCORE, OYA_TSUMO_SCORE, TRANSLATE, YAOCHUUHAI
+from modules.InjusticeJudge.injustice_judge.constants import YAOCHUUHAI
 from modules.InjusticeJudge.injustice_judge.display import ph, pt, round_name, short_round_name
-from modules.InjusticeJudge.injustice_judge.utils import calc_ko_oya_points, to_dora_indicator
+from modules.InjusticeJudge.injustice_judge.utils import calc_ko_oya_points, save_cache, to_dora_indicator
 
 async def long_followup(interaction: Interaction, chunks: List[str], header: str, view: Optional[ui.View] = None) -> Message:
     """Followup with a long message by breaking it into multiple messages"""
