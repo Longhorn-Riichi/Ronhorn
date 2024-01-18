@@ -19,6 +19,7 @@ from ext.LobbyManagers.cog import LobbyManager
 from .display_hand import replace_text
 from global_stuff import account_manager, assert_getenv, registry, raw_scores, registry_lock, raw_scores_lock
 from modules.InjusticeJudge.injustice_judge.fetch import parse_majsoul_link
+from .rules import all_rules, construct_game_rule
 
 GUILD_ID: int                 = int(assert_getenv("guild_id"))
 OFFICER_ROLE: str             = assert_getenv("officer_role")
@@ -335,7 +336,6 @@ class LonghornRiichiUtilities(commands.Cog):
         response = await self._unregister(server_member)
         await interaction.followup.send(content=response)
 
-
     async def _get_queued_players(self, lobby):
         # get all queued players
         players = list((await self.get_cog(lobby).manager.call("fetchContestMatchingPlayer")).players)
@@ -479,6 +479,30 @@ class LonghornRiichiUtilities(commands.Cog):
             await interaction.followup.send(content=f"Successfully {'enabled' if enabled else 'disabled'} auto-matching for {lobby.value}.")
         else:
             await interaction.followup.send(content=f"Failed to {'enable' if enabled else 'disable'} auto-matching for {lobby.value}.")
+
+    @app_commands.command(name="set_rules", description=f"Restore preset settings for a lobby. Only usable by @{OFFICER_ROLE}.")
+    @app_commands.describe(lobby="Which lobby do you want to reset the settings of?",
+                           name="(optional) Set this to rename the lobby.",
+                           desc="(optional) Set this to write the description for the lobby.")
+    @app_commands.choices(lobby=[
+        app_commands.Choice(name=YH_NAME, value=YH_NAME),
+        app_commands.Choice(name=YT_NAME, value=YT_NAME),
+        app_commands.Choice(name=SH_NAME, value=SH_NAME),
+        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
+    @app_commands.checks.has_role(OFFICER_ROLE)
+    async def set_rules(self, interaction: Interaction, lobby: app_commands.Choice[str], name: Optional[str] = None, desc: Optional[str] = None):
+        await interaction.response.defer(ephemeral=True)
+        try:
+            args = construct_game_rule(**all_rules[lobby.value])
+            lobby_manager = self.get_cog(lobby.value).manager
+            if name is not None:
+                args["contest_name"] = name
+            await lobby_manager.call("updateContestGameRule", **args)
+            if desc is not None:
+                await lobby_manager.call("updateContestNotice", notice_type=1, content=desc)
+            await interaction.followup.send(content=f"Successfully reset settings of {lobby.value}.")
+        except Exception as e:
+            await interaction.followup.send(content=f"Failed to reset settings of {lobby.value}.")
 
     @app_commands.command(name="enter_scores", description=f"Enter scores for an IRL game. Will check if points add up. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(game_type="Hanchan or tonpuu?",

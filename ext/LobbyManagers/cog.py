@@ -100,6 +100,7 @@ class LobbyManager(commands.Cog):
 
     async def add_game_to_leaderboard(self, uuid: str, record=None) -> str:
         if record is None:
+            assert account_manager is not None
             record_list = await account_manager.get_game_results([uuid])
             if len(record_list) == 0:
                 raise Exception("A game concluded without a record (possibly due to being terminated early).")
@@ -137,6 +138,7 @@ class LobbyManager(commands.Cog):
             player_scores_rendered.append(f"*WARNING*: Mahjong Soul player `{player_nickname}` is not registered!")
 
         async with raw_scores_lock:
+            assert raw_scores is not None
             raw_scores.append_row(raw_scores_row)
 
         return '\n'.join(player_scores_rendered)
@@ -183,6 +185,7 @@ class LobbyManager(commands.Cog):
     """
 
     def get_member_mjs_nickname(self, discord_name: str) -> Optional[str]:
+        assert registry is not None
         found_cell: gspread.cell.Cell = registry.find(discord_name, in_column=DISCORD_NAME_COL)
         if found_cell is None:
             # No player with given Discord name found; returning None
