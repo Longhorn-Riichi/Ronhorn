@@ -480,7 +480,7 @@ class LonghornRiichiUtilities(commands.Cog):
         else:
             await interaction.followup.send(content=f"Failed to {'enable' if enabled else 'disable'} auto-matching for {lobby.value}.")
 
-    @app_commands.command(name="set_rules", description=f"Restore preset settings for a lobby. Only usable by @{OFFICER_ROLE}.")
+    @app_commands.command(name="reset_lobby", description=f"Restore preset settings for a lobby. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(lobby="Which lobby do you want to reset the settings of?",
                            name="(optional) Set this to rename the lobby.",
                            desc="(optional) Set this to write the description for the lobby.")
@@ -490,7 +490,7 @@ class LonghornRiichiUtilities(commands.Cog):
         app_commands.Choice(name=SH_NAME, value=SH_NAME),
         app_commands.Choice(name=ST_NAME, value=ST_NAME)])
     @app_commands.checks.has_role(OFFICER_ROLE)
-    async def set_rules(self, interaction: Interaction, lobby: app_commands.Choice[str], name: Optional[str] = None, desc: Optional[str] = None):
+    async def reset_lobby(self, interaction: Interaction, lobby: app_commands.Choice[str], name: Optional[str] = None, desc: Optional[str] = None):
         await interaction.response.defer(ephemeral=True)
         try:
             args = construct_game_rule(**all_rules[lobby.value])

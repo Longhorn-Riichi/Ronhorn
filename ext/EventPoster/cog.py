@@ -27,13 +27,13 @@ class EventPoster(commands.Cog):
         six_pm = datetime.time(hour=18)
         await self.guild.create_scheduled_event(
             name = "Riichi Sunday",
-            description = "This is our weekly meetup, where we'll be **teaching and playing** Riichi! The meeting location is WCP Student Activity Center, room 2.120, 2-4 PM. We can play more after 4 PM in the same building.",
+            description = "This is our weekly meetup, where we'll be **teaching and playing** Riichi! The meeting location is WCP Student Activity Center, room 1.106, 2-4 PM. We can play more after 4 PM in the same building.",
             start_time = datetime.datetime.combine(date=next_sunday, time=two_pm, tzinfo=self.timezone),
             end_time = datetime.datetime.combine(date=next_sunday, time=six_pm, tzinfo=self.timezone),
             entity_type = discord.EntityType.external,
             privacy_level = discord.PrivacyLevel.guild_only,
             image = self.sunday_image,
-            location = "WCP Student Activity Center, Room 2.120")
+            location = "WCP Student Activity Center, Room 1.106")
 
     async def post_friday_event(self):
         today = datetime.date.today()
@@ -56,7 +56,8 @@ class EventPoster(commands.Cog):
         sunday_event_exists = False
         friday_event_exists = False
         for event in events:
-            weekday = (event.start_time + self.timezone.utcoffset(None)).weekday()
+            offset = self.timezone.utcoffset(event.start_time)
+            weekday = (event.start_time + offset).weekday()
             if weekday == 6:
                 sunday_event_exists = True
             elif weekday == 4:
@@ -74,7 +75,6 @@ class EventPoster(commands.Cog):
 
     async def async_setup(self):
         self.guild = await self.bot.fetch_guild(GUILD_ID)
-        await self.try_post_events()
         self.try_post_events.start()
 
     # ensure bot is ready before try_post_events is called
@@ -84,9 +84,7 @@ class EventPoster(commands.Cog):
 
     @try_post_events.error
     async def try_post_events_error(self, error):
-        print(f"Error in posting events: {error}")
-
-
+        logging.error(f"Error in posting events: {error}")
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{EventPoster.__name__}`...")
