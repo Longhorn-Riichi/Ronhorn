@@ -160,9 +160,9 @@ def construct_game_rule(
         "have_sanjiahele": three_ron_draw_enabled,                 # 25; bool
         "have_toutiao": head_bump_enabled,                         # 26; bool
         "have_helelianzhuang": dealer_win_repeat_enabled,          # 27; bool
-        "have_helezhongju": last_dealer_win_continues,             # 28; bool
+        "have_helezhongju": not last_dealer_win_continues,         # 28; bool
         "have_tingpailianzhuang": dealer_tenpai_repeat_enabled,    # 29; bool
-        "have_tingpaizhongju": last_dealer_tenpai_continues,       # 30; bool
+        "have_tingpaizhongju": not last_dealer_tenpai_continues,   # 30; bool
         "have_yifa": ippatsu_enabled,                              # 31; bool
         "have_nanruxiru": extend_to_west_round,                    # 32; bool
         "jingsuanyuandian": goal_points,                           # 33; uint32
@@ -210,7 +210,7 @@ def construct_game_rule(
         # "contest_type": None,                  # 9; uint32
         # "banned_zones": None,                  # 10; string
         # "hidden_zones": None,                  # 11; string
-        "emoji_switch": allow_emote,             # 12; bool
+        "emoji_switch": not allow_emote,         # 12; bool
         # "player_roster_type": None,            # 13; uint32
         # "disable_broadcast": None,             # 14; uint32
     }
