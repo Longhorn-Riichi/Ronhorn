@@ -223,8 +223,9 @@ class LonghornRiichiUtilities(commands.Cog):
     def get_discord_name(self, member: discord.Member) -> str:
         discord_name = member.name
         # add "#1234" if it exists
-        if member.discriminator != "0":
-            discord_name += "#" + member.discriminator
+        discriminator = str(member.discriminator)
+        if discriminator != "0":
+            discord_name += "#" + discriminator
         return discord_name
 
     async def _register(self, name: str, server_member: discord.Member, friend_id: Optional[int]) -> str:
