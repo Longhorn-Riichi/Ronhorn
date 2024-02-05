@@ -562,7 +562,8 @@ class LonghornRiichiUtilities(commands.Cog):
             gamemode = f"{game_style} {game_type.value}"
             flatten = lambda xss: (x for xs in xss for x in xs)
             async with raw_scores_lock:
-                raw_scores.append_row([timestamp, gamemode, "yes", *map(str, flatten(ordered_players))])
+                assert raw_scores is not None
+                raw_scores.append_row([timestamp, gamemode, "yes", *flatten(map(lambda p: (self.get_discord_name(p[0]), str(p[1])), ordered_players))])
 
             player_score_strings = list(flatten(map(lambda p: (p[0].mention, str(p[1])), ordered_players)))
             score_printout = f"Successfully entered scores for a {gamemode} game:\n" \
