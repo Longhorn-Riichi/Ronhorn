@@ -52,4 +52,5 @@ links = {
     "single wait suuankou": "cm6cj269nc741boj0nc0",
     "all green": "cm77fd6ai08d9bndgfm0",
     "rinshan pao": "chobih69nc70955ui910",
+    "temporary furiten": "https://mahjongsoul.game.yo-star.com/?paipu=240224-ceef05e9-6c43-4ca0-80d5-4cc829300e47_a931868797",
 }
