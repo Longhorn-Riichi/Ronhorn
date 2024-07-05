@@ -81,11 +81,10 @@ async def parse_game_link(link: str, specified_players: Set[int] = set(), nickna
         logging.info("  majsoul log parsed")
     elif len(link) == 20: # riichi city log id
         logging.info("  fetching riichicity log")
-        riichicity_log, metadata = fetch_riichicity(link)
+        riichicity_log, metadata, player = await fetch_riichicity(link)
         logging.info("  riichicity log fetched")
         kyokus, parsed_metadata, parsed_player_seat = parse_riichicity(riichicity_log, metadata, nickname)
         logging.info("  riichicity log parsed")
-        player = None
     else:
         raise Exception("expected tenhou link similar to `tenhou.net/0/?log=`"
                         " or mahjong soul link similar to `mahjongsoul.game.yo-star.com/?paipu=`"
