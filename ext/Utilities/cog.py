@@ -19,7 +19,7 @@ from ext.LobbyManagers.cog import LobbyManager
 from .display_hand import replace_text
 from global_stuff import account_manager, assert_getenv, registry, raw_scores, registry_lock, raw_scores_lock
 from modules.InjusticeJudge.injustice_judge.fetch import parse_majsoul_link
-from .rules import all_rules, construct_game_rule
+from .rules import all_rules, construct_detail_rule
 
 GUILD_ID: int                 = int(assert_getenv("guild_id"))
 OFFICER_ROLE: str             = assert_getenv("officer_role")
@@ -41,6 +41,10 @@ ST_NAME: str                  = assert_getenv("st_name")
 REGISTRY_NAME_LENGTH: int     = int(assert_getenv("max_name_len"))
 VOICE_CHANNEL_ID: int         = int(assert_getenv("voice_channel_id"))
 
+DISCORD_NAME_COL: int      = 2
+MJS_NICKNAME_COL: int      = 4
+MJS_ACCOUNT_ID_COL: int    = 6
+
 class LonghornRiichiUtilities(commands.Cog):
     """
     Utility commands specific to Longhorn Riichi
@@ -56,7 +60,7 @@ class LonghornRiichiUtilities(commands.Cog):
     """
 
     def get_cog(self, lobby_name: str) -> LobbyManager:
-        return self.bot.get_cog(lobby_name)
+        return self.bot.get_cog(lobby_name)  # type: ignore[return-value]
 
     def lobby_choices(choices_list):
         def decorator(func):
@@ -144,81 +148,57 @@ class LonghornRiichiUtilities(commands.Cog):
             content="List of officer commands:", embed=Embed(description="\n".join(command_help), colour=green),
             ephemeral=True)
 
+    def try_all_lobbies(self, method: str, nickname: Optional[str]) -> str:
+        # `method` must be one of "terminate_game", "pause_game", "unpause_game"
+        if nickname is None:
+            return f"Nickname not found! Have you registered via /register?"
+        for success, message in [getattr(self.get_cog(lobby).manager, method)(nickname) for lobby in [YH_NAME, YT_NAME, SH_NAME, ST_NAME]]:
+            if success:
+                break
+        return message
+
     @app_commands.command(name="terminate_any_game", description=f"Terminate the game of the specified player. Only usable by @{OFFICER_ROLE}.")
-    @app_commands.describe(
-        lobby="Which lobby is the game in?",
-        nickname="Mahjong Soul nickname of a player that's in the game you want to terminate.")
-    @app_commands.choices(lobby=[
-        app_commands.Choice(name=YH_NAME, value=YH_NAME),
-        app_commands.Choice(name=YT_NAME, value=YT_NAME),
-        app_commands.Choice(name=SH_NAME, value=SH_NAME),
-        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
+    @app_commands.describe(nickname="Mahjong Soul nickname of a player that's in the game you want to terminate.")
     @app_commands.checks.has_role(OFFICER_ROLE)
-    async def terminate_any_game(self, interaction: Interaction, lobby: app_commands.Choice[str], nickname: str):
-        await self.get_cog(lobby.value).terminate_any_game(interaction, nickname)
+    async def terminate_any_game(self, interaction: Interaction, nickname: str):
+        await interaction.response.defer()
+        await interaction.followup.send(content=self.try_all_lobbies("terminate_game", nickname))
 
     @app_commands.command(name="terminate_own_game", description=f"Terminate the game you are currently in.")
-    @app_commands.describe(
-        lobby="Which lobby is your game in?")
-    @app_commands.choices(lobby=[
-        app_commands.Choice(name=YH_NAME, value=YH_NAME),
-        app_commands.Choice(name=YT_NAME, value=YT_NAME),
-        app_commands.Choice(name=SH_NAME, value=SH_NAME),
-        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
-    async def terminate_own_game(self, interaction: Interaction, lobby: app_commands.Choice[str]):
-        await self.get_cog(lobby.value).terminate_own_game(interaction)
+    async def terminate_own_game(self, interaction: Interaction):
+        await interaction.response.defer()
+        nickname = self.get_member_mjs_nickname(interaction.user.name)
+        await interaction.followup.send(content=self.try_all_lobbies("terminate_game", nickname))
     
     @app_commands.command(name="pause_any_game", description=f"Pause the game of the specified player. Only usable by @{OFFICER_ROLE}.")
-    @app_commands.describe(
-        lobby="Which lobby is the game in?",
-        nickname="Mahjong Soul nickname of a player that's in the game you want to pause.")
-    @app_commands.choices(lobby=[
-        app_commands.Choice(name=YH_NAME, value=YH_NAME),
-        app_commands.Choice(name=YT_NAME, value=YT_NAME),
-        app_commands.Choice(name=SH_NAME, value=SH_NAME),
-        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
+    @app_commands.describe(nickname="Mahjong Soul nickname of a player that's in the game you want to pause.")
     @app_commands.checks.has_role(OFFICER_ROLE)
-    async def pause_any_game(self, interaction: Interaction, lobby: app_commands.Choice[str], nickname: str):
-        await self.get_cog(lobby.value).pause_any_game(interaction, nickname)
+    async def pause_any_game(self, interaction: Interaction, nickname: str):
+        await interaction.response.defer()
+        await interaction.followup.send(content=self.try_all_lobbies("pause_game", nickname))
 
     @app_commands.command(name="pause_own_game", description=f"Pause the game you are currently in.")
-    @app_commands.describe(
-        lobby="Which lobby is your game in?")
-    @app_commands.choices(lobby=[
-        app_commands.Choice(name=YH_NAME, value=YH_NAME),
-        app_commands.Choice(name=YT_NAME, value=YT_NAME),
-        app_commands.Choice(name=SH_NAME, value=SH_NAME),
-        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
-    async def pause_own_game(self, interaction: Interaction, lobby: app_commands.Choice[str]):
-        await self.get_cog(lobby.value).pause_own_game(interaction)
+    async def pause_own_game(self, interaction: Interaction):
+        await interaction.response.defer()
+        nickname = self.get_member_mjs_nickname(interaction.user.name)
+        await interaction.followup.send(content=self.try_all_lobbies("pause_game", nickname))
     
     @app_commands.command(name="unpause_any_game", description=f"Unpause the paused game of the specified player. Only usable by @{OFFICER_ROLE}.")
-    @app_commands.describe(
-        lobby="Which lobby is the game in?",
-        nickname="Mahjong Soul nickname of a player that's in the game you want to unpause.")
-    @app_commands.choices(lobby=[
-        app_commands.Choice(name=YH_NAME, value=YH_NAME),
-        app_commands.Choice(name=YT_NAME, value=YT_NAME),
-        app_commands.Choice(name=SH_NAME, value=SH_NAME),
-        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
+    @app_commands.describe(nickname="Mahjong Soul nickname of a player that's in the game you want to unpause.")
     @app_commands.checks.has_role(OFFICER_ROLE)
-    async def unpause_any_game(self, interaction: Interaction, lobby: app_commands.Choice[str], nickname: str):
-        await self.get_cog(lobby.value).unpause_any_game(interaction, nickname)
+    async def unpause_any_game(self, interaction: Interaction, nickname: str):
+        await interaction.response.defer()
+        await interaction.followup.send(content=self.try_all_lobbies("pause_game", nickname))
 
     @app_commands.command(name="unpause_own_game", description=f"Unpause the paused game you were in.")
-    @app_commands.describe(
-        lobby="Which lobby is your game in?")
-    @app_commands.choices(lobby=[
-        app_commands.Choice(name=YH_NAME, value=YH_NAME),
-        app_commands.Choice(name=YT_NAME, value=YT_NAME),
-        app_commands.Choice(name=SH_NAME, value=SH_NAME),
-        app_commands.Choice(name=ST_NAME, value=ST_NAME)])
-    async def unpause_own_game(self, interaction: Interaction, lobby: app_commands.Choice[str]):
-        await self.get_cog(lobby.value).unpause_own_game(interaction)
+    async def unpause_own_game(self, interaction: Interaction):
+        await interaction.response.defer()
+        nickname = self.get_member_mjs_nickname(interaction.user.name)
+        await interaction.followup.send(content=self.try_all_lobbies("unpause_game", nickname))
         
-    @app_commands.command(name="test_command", description=f"Test command")
-    async def test_command(self, interaction: Interaction, server_member: discord.Member):
-        await interaction.response.send_message(server_member.discriminator == "0")
+    # @app_commands.command(name="test_command", description=f"Test command")
+    # async def test_command(self, interaction: Interaction, server_member: discord.Member):
+    #     await interaction.response.send_message(server_member.discriminator == "0")
     
     def get_discord_name(self, member: discord.Member) -> str:
         discord_name = member.name
@@ -228,6 +208,60 @@ class LonghornRiichiUtilities(commands.Cog):
             discord_name += "#" + discriminator
         return discord_name
 
+    def get_member_mjs_nickname(self, discord_name: str) -> Optional[str]:
+        assert registry is not None
+        found_cell: gspread.cell.Cell = registry.find(discord_name, in_column=DISCORD_NAME_COL)
+        if found_cell is None:
+            # No player with given Discord name found; returning None
+            return None
+        
+        return registry.cell(found_cell.row, MJS_NICKNAME_COL).value
+
+    async def add_game_to_leaderboard(self, lobby: str, uuid: str, record=None) -> str:
+        if record is None:
+            assert account_manager is not None
+            record_list = await account_manager.get_game_results([uuid])
+            if len(record_list) == 0:
+                raise Exception("A game concluded without a record (possibly due to being terminated early).")
+            record = record_list[0]
+        # TODO: deal with ordering the scores; currently assumes the scores are ordered by
+        #       total_point (adopt the algorithm of `enter_scores` command)
+        seat_player_dict = {a.seat: (a.account_id, a.nickname) for a in record.accounts}
+
+        player_scores_rendered = ["Game concluded!"] # to be newline-separated
+        player_scores_rendered.append(f"https://mahjongsoul.game.yo-star.com/?paipu={uuid}")
+
+        timestamp = str(datetime.datetime.now()).split(".")[0]
+        raw_scores_row = [timestamp, lobby, "no"] # a list of values for a "Raw Scores" row
+        not_registered = [] # list of unregistered players in game, if any
+
+        seat_name = ["East", "South", "West", "North"]
+        for p in record.result.players:
+            player_account_id, player_nickname = seat_player_dict.get(p.seat, (0, "AI"))
+            
+            raw_score = p.part_point_1
+            async with registry_lock:
+                assert registry is not None
+                found_cell: gspread.cell.Cell = registry.find(str(player_account_id), in_column=MJS_ACCOUNT_ID_COL)
+                if found_cell is not None:
+                    discord_name = registry.cell(found_cell.row, DISCORD_NAME_COL).value
+                    raw_scores_row.extend((discord_name, raw_score))
+                else: # The player was not registered?
+                    not_registered.append(player_nickname)
+                    raw_scores_row.extend(("Unregistered player", raw_score))
+            
+            player_scores_rendered.append(
+                f"{player_nickname} ({seat_name[p.seat]}): {p.part_point_1} ({(p.total_point/1000):+})")
+
+        for player_nickname in not_registered:
+            player_scores_rendered.append(f"*WARNING*: Mahjong Soul player `{player_nickname}` is not registered!")
+
+        async with raw_scores_lock:
+            assert raw_scores is not None
+            raw_scores.append_row(raw_scores_row)
+
+        return '\n'.join(player_scores_rendered)
+    
     async def _register(self, name: str, server_member: discord.Member, friend_id: Optional[int]) -> str:
         """
         Add player to the registry, removing any existing registration first.
@@ -252,7 +286,7 @@ class LonghornRiichiUtilities(commands.Cog):
                     [mahjongsoul_nickname, existing_friend_id, mahjongsoul_account_id] = mahjongsoul_fields
                     assert existing_friend_id is not None, "There are Mahjong Soul fields in the existing registry entry, but no Friend ID??"
                     existing_friend_id = int(existing_friend_id)
-                registry.delete_row(found_cell.row)
+                registry.delete_rows(found_cell.row)
         
         if friend_id is None:
             friend_id = existing_friend_id
@@ -315,11 +349,12 @@ class LonghornRiichiUtilities(commands.Cog):
     async def _unregister(self, server_member: discord.Member) -> str:
         discord_name = self.get_discord_name(server_member)
         async with registry_lock:
+            assert registry is not None
             found_cell: gspread.cell.Cell = registry.find(discord_name, in_column=2)
             if found_cell is None:
                 return f"\"{discord_name}\" is not a registered member."
             else:
-                registry.delete_row(found_cell.row)
+                registry.delete_rows(found_cell.row)
                 return f"\"{discord_name}\"'s registration has been removed."
 
     @app_commands.command(name="unregister", description="Remove your registered information.")
@@ -445,7 +480,7 @@ class LonghornRiichiUtilities(commands.Cog):
                     for i in range(len(players) // num_players):
                         num_tables += 1
                         table = players[i*num_players:(i+1)*num_players]
-                        await self.get_cog(lobby).manager.start_game(account_ids=[p.account_id for p in table])
+                        self.get_cog(lobby).manager.start_game(account_ids=[p.account_id for p in table])
                         msg += f"- **Table {num_tables}** ({lobby} {lobby_id}): {', '.join(p.nickname or 'AI' for p in table)}\n"
             header = f"Created the following table{'' if num_tables == 1 else 's'}:"
         else:
@@ -457,9 +492,6 @@ class LonghornRiichiUtilities(commands.Cog):
             await interaction.followup.send(content=header, embed=Embed(description=msg, colour=green))
         else:
             await interaction.followup.send(content=header)
-
-    async def _toggle_auto_match(self, lobby_name: str, enabled: bool):
-        await self.get_cog(lobby_name).manager.call("updateContestGameRule", auto_match=enabled)
 
     @app_commands.command(name="toggle_auto_match", description=f"Enable or disable auto-matching for a given lobby. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(
@@ -473,10 +505,9 @@ class LonghornRiichiUtilities(commands.Cog):
     @app_commands.checks.has_role(OFFICER_ROLE)
     async def toggle_auto_match(self, interaction: Interaction, lobby: app_commands.Choice[str], enabled: bool):
         await interaction.response.defer()
-        await self._toggle_auto_match(lobby.value, enabled)
-        contest = (await self.get_cog(lobby.value).manager.call("fetchContestInfo")).contest
-        assert contest is not None
-        if contest.auto_match == enabled:
+        lobby_manager = self.get_cog(lobby.value).manager
+        lobby_manager.change_season_rules(auto_match=enabled)
+        if lobby_manager.fetch_rules()["season_list"][0]["auto_match"] == (1 if enabled else 0):
             await interaction.followup.send(content=f"Successfully {'enabled' if enabled else 'disabled'} auto-matching for {lobby.value}.")
         else:
             await interaction.followup.send(content=f"Failed to {'enable' if enabled else 'disable'} auto-matching for {lobby.value}.")
@@ -494,16 +525,16 @@ class LonghornRiichiUtilities(commands.Cog):
     async def reset_lobby(self, interaction: Interaction, lobby: app_commands.Choice[str], name: Optional[str] = None, desc: Optional[str] = None):
         await interaction.response.defer(ephemeral=True)
         try:
-            args = construct_game_rule(**all_rules[lobby.value])
             lobby_manager = self.get_cog(lobby.value).manager
+            # TODO changing rules doesn't seem to do anything...
+            print("rule changed: ", lobby_manager.change_contest_detail_rules(construct_detail_rule(**all_rules[lobby.value])))
             if name is not None:
-                args["contest_name"] = name
-            await lobby_manager.call("updateContestGameRule", **args)
+                lobby_manager.change_contest_name(name)
             if desc is not None:
-                await lobby_manager.call("updateContestNotice", notice_type=1, content=desc)
+                lobby_manager.change_contest_desc(desc)
             await interaction.followup.send(content=f"Successfully reset settings of {lobby.value}.")
         except Exception as e:
-            await interaction.followup.send(content=f"Failed to reset settings of {lobby.value}.")
+            await interaction.followup.send(content=f"Failed to reset settings of {lobby.value}. Error: " + str(e))
 
     @app_commands.command(name="enter_scores", description=f"Enter scores for an IRL game. Will check if points add up. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(game_type="Hanchan or tonpuu?",
@@ -591,6 +622,7 @@ class LonghornRiichiUtilities(commands.Cog):
         await interaction.response.defer(ephemeral=True)
         discord_name = self.get_discord_name(server_member)
         async with registry_lock:
+            assert registry is not None
             found_cell = registry.find(discord_name, in_column=2)
             if found_cell is None:
                 return await interaction.followup.send(content=f"Error: {discord_name} is not registered as a club member.")
@@ -630,6 +662,7 @@ class LonghornRiichiUtilities(commands.Cog):
             return ""
         try:
             # get the game record
+            assert account_manager is not None
             record_list = await account_manager.get_game_results([uuid])
             if len(record_list) == 0:
                 raise Exception("A game concluded without a record (possibly due to being terminated early).")
@@ -639,7 +672,7 @@ class LonghornRiichiUtilities(commands.Cog):
             uid_to_name = {YH_UNIQUE_ID: YH_NAME, YT_UNIQUE_ID: YT_NAME, SH_UNIQUE_ID: SH_NAME, ST_UNIQUE_ID: ST_NAME}
             if contest_uid not in uid_to_name.keys():
                 raise Exception(f"/submit_game was given a game which wasn't played in our lobby. (uid={contest_uid})\n{link}")
-            resp = await self.get_cog(uid_to_name[contest_uid]).add_game_to_leaderboard(uuid, record)
+            resp = await self.add_game_to_leaderboard(uid_to_name[contest_uid], uuid, record)
         except Exception as e:
             await interaction.followup.send(content="Error: " + str(e))
             return ""
@@ -786,6 +819,7 @@ class GlobalUtilities(commands.Cog):
                 updated["tenhou.net"] = registry[discord_name]["tenhou_name"]
             if riichicity_name is not None or riichicity_friend_code is not None:
                 query = str(riichicity_friend_code) if riichicity_friend_code is not None else riichicity_name
+                assert query is not None                    
                 SID = os.getenv("rc_sid")
                 assert SID is not None
                 results = requests.post(
@@ -961,11 +995,6 @@ class GlobalUtilities(commands.Cog):
         for k, v in stats.items():
             embed.add_field(name=k, value=v, inline=True)
         await interaction.followup.send(embed=embed)
-
-    @app_commands.command(name="display", description=f"Write a message, replacing mahjong notation (like 123p 3z3Z3z) with mahjong tile emotes.")
-    @app_commands.describe(text="The text containing mahjong tiles to display")
-    async def display(self, interaction: Interaction, text: str):
-        await interaction.response.send_message(replace_text(text))
 
 async def setup(bot: commands.Bot):
     logging.info(f"Loading cog `{LonghornRiichiUtilities.__name__}`...")

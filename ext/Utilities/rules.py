@@ -55,7 +55,7 @@ all_rules: Dict[str, Dict[str, Any]] = {
     },
 }
 
-def construct_game_rule(
+def construct_game_rule_old(
         contest_name: str,
         round_type: int, # 1 (4-Player East), 2 (4-Player South), 11 (3-Player East), 12 (3-Player South)
         thinking_type: int = 3, # 1 (3+5s), 2 (5+10s), 3 (5+20s), 4 (60+0s), 5 (20+0s), 6 (10+20s)
@@ -213,4 +213,159 @@ def construct_game_rule(
         "emoji_switch": not allow_emote,         # 12; bool
         # "player_roster_type": None,            # 13; uint32
         # "disable_broadcast": None,             # 14; uint32
+    }
+
+def construct_detail_rule(
+        contest_name: str,
+        round_type: int, # 1 (4-Player East), 2 (4-Player South), 11 (3-Player East), 12 (3-Player South)
+        thinking_type: int = 3, # 1 (3+5s), 2 (5+10s), 3 (5+20s), 4 (60+0s), 5 (20+0s), 6 (10+20s)
+        allow_emote: bool = True,
+        auto_match: bool = True,
+        starting_points: Optional[int] = None,
+        min_points_to_win: Optional[int] = None, 
+        auto_win_points: Optional[int] = None, 
+        goal_points: Optional[int] = None, 
+        dora_count: Optional[int] = None,
+        noten_payments: Optional[Tuple[int, ...]] = None,
+        uma: Optional[Tuple[int, ...]] = None,
+        riichi_value: int = 1000,
+        honba_value: int = 100,
+        busting_enabled: bool = True,
+        can_rob_ankan_for_13_orphans: bool = True,
+        charleston_enabled: bool = False,
+        dealer_tenpai_repeat_enabled: bool = True,
+        dealer_win_repeat_enabled: bool = True,
+        dora_enabled: bool = True,
+        double_wind_is_4_fu: bool = True,
+        double_yakuman_enabled: bool = True,
+        extend_to_west_round: bool = True,
+        four_kan_draw_enabled: bool = True,
+        four_riichi_draw_enabled: bool = True,
+        four_wind_draw_enabled: bool = True,
+        head_bump_enabled: bool = False,
+        hints_enabled: bool = True,
+        immediate_kan_dora: bool = False,
+        ippatsu_enabled: bool = True,
+        kan_dora_enabled: bool = True,
+        kan_ura_dora_enabled: bool = True,
+        kazoe_yakuman_enabled: bool = True,
+        kiriage_mangan_enabled: bool = False,
+        last_dealer_tenpai_continues: bool = False,
+        last_dealer_win_continues: bool = False,
+        last_turn_riichi_enabled: bool = False,
+        local_yaku_enabled: bool = False,
+        multiple_winners_enabled: bool = False,
+        multiple_yakuman_enabled: bool = True,
+        nagashi_mangan_enabled: bool = True,
+        nine_terminal_draw_enabled: bool = True,
+        open_tanyao_enabled: bool = True,
+        pao_mode: int = 0, # 0 (pao enabled for big three dragons and four big winds), 1 (also include four kans), 2 (disable pao)
+        renhou_enabled: int = False, # 0 (disabled), 1 (mangan), 2 (yakuman)
+        swap_calling_enabled: bool = False,
+        three_ron_draw_enabled: bool = False,
+        three_starting_doras: bool = False,
+        tsumo_loss_enabled: bool = True,
+        ura_dora_enabled: bool = True,
+        min_han: int = 1, # allowed values: 1, 2, 4
+    ) -> Dict[str, Any]:
+    num_players = 3 if round_type > 10 else 4
+    if dora_count is None:
+        dora_count = 2 if num_players == 3 else 3
+    if starting_points is None:
+        starting_points = 35000 if num_players == 3 else 25000
+    if goal_points is None:
+        goal_points = starting_points + 5000
+    if min_points_to_win is None:
+        min_points_to_win = starting_points
+    if auto_win_points is None:
+        auto_win_points = 0
+    if noten_payments is None:
+        noten_payments = (1000, 2000) if num_players == 3 else (1000, 1500, 3000)
+    if uma is None:
+        uma = (15, 0, -15) if num_players == 3 else (15, 5, -5, -15)
+    if not dora_enabled:
+        kan_dora_enabled = False
+        ura_dora_enabled = False
+        kan_ura_dora_enabled = False
+    if not dealer_win_repeat_enabled:
+        last_dealer_win_continues = False
+    if not dealer_tenpai_repeat_enabled:
+        last_dealer_tenpai_continues = False
+    honba_value *= num_players - 1
+    
+    noten_payments = (*noten_payments, 0) if len(noten_payments) == 2 else noten_payments
+    uma = (*uma, 0) if len(uma) == 3 else uma
+
+    time_fixed = {1: 3, 2: 5, 3: 5, 4: 60, 5: 20, 6: 10}
+    time_add = {1: 5, 2: 10, 3: 20, 4: 0, 5: 0, 6: 20}
+    return {
+        "time_fixed": time_fixed[thinking_type],
+        "time_add": time_add[thinking_type],
+        "dora_count": dora_count,
+        "shiduan": open_tanyao_enabled,
+        "init_point": starting_points,
+        "fandian": min_points_to_win,
+        "can_jifei": busting_enabled,
+        "tianbian_value": auto_win_points,
+        "liqibang_value": riichi_value,
+        "changbang_value": honba_value,
+        "noting_fafu_1": noten_payments[0],
+        "noting_fafu_2": noten_payments[1],
+        "noting_fafu_3": noten_payments[2],
+        "have_liujumanguan": nagashi_mangan_enabled,
+        "have_qieshangmanguan": kiriage_mangan_enabled,
+        "have_biao_dora": dora_enabled,
+        "have_gang_biao_dora": kan_dora_enabled,
+        "ming_dora_immediately_open": immediate_kan_dora,
+        "have_li_dora": ura_dora_enabled,
+        "have_gang_li_dora": kan_ura_dora_enabled,
+        "have_sifenglianda": four_wind_draw_enabled,
+        "have_sigangsanle": four_kan_draw_enabled,
+        "have_sijializhi": four_riichi_draw_enabled,
+        "have_jiuzhongjiupai": nine_terminal_draw_enabled,
+        "have_sanjiahele": three_ron_draw_enabled,
+        "have_toutiao": head_bump_enabled,
+        "have_helelianzhuang": dealer_win_repeat_enabled,
+        "have_helezhongju": not last_dealer_win_continues,
+        "have_tingpailianzhuang": dealer_tenpai_repeat_enabled,
+        "have_tingpaizhongju": not last_dealer_tenpai_continues,
+        "have_yifa": ippatsu_enabled,
+        "have_nanruxiru": extend_to_west_round,
+        "jingsuanyuandian": goal_points,
+        "shunweima_2": uma[1],
+        "shunweima_3": uma[2],
+        "shunweima_4": uma[3],
+        "bianjietishi": hints_enabled,
+        "ai_level": 0,
+        "have_zimosun": tsumo_loss_enabled,
+        "disable_multi_yukaman": False,
+        "fanfu": min_han,
+        "guyi_mode": local_yaku_enabled,
+        "dora3_mode": three_starting_doras,
+        "begin_open_mode": 0,
+        "jiuchao_mode": 0,
+        "reveal_discard": 0,
+        "muyu_mode": 0,
+        "xuezhandaodi": multiple_winners_enabled,
+        "huansanzhang": charleston_enabled,
+        "chuanma": 0,
+        "open_hand": 0,
+        "field_spell_mode": 0,
+        "zhanxing": 0,
+        "disable_double_yakuman": not double_yakuman_enabled,
+        "disable_composite_yakuman": not multiple_yakuman_enabled,
+        "enable_shiti": swap_calling_enabled,
+        "enable_nontsumo_liqi": last_turn_riichi_enabled,
+        "disable_double_wind_four_fu": not double_wind_is_4_fu,
+        "disable_angang_guoshi": not can_rob_ankan_for_13_orphans,
+        "enable_renhe": renhou_enabled,
+        "enable_baopai_extend_settings": pao_mode,
+        "tianming_mode": 0,
+        "yongchang_mode": 0,
+        "hunzhiyiji_mode": 0,
+        "disable_leijiyiman": not kazoe_yakuman_enabled,
+        "disable_broadcast": False,
+        "required_level_p4": 0,
+        "required_level_p3": 0,
+        "max_game_count": 0,
     }
