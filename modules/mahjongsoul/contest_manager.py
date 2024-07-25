@@ -166,7 +166,7 @@ class ContestManager:
         res = self.api.get(method="contest/contest_running_game_list", unique_id=self.contest_unique_id, season_id=1)
         for game in res["data"]:
             for player in game["players"]:
-                if player["nickname"] == nickname:
+                if "nickanme" in player and player["nickname"] == nickname:
                     return game["game_uuid"]
     
     def terminate_game(self, nickname: str) -> Tuple[bool, str]:

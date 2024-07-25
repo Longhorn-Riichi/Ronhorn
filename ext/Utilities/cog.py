@@ -188,7 +188,7 @@ class LonghornRiichiUtilities(commands.Cog):
     @app_commands.checks.has_role(OFFICER_ROLE)
     async def unpause_any_game(self, interaction: Interaction, nickname: str):
         await interaction.response.defer()
-        await interaction.followup.send(content=self.try_all_lobbies("pause_game", nickname))
+        await interaction.followup.send(content=self.try_all_lobbies("unpause_game", nickname))
 
     @app_commands.command(name="unpause_own_game", description=f"Unpause the paused game you were in.")
     async def unpause_own_game(self, interaction: Interaction):
