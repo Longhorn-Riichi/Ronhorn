@@ -12,5 +12,6 @@ websockets = "*"
 aiohttp = "*"
 requests = "*"
 matplotlib = "*"
+tzdata = "*"
 
 [dev-packages]
