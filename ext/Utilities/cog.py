@@ -41,9 +41,9 @@ ST_NAME: str                  = assert_getenv("st_name")
 REGISTRY_NAME_LENGTH: int     = int(assert_getenv("max_name_len"))
 VOICE_CHANNEL_ID: int         = int(assert_getenv("voice_channel_id"))
 
-DISCORD_NAME_COL: int      = 2
-MJS_NICKNAME_COL: int      = 4
-MJS_ACCOUNT_ID_COL: int    = 6
+DISCORD_NAME_COL: int         = 2
+MJS_NICKNAME_COL: int         = 4
+MJS_ACCOUNT_ID_COL: int       = 6
 
 class LonghornRiichiUtilities(commands.Cog):
     """
@@ -217,51 +217,6 @@ class LonghornRiichiUtilities(commands.Cog):
         
         return registry.cell(found_cell.row, MJS_NICKNAME_COL).value
 
-    async def add_game_to_leaderboard(self, lobby: str, uuid: str, record=None) -> str:
-        if record is None:
-            assert account_manager is not None
-            record_list = await account_manager.get_game_results([uuid])
-            if len(record_list) == 0:
-                raise Exception("A game concluded without a record (possibly due to being terminated early).")
-            record = record_list[0]
-        # TODO: deal with ordering the scores; currently assumes the scores are ordered by
-        #       total_point (adopt the algorithm of `enter_scores` command)
-        seat_player_dict = {a.seat: (a.account_id, a.nickname) for a in record.accounts}
-
-        player_scores_rendered = ["Game concluded!"] # to be newline-separated
-        player_scores_rendered.append(f"https://mahjongsoul.game.yo-star.com/?paipu={uuid}")
-
-        timestamp = str(datetime.datetime.now()).split(".")[0]
-        raw_scores_row = [timestamp, lobby, "no"] # a list of values for a "Raw Scores" row
-        not_registered = [] # list of unregistered players in game, if any
-
-        seat_name = ["East", "South", "West", "North"]
-        for p in record.result.players:
-            player_account_id, player_nickname = seat_player_dict.get(p.seat, (0, "AI"))
-            
-            raw_score = p.part_point_1
-            async with registry_lock:
-                assert registry is not None
-                found_cell: gspread.cell.Cell = registry.find(str(player_account_id), in_column=MJS_ACCOUNT_ID_COL)
-                if found_cell is not None:
-                    discord_name = registry.cell(found_cell.row, DISCORD_NAME_COL).value
-                    raw_scores_row.extend((discord_name, raw_score))
-                else: # The player was not registered?
-                    not_registered.append(player_nickname)
-                    raw_scores_row.extend(("Unregistered player", raw_score))
-            
-            player_scores_rendered.append(
-                f"{player_nickname} ({seat_name[p.seat]}): {p.part_point_1} ({(p.total_point/1000):+})")
-
-        for player_nickname in not_registered:
-            player_scores_rendered.append(f"*WARNING*: Mahjong Soul player `{player_nickname}` is not registered!")
-
-        async with raw_scores_lock:
-            assert raw_scores is not None
-            raw_scores.append_row(raw_scores_row)
-
-        return '\n'.join(player_scores_rendered)
-    
     async def _register(self, name: str, server_member: discord.Member, friend_id: Optional[int]) -> str:
         """
         Add player to the registry, removing any existing registration first.
@@ -672,7 +627,7 @@ class LonghornRiichiUtilities(commands.Cog):
             uid_to_name = {YH_UNIQUE_ID: YH_NAME, YT_UNIQUE_ID: YT_NAME, SH_UNIQUE_ID: SH_NAME, ST_UNIQUE_ID: ST_NAME}
             if contest_uid not in uid_to_name.keys():
                 raise Exception(f"/submit_game was given a game which wasn't played in our lobby. (uid={contest_uid})\n{link}")
-            resp = await self.add_game_to_leaderboard(uid_to_name[contest_uid], uuid, record)
+            resp = await self.manager.add_game_to_leaderboard(uid_to_name[contest_uid], uuid, record)
         except Exception as e:
             await interaction.followup.send(content="Error: " + str(e))
             return ""

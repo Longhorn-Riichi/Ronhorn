@@ -95,14 +95,14 @@ class ContestManager:
         return self.pause_match_impl(uuid=uuid, resume=2)
     def terminate_match(self, uuid: str):
         return self.api.post(method="contest/terminate_contest_running_game", unique_id=str(self.contest_unique_id), uuid=uuid)
-    def poll_participants(self): # ready players in lobby
-        # returns {"data":[{"account_id":118325554,"nickname":"Kalanchloe"}]}
-        return self.get(method="contest/ready_player_list", unique_id=self.contest_unique_id, season_id=1)
-    def poll_match_list(self):
-        # returns {"data":[{"game_uuid":"240725-550d2f43-904b-4412-bd31-514668e4d4d5","players":[{"account_id":118325554,"nickname":"Kalanchloe"},{"account_id":0},{"account_id":0},{"account_id":0}],"start_time":1721920249,"tag":""}]}
-        return self.get(method="contest/contest_running_game_list", unique_id=self.contest_unique_id, season_id=1)
-    def poll_match(self, uuid: str):
-        # returns {"uuid":"240725-550d2f43-904b-4412-bd31-514668e4d4d5","chang":0,"ju":0,"ben":0,"is_end":0,"update_time":1721920266,"scores":[1000,1000,1000,1000]}
+    def poll_participants(self) -> List[Dict]: # ready players in lobby
+        # call returns {"data":[{"account_id":118325554,"nickname":"Kalanchloe"}]}
+        return self.api.get(method="contest/ready_player_list", unique_id=self.contest_unique_id, season_id=1)["data"]
+    def poll_match_list(self) -> List[Dict]:
+        # call returns {"data":[{"game_uuid":"240725-550d2f43-904b-4412-bd31-514668e4d4d5","players":[{"account_id":118325554,"nickname":"Kalanchloe"},{"account_id":0},{"account_id":0},{"account_id":0}],"start_time":1721920249,"tag":""}]}
+        return self.api.get(method="contest/contest_running_game_list", unique_id=self.contest_unique_id, season_id=1)["data"]
+    def poll_match(self, uuid: str) -> Dict:
+        # call returns {"uuid":"240725-550d2f43-904b-4412-bd31-514668e4d4d5","chang":0,"ju":0,"ben":0,"is_end":0,"update_time":1721920266,"scores":[1000,1000,1000,1000]}
         return self.api.get(method=f"game/realtime/{uuid}/progress/latest", endpoint="https://contesten.mahjongsoul.com:7443/api/")
     def fetch_rules(self):
         return self.api.get(method="contest/fetch_contest_detail", endpoint="https://mjusgs.mahjongsoul.com:8200/api/", unique_id=str(self.contest_unique_id))["data"]
@@ -164,7 +164,6 @@ class ContestManager:
         return the self.mjs_uid for an ongoing game the specified player is in
         """
         res = self.api.get(method="contest/contest_running_game_list", unique_id=self.contest_unique_id, season_id=1)
-        print(res, self.contest_unique_id, nickname)
         for game in res["data"]:
             for player in game["players"]:
                 if player["nickname"] == nickname:
