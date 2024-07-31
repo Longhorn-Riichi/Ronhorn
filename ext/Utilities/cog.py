@@ -855,14 +855,19 @@ class GlobalUtilities(commands.Cog):
             user = interaction.user
         if majsoul_id is None:
             async with registry_lock:
-                if not os.path.isfile("player_registry.json"):
-                    registry = {}
-                with open("player_registry.json", "rb") as file:
-                    registry = json.load(file)
-            if user.name not in registry or "ms_name" not in registry[user.name]:
-                return await interaction.followup.send(content=f"Error: first register your Mahjong Soul friend code with </register_stats:1195388249791799366>!")
-            majsoul_name = registry[user.name]["ms_name"]
-            majsoul_id = registry[user.name]["ms_id"]
+                global registry
+                assert registry is not None
+                found_cell: gspread.cell.Cell = registry.find(user.name, in_column=2)
+                cell_existed = found_cell is not None
+                if cell_existed:
+                    [_, _, _, *mahjongsoul_fields] = registry.row_values(found_cell.row)
+                    if mahjongsoul_fields:
+                        [majsoul_name, _, majsoul_id] = mahjongsoul_fields
+                        majsoul_id = int(majsoul_id)
+                    else:
+                        return await interaction.followup.send(content=f"Error: first register your Mahjong Soul friend code with </register:1191487599941001357>!")
+                else:
+                    return await interaction.followup.send(content=f"Error: first register your Mahjong Soul friend code with </register:1191487599941001357>!")
         assert majsoul_name is not None
         assert majsoul_id is not None
 
