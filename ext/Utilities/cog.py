@@ -792,7 +792,7 @@ class GlobalUtilities(commands.Cog):
                 player_registry[discord_name]["rc_name"] = results["data"]["friendList"][0]["nickname"]
                 player_registry[discord_name]["rc_friendcode"] = results["data"]["friendList"][0]["userID"]
                 updated["Riichi City"] = player_registry[discord_name]["rc_name"]
-            with open("player_player_registry.json", "wb") as file:
+            with open("player_registry.json", "wb") as file:
                 file.write(json.dumps(player_registry, ensure_ascii=False).encode("utf-8"))
 
         out_header = f"Updated your registration for {' and '.join(updated.keys())}:"
