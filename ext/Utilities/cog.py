@@ -752,12 +752,13 @@ class GlobalUtilities(commands.Cog):
         tenhou_name = None # no way to get tenhou stats outside of nodocchi so we will ignore tenhou.net
         async with registry_lock:
             if not os.path.isfile("player_registry.json"):
-                registry = {}
-            with open("player_registry.json", "rb") as file:
-                registry = json.load(file)
+                player_registry = {}
+            else:
+                with open("player_registry.json", "rb") as file:
+                    player_registry = json.load(file)
             discord_name = interaction.user.name
-            if discord_name not in registry:
-                registry[discord_name] = {}
+            if discord_name not in player_registry:
+                player_registry[discord_name] = {}
 
             updated = {}
             if majsoul_friend_code is not None:
@@ -765,13 +766,13 @@ class GlobalUtilities(commands.Cog):
                 result = await account_manager.get_account(majsoul_friend_code)
                 if result is None:
                     raise Exception(f"Invalid Mahjong soul friend code {majsoul_friend_code}")
-                registry[discord_name]["ms_name"] = result[0]
-                registry[discord_name]["ms_id"] = result[1]
-                registry[discord_name]["ms_friendcode"] = majsoul_friend_code
-                updated["Mahjong Soul"] = registry[discord_name]["ms_name"]
+                player_registry[discord_name]["ms_name"] = result[0]
+                player_registry[discord_name]["ms_id"] = result[1]
+                player_registry[discord_name]["ms_friendcode"] = majsoul_friend_code
+                updated["Mahjong Soul"] = player_registry[discord_name]["ms_name"]
             if tenhou_name is not None:
-                registry[discord_name]["tenhou_name"] = tenhou_name
-                updated["tenhou.net"] = registry[discord_name]["tenhou_name"]
+                player_registry[discord_name]["tenhou_name"] = tenhou_name
+                updated["tenhou.net"] = player_registry[discord_name]["tenhou_name"]
             if riichicity_name is not None or riichicity_friend_code is not None:
                 query = str(riichicity_friend_code) if riichicity_friend_code is not None else riichicity_name
                 assert query is not None                    
@@ -788,18 +789,18 @@ class GlobalUtilities(commands.Cog):
                     data="{\"findType\":2,\"content\":\"" + query + "\"}").json()
                 if results["code"] != 0:
                     raise Exception(f"Error {results['code']}: {results['message']}")
-                registry[discord_name]["rc_name"] = results["data"]["friendList"][0]["nickname"]
-                registry[discord_name]["rc_friendcode"] = results["data"]["friendList"][0]["userID"]
-                updated["Riichi City"] = registry[discord_name]["rc_name"]
-            with open("player_registry.json", "wb") as file:
-                file.write(json.dumps(registry, ensure_ascii=False).encode("utf-8"))
+                player_registry[discord_name]["rc_name"] = results["data"]["friendList"][0]["nickname"]
+                player_registry[discord_name]["rc_friendcode"] = results["data"]["friendList"][0]["userID"]
+                updated["Riichi City"] = player_registry[discord_name]["rc_name"]
+            with open("player_player_registry.json", "wb") as file:
+                file.write(json.dumps(player_registry, ensure_ascii=False).encode("utf-8"))
 
         out_header = f"Updated your registration for {' and '.join(updated.keys())}:"
         green = Colour.from_str("#1EA51E")
         embed = Embed(description="Registered accounts:", colour=green)
         for k, v in {"Mahjong Soul": "ms_name", "tenhou.net": "tenhou_name", "Riichi City": "rc_name"}.items():
-            if v in registry[discord_name]:
-                embed.add_field(name=f"**{k}**", value=registry[discord_name][v], inline=True)
+            if v in player_registry[discord_name]:
+                embed.add_field(name=f"**{k}**", value=player_registry[discord_name][v], inline=True)
         await interaction.followup.send(content=out_header, embed=embed)
 
     def draw_ms_trendline(self, data):
@@ -858,16 +859,21 @@ class GlobalUtilities(commands.Cog):
                 global registry
                 assert registry is not None
                 found_cell: gspread.cell.Cell = registry.find(user.name, in_column=2)
-                cell_existed = found_cell is not None
-                if cell_existed:
+                try:
                     [_, _, _, *mahjongsoul_fields] = registry.row_values(found_cell.row)
-                    if mahjongsoul_fields:
-                        [majsoul_name, _, majsoul_id] = mahjongsoul_fields
-                        majsoul_id = int(majsoul_id)
+                    [majsoul_name, _, majsoul_id] = mahjongsoul_fields
+                    majsoul_id = int(majsoul_id)
+                except Exception as e:
+                    # fall back to json file
+                    if not os.path.isfile("player_registry.json"):
+                        player_registry = {}
                     else:
-                        return await interaction.followup.send(content=f"Error: first register your Mahjong Soul friend code with </register:1191487599941001357>!")
-                else:
-                    return await interaction.followup.send(content=f"Error: first register your Mahjong Soul friend code with </register:1191487599941001357>!")
+                        with open("player_registry.json", "rb") as file:
+                            player_registry = json.load(file)
+                    if user.name not in player_registry or "ms_name" not in player_registry[user.name]:
+                        return await interaction.followup.send(content=f"Error: first register your Mahjong Soul friend code with </register_stats:1195388249791799366>!")
+                    majsoul_name = player_registry[user.name]["ms_name"]
+                    majsoul_id = player_registry[user.name]["ms_id"]
         assert majsoul_name is not None
         assert majsoul_id is not None
 
@@ -938,13 +944,14 @@ class GlobalUtilities(commands.Cog):
         if riichicity_id is None:
             async with registry_lock:
                 if not os.path.isfile("player_registry.json"):
-                    registry = {}
-                with open("player_registry.json", "rb") as file:
-                    registry = json.load(file)
-            if user.name not in registry or "rc_name" not in registry[user.name]:
+                    player_registry = {}
+                else:
+                    with open("player_registry.json", "rb") as file:
+                        player_registry = json.load(file)
+            if user.name not in player_registry or "rc_name" not in player_registry[user.name]:
                 return await interaction.followup.send(content=f"Error: first register your Riichi City username with </register_stats:1195388249791799366>!")
-            riichicity_name = registry[user.name]["rc_name"]
-            riichicity_id = registry[user.name]["rc_friendcode"]
+            riichicity_name = player_registry[user.name]["rc_name"]
+            riichicity_id = player_registry[user.name]["rc_friendcode"]
         assert riichicity_name is not None
         assert riichicity_id is not None
 
