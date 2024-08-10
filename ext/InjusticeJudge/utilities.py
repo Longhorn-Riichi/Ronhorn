@@ -289,18 +289,22 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
                     # determine the declarer of the draw by identifying the
                     # first player without a discard, starting from the dealer
                     curr_seat = rnd % 4 # initialized as the current dealer's seat
-                    while True:
+                    gas = 10
+                    while gas > 0:
+                        gas -= 1
                         if len(kyoku.pond[curr_seat]) == 0:
                             declarer = curr_seat
                             break
                         curr_seat = (curr_seat + 1) % kyoku.num_players
+                    else:
+                        assert False, "parse_game: ran out of gas in checking 9 terminals draw"
 
                     declarer_hand = (*kyoku.haipai[declarer].tiles, kyoku.final_draw)
 
                     result_string += CODE_BLOCK_PREFIX
                     result_string += f"{ph(declarer_hand)} ({count_unique_terminals(declarer_hand)} unique terminals)"
         else:
-            assert False, f"unknown result type {result_type} for round {round_name(rnd, honba)}"
+            assert False, f"parse_game: unknown result type {result_type} for round {round_name(rnd, honba)}"
 
         # add to the end of ret[-1] unless that makes it too long,
         # in which case we append a new string to ret
