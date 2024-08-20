@@ -117,19 +117,7 @@ async def fetch_majsoul(link: str):
     Instead of logging in for each fetch, just fetch through the already logged-in
     AccountManager.
     """
-    identifier_pattern = r'\?paipu=([0-9a-zA-Z-]+)'
-    identifier_match = re.search(identifier_pattern, link)
-    if identifier_match is None:
-        raise Exception(f"Invalid Mahjong Soul link: {link}")
-    identifier = identifier_match.group(1)
-
-    if not all(c in "0123456789abcdef-" for c in identifier):
-        # deanonymize the link
-        codex = "0123456789abcdefghijklmnopqrstuvwxyz"
-        decoded = ""
-        for i, c in enumerate(identifier):
-            decoded += "-" if c == "-" else codex[(codex.index(c) - i + 55) % 36]
-        identifier = decoded
+    identifier, ms_account_id, player_seat = parse_majsoul_link(link)
     
     try:
         f = open(f"cached_games/game-{identifier}.log", 'rb')
@@ -141,10 +129,7 @@ async def fetch_majsoul(link: str):
             "fetchGameRecord",
             game_uuid=identifier,
             client_version_string=account_manager.client_version_string)
-
-        save_cache(
-            filename=f"game-{identifier}.log",
-            data=record.SerializeToString())
+        save_cache(filename=f"game-{identifier}.log", data=record.SerializeToString())
 
     parsed = parse_wrapped_bytes(record.data)[1]
     if parsed.actions != []:  # type: ignore[attr-defined]
@@ -152,19 +137,15 @@ async def fetch_majsoul(link: str):
     else:
         actions = [parse_wrapped_bytes(record) for record in parsed.records]  # type: ignore[attr-defined]
     
-    player = 0
-    if link.count("_") == 2:
-        player = int(link[-1])
-    else:
-        player_pattern = r'_a(\d+)'
-        player_match = re.search(player_pattern, link)
-        if player_match is not None:
-            ms_account_id = int((((int(player_match.group(1))-1358437)^86216345)-1117113)/7)
-            for acc in record.head.accounts:
-                if acc.account_id == ms_account_id:
-                    player = acc.seat
-                    break
-    
+    player = None
+    if player_seat is not None:
+        player = player_seat
+    elif ms_account_id is not None:
+        for acc in record.head.accounts:
+            if acc.account_id == ms_account_id:
+                player = acc.seat
+                break
+
     return actions, MessageToDict(record.head), player
 
 """
