@@ -49,20 +49,21 @@ class AccountManager(MajsoulChannel):
         UID = self.mjs_uid
         TOKEN = self.mjs_token
         MS_VERSION = requests.get(url="https://mahjongsoul.game.yo-star.com/version.json").json()["version"][:-2]
+        self.client_version_string = f"web-{MS_VERSION}"
         self.logger.info("Calling heatbeat...")
         await super().call("heatbeat")
         self.logger.info("Requesting initial access token...")
         USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/110.0"
         access_token = requests.post(url="https://passport.mahjongsoul.com/user/login", headers={"User-Agent": USER_AGENT, "Referer": "https://mahjongsoul.game.yo-star.com/"}, data={"uid":UID,"token":TOKEN,"deviceId":f"web|{UID}"}).json()["accessToken"]
         self.logger.info("Requesting oauth access token...")
-        oauth_token = (await super().call("oauth2Auth", type=7, code=access_token, uid=UID, client_version_string=f"web-{MS_VERSION}")).access_token
+        oauth_token = (await super().call("oauth2Auth", type=7, code=access_token, uid=UID, client_version_string=self.client_version_string)).access_token
         self.logger.info("Calling heatbeat...")
         await super().call("heatbeat")
         self.logger.info("Calling oauth2Check...")
         assert (await super().call("oauth2Check", type=7, access_token=oauth_token)).has_account, "couldn't find account with oauth2Check"
         self.logger.info("Calling oauth2Login...")
         client_device_info = {"platform": "pc", "hardware": "pc", "os": "mac", "is_browser": True, "software": "Firefox", "sale_platform": "web"}
-        await super().call("oauth2Login", type=7, access_token=oauth_token, reconnect=False, device=client_device_info, random_key=str(uuid.uuid1()), client_version={"resource": f"{MS_VERSION}.w"}, currency_platforms=[], client_version_string=f"web-{MS_VERSION}", tag="en")
+        await super().call("oauth2Login", type=7, access_token=oauth_token, reconnect=False, device=client_device_info, random_key=str(uuid.uuid1()), client_version={"resource": f"{MS_VERSION}.w"}, currency_platforms=[], client_version_string=self.client_version_string, tag="en")
         self.logger.info(f"`login` with token successful!")
 
     async def login_cn(self):
