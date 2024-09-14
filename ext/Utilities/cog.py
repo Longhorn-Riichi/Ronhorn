@@ -329,7 +329,7 @@ class LonghornRiichiUtilities(commands.Cog):
 
     async def _get_queued_players(self, lobby):
         # get all queued players
-        players = list((await self.get_cog(lobby).manager.call("fetchContestMatchingPlayer")).players)
+        players = [player["nickname"] for player in self.get_cog(lobby).manager.poll_participants()]
 
         # # debug
         # make_ai = lambda: self.get_cog(lobby).manager.proto.ContestPlayerInfo(account_id=0, nickname="")
