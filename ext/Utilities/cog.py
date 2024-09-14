@@ -367,11 +367,17 @@ class LonghornRiichiUtilities(commands.Cog):
     @app_commands.command(name="check_queues", description=f"Check to see if everyone is queued up on Mahjong Soul.")
     @app_commands.describe(
         check_voice_channel="Whether to check the voice channel for players instead.",
+        include1="A player who wishes to be included in the check.",
+        include2="A player who wishes to be included in the check.",
+        include3="A player who wishes to be included in the check.",
+        include4="A player who wishes to be included in the check.",
         exclude1="A player who wishes to not be included in the check.",
         exclude2="A player who wishes to not be included in the check.",
         exclude3="A player who wishes to not be included in the check.",
         exclude4="A player who wishes to not be included in the check.")
     async def check_queues(self, interaction: Interaction, check_voice_channel: Optional[bool],
+            include1: Optional[discord.User], include2: Optional[discord.User],
+            include3: Optional[discord.User], include4: Optional[discord.User],
             exclude1: Optional[discord.User], exclude2: Optional[discord.User],
             exclude3: Optional[discord.User], exclude4: Optional[discord.User]):
         await interaction.response.defer()
@@ -379,6 +385,7 @@ class LonghornRiichiUtilities(commands.Cog):
         yt_players = await self._get_queued_players(YT_NAME)
         sh_players = await self._get_queued_players(SH_NAME)
         st_players = await self._get_queued_players(ST_NAME)
+        included = [e.name for e in (include1, include2, include3, include4) if e is not None]
         excluded = [e.name for e in (exclude1, exclude2, exclude3, exclude4) if e is not None]
 
         header = ""
@@ -390,7 +397,7 @@ class LonghornRiichiUtilities(commands.Cog):
                 header = "Nobody is currently in the voice channel!"
             else:
                 # otherwise, partition everyone up into tables and give a suggestion of who goes where
-                header, msg = self._split_queued_players([member.name for member in voice_channel.members], excluded)
+                header, msg = self._split_queued_players([member.name for member in voice_channel.members] + included, excluded)
         elif len(yh_players) + len(yt_players) + len(sh_players) + len(st_players) == 0:
             header = "Nobody is currently queued in any lobby!"
         elif len(yh_players) % 4 == len(yt_players) % 4 == len(sh_players) % 3 == len(st_players) % 3 == 0:
