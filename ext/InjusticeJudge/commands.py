@@ -1,5 +1,6 @@
 import discord
 from .utilities import analyze_game, draw_graph, long_followup, parse_game, parse_link
+from .shanten import analyze_hand, translate_hand
 from discord import app_commands, ui, ButtonStyle, Colour, Embed, Interaction, Message
 from global_stuff import account_manager
 import logging
@@ -53,4 +54,12 @@ async def _skill(interaction: Interaction, link: str, player_set: Set[int]) -> N
                    "Did we miss a skill? Contribute ideas [here](https://github.com/Longhorn-Riichi/InjusticeJudge/issues/10)!"]
     header = f"Input: {link}\nSkills everyone pulled off this game:"
     await long_followup(interaction, skills, header)
+    logging.info("  response sent")
+
+async def _shanten(interaction: Interaction, hand: str) -> None:
+    logging.info("Running shanten")
+    analysis = analyze_hand(translate_hand(hand))
+    logging.info("  done")
+    header = f"Input: {hand}"
+    await long_followup(interaction, analysis, header)
     logging.info("  response sent")

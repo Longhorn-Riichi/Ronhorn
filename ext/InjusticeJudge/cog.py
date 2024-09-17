@@ -6,7 +6,7 @@ from discord import app_commands, ui, ButtonStyle, Colour, Embed, Interaction
 from typing import *
 
 # InjusticeJudge imports
-from .commands import _parse, _injustice, _skill
+from .commands import _parse, _injustice, _skill, _shanten
 from .utilities import analyze_game, draw_graph, long_followup, parse_game, parse_link
 from .command_view import CommandSuggestionView
 
@@ -44,6 +44,12 @@ class Injustice(commands.Cog):
     async def skill(self, interaction: Interaction, link: str):
         await interaction.response.defer()
         await _skill(interaction, link, {0,1,2,3})
+
+    @app_commands.command(name="shanten", description="Analyze a given hand's waits and upgrades.")  # type: ignore[arg-type]
+    @app_commands.describe(hand="A hand in the form 123m456p789s1234z. Must be {4,7,10,13} tiles in length.")
+    async def shanten(self, interaction: Interaction, hand: str):
+        await interaction.response.defer()
+        await _shanten(interaction, hand)
 
 class ParseLog(commands.Cog):
     @app_commands.command(name="parse", description=f"Print out the results of a game.")  # type: ignore[arg-type]
