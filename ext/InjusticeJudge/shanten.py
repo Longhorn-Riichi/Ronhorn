@@ -97,7 +97,7 @@ def analyze_hand(hand: Tuple[int, ...]) -> List[str]:
 def describe_floating_iishanten(debug_info: Dict[str, Any], waits: Set[int]) -> List[str]:
     pair = debug_info["floating_hands"][0]["pair"]
     ret = []
-    for floating_hand in debug_info["floating_hands"]:
+    for floating_hand in sorted(debug_info["floating_hands"], key=lambda h: -len(h["simple_taatsu_waits"] | h["simple_shanpon_waits"])):
         simple_shapes = floating_hand["simple_shapes"]
         simple_taatsu_waits = floating_hand["simple_taatsu_waits"]
         simple_shanpon_waits = floating_hand["simple_shanpon_waits"]
@@ -128,7 +128,7 @@ def describe_complete_iishanten(debug_info: Dict[str, Any], waits: Set[int]) -> 
     ret = []
     is_ryanmen = lambda h: len(h) == 2 and SUCC[h[0]] == h[1] and h[0] not in {11,18,21,28,31,38}
     perfect_str = "\nThis ryanmen-ryanmen form of complete iishanten is also known as **perfect iishanten**."
-    for complex_hand in debug_info["complex_hands"]:
+    for complex_hand in sorted(debug_info["complex_hands"], key=lambda h: -len(h["simple_wait"] | h["complex_waits"])):
         pair = complex_hand["pair"]
         simple_shape = complex_hand["simple_shape"]
         complex_shape = complex_hand["complex_shape"]
@@ -308,4 +308,4 @@ def describe_shanten(debug_info: Dict[str, Any]) -> List[str]:
 
 # debug
 if __name__ == "__main__":
-    print("\n".join(analyze_hand(translate_hand("2223579m789p111s"))))
+    print("\n".join(analyze_hand(translate_hand("1122345588899m"))))
