@@ -17,6 +17,8 @@ def translate_hand(hand: str) -> Tuple[int, ...]:
     return tuple(reversed(ret))
 
 def analyze_hand(hand: Tuple[int, ...]) -> List[str]:
+    if len(hand) not in {4, 7, 10, 13}:
+        return ["The given hand must be of length 4, 7, 10, or 13."]
     suits = to_suits(hand)
     groupless_hands = eliminate_all_groups(suits)
     groups_needed = (len(next(from_suits(groupless_hands))) - 1) // 3
