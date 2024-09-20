@@ -1,6 +1,6 @@
 from typing import *
 from modules.InjusticeJudge.injustice_judge.display import ph, pt
-from modules.InjusticeJudge.injustice_judge.constants import SUCC, TANYAOHAI, YAOCHUUHAI
+from modules.InjusticeJudge.injustice_judge.constants import SUCC, PRED, TANYAOHAI, YAOCHUUHAI
 from modules.InjusticeJudge.injustice_judge.shanten import to_suits, from_suits, eliminate_all_groups, get_iishanten_type, calculate_chiitoitsu_shanten, calculate_kokushi_shanten, eliminate_some_taatsus, get_hand_shanten, get_tenpai_waits
 from modules.InjusticeJudge.injustice_judge.utils import normalize_red_fives, sorted_hand
 
@@ -98,9 +98,11 @@ def describe_floating_iishanten(debug_info: Dict[str, Any], waits: Set[int]) -> 
     pair = debug_info["floating_hands"][0]["pair"]
     ret = []
     for floating_hand in sorted(debug_info["floating_hands"], key=lambda h: -len(h["simple_taatsu_waits"] | h["simple_shanpon_waits"])):
-        simple_shapes = floating_hand["simple_shapes"]
+        simple_shapes = sorted(floating_hand["simple_shapes"])
         simple_taatsu_waits = floating_hand["simple_taatsu_waits"]
         simple_shanpon_waits = floating_hand["simple_shanpon_waits"]
+        left_extensions = floating_hand["left_extensions"]
+        right_extensions = floating_hand["right_extensions"]
         simple_waits = simple_taatsu_waits | simple_shanpon_waits
         if len(simple_shapes) == 0:
             continue
@@ -121,19 +123,23 @@ def describe_floating_iishanten(debug_info: Dict[str, Any], waits: Set[int]) -> 
         else:
             continue
         waits |= simple_waits
+        extend_text, waits = describe_sequence_extensions(left_extensions, right_extensions, waits)
+        ret.extend(extend_text)
     return ret
 
 
 def describe_complete_iishanten(debug_info: Dict[str, Any], waits: Set[int]) -> List[str]:
     ret = []
     is_ryanmen = lambda h: len(h) == 2 and SUCC[h[0]] == h[1] and h[0] not in {11,18,21,28,31,38}
-    perfect_str = "\nThis ryanmen-ryanmen form of complete iishanten is also known as **perfect iishanten**."
+    perfect_str = "\nThis ryanmen-ryanmen form of complete iishanten is also known as **perfect iishanten**.\n"
     for complex_hand in sorted(debug_info["complex_hands"], key=lambda h: -len(h["simple_wait"] | h["complex_waits"])):
         pair = complex_hand["pair"]
         simple_shape = complex_hand["simple_shape"]
         complex_shape = complex_hand["complex_shape"]
         simple_wait = complex_hand["simple_wait"]
         complex_waits = complex_hand["complex_waits"]
+        left_extensions = complex_hand["left_extensions"]
+        right_extensions = complex_hand["right_extensions"]
         is_complex_pair = len(set(complex_shape)) == 2
         t1, t2 = complex_shape[0:2], complex_shape[1:3]
         is_perfect = is_ryanmen(simple_shape) and (is_ryanmen(t1) or is_ryanmen(t2))
@@ -182,10 +188,33 @@ def describe_complete_iishanten(debug_info: Dict[str, Any], waits: Set[int]) -> 
         else:
             continue
         waits |= simple_wait | complex_waits
+        extend_text, waits = describe_sequence_extensions(left_extensions, right_extensions, waits)
+        ret.extend(extend_text)
+
     return ret
 
+def describe_sequence_extensions(left_extensions: Set[int], right_extensions: Set[int], waits: Set[int]) -> Tuple[List[str], Set[int]]:
+    ret = []
+    if len((left_extensions | right_extensions) - waits) > 0:
+        extend_text = []
+        for wait in reversed(sorted(left_extensions - waits)):
+            seq = (SUCC[wait], SUCC[SUCC[wait]], SUCC[SUCC[SUCC[wait]]])
+            extend_text.append(f"the sequence {ph(seq)} extends the {pt(SUCC[SUCC[SUCC[wait]]])} wait to {pt(wait)}")
+            waits.add(wait)
+        for wait in sorted(right_extensions - waits):
+            seq = (PRED[PRED[PRED[wait]]], PRED[PRED[wait]], PRED[wait])
+            extend_text.append(f"the sequence {ph(seq)} extends the {pt(PRED[PRED[PRED[wait]]])} wait to {pt(wait)}")
+            waits.add(wait)
+        if len(extend_text) > 1:
+            extend_text[-1] = "and " + extend_text[-1]
+        ret = ["",
+            f"Sequences in hand can extend the waits if one of their ends overlaps a wait."
+            f" In particular, " + ", ".join(extend_text) + "."
+        ]
+    return ret, waits
+
 def describe_headless_iishanten(debug_info: Dict[str, Any], waits: Set[int]) -> List[str]:
-    simple_shapes = debug_info["headless_taatsus"]
+    simple_shapes = sorted(debug_info["headless_taatsus"])
     floating_tiles = debug_info["headless_floating_tiles"]
     headless_tanki_waits = debug_info["headless_tanki_waits"]
     headless_taatsu_waits = debug_info["headless_taatsu_waits"]
@@ -308,4 +337,10 @@ def describe_shanten(debug_info: Dict[str, Any]) -> List[str]:
 
 # debug
 if __name__ == "__main__":
-    print("\n".join(analyze_hand(translate_hand("1122345588899m"))))
+    # print("\n".join(analyze_hand(translate_hand("234567m2468p678s"))))
+    # print("\n".join(analyze_hand(translate_hand("23455667m56p678s"))))
+    # print("\n".join(analyze_hand(translate_hand("34445566p22256s"))))
+    # print("\n".join(analyze_hand(translate_hand("23345566p22256s"))))
+    # print("\n".join(analyze_hand(translate_hand("11123456m227p12s"))))
+    # print("\n".join(analyze_hand(translate_hand("3334555m12678p1z"))))
+    print("\n".join(analyze_hand(translate_hand("123456m55568p12s"))))
