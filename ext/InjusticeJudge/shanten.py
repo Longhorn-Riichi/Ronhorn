@@ -405,4 +405,4 @@ if __name__ == "__main__":
     # assert_analyze_hand("12377m233566p12s", "7m13467p3s") # 2 complex same suit diff from pair
     # assert_analyze_hand("123m23356699p12s", "134679p3s") # 2 complex same suit as pair
     # # 3-shanten
-    # assert_analyze_hand("123788m23458p1s2z", "56789m123456789p123s2z")
+    assert_analyze_hand("123788m23458p1s2z", "56789m123456789p123s2z")
