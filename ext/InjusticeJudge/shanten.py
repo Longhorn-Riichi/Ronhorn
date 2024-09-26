@@ -115,10 +115,11 @@ def get_shape_str(max_shapes: int, simple_shapes: Tuple[Tuple[int, ...], ...], c
     has_complex_pair = any(len(set(complex_shape)) == 2 for complex_shape in complex_shapes)
     shape_str = ""
     shape_num = len(simple_shapes) + len(complex_shapes)
+    simple_shape_has_pair = any((t1 == t2) for t1, t2 in simple_shapes)
     if shape_num > 0 and max_shapes > 0:
         s = "s" if shape_num != 1 else ""
         if len(complex_shapes) == 0:
-            if any((t1 == t2) for t1, t2 in simple_shapes):
+            if simple_shape_has_pair:
                 shape_str = f"pair{s}/simple shape{s} {' '.join(map(ph, simple_shapes + complex_shapes))}"
             else:
                 shape_str = f"simple shape{s} {' '.join(map(ph, simple_shapes + complex_shapes))}"
@@ -129,7 +130,7 @@ def get_shape_str(max_shapes: int, simple_shapes: Tuple[Tuple[int, ...], ...], c
         shape_num_str = f"{max_shapes}+" if shape_num > max_shapes else "a" if shape_num == 1 else str(shape_num)
         shape_str = f"{shape_num_str} {shape_str}"
 
-    pair_str = f"a pair {ph(pair)}" if pair is not None else "no pairs" if shape_num > 0 else ""
+    pair_str = f"a pair {ph(pair)}" if pair is not None else "no pairs" if not simple_shape_has_pair and shape_num > 0 else ""
     floating_num = len(floating_tiles)
     floating_num_str = f"{max_floating}+" if floating_num > max_floating else "a" if floating_num == 1 else str(floating_num)
     floating_str = f"{floating_num_str} floating {ph(floating_tiles)}" if floating_num > 0 else "no floating tiles"
@@ -404,5 +405,11 @@ if __name__ == "__main__":
     # assert_analyze_hand("12377m233p12566s", "7m134p3467s") # 2 complex diff suit
     # assert_analyze_hand("12377m233566p12s", "7m13467p3s") # 2 complex same suit diff from pair
     # assert_analyze_hand("123m23356699p12s", "134679p3s") # 2 complex same suit as pair
+    # assert_analyze_hand("123788m233557p1s", "146p") # floating
     # # 3-shanten
-    assert_analyze_hand("123788m23458p1s2z", "56789m123456789p123s2z")
+    # assert_analyze_hand("123788m23458p1s2z", "56789m123456789p123s2z") # kuttsuki
+    # assert_analyze_hand("123788m233668p1s", "12356789m123456789p123s") # not sure
+
+
+    # assert_analyze_hand("34445566p22256s", "234567p4567s", True) # headless + complete
+    # assert_analyze_hand("12377m2356p122s5z", "7m147p23s", True) # 1 complex
