@@ -379,7 +379,7 @@ def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = Fa
         print("\n".join(ret))
 
 # debug
-if __name__ == "__main__":
+# if __name__ == "__main__":
     # TODO tenpai
     # assert_analyze_hand("234567m23456p66s", "147p") # sanmenchan
     # assert_analyze_hand("234567m23488p67s", "58s") # ryanmen
