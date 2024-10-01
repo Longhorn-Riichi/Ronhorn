@@ -23,6 +23,7 @@ from .rules import all_rules, construct_detail_rule
 
 GUILD_ID: int                 = int(assert_getenv("guild_id"))
 OFFICER_ROLE: str             = assert_getenv("officer_role")
+JUNIOR_OFFICER_ROLE: str      = assert_getenv("junior_officer_role")
 PAID_MEMBER_ROLE_ID: int      = int(assert_getenv("paid_member_role_id"))
 PAST_PAID_MEMBER_ROLE_ID: int = int(assert_getenv("past_paid_member_role_id"))
 SPREADSHEET_ID: str           = assert_getenv("spreadsheet_url")
@@ -125,7 +126,7 @@ class LonghornRiichiUtilities(commands.Cog):
             ephemeral=True)
 
     @app_commands.command(name="help_officer_commands", description="Learn how to use slash commands (for officers).")
-    @app_commands.checks.has_role(OFFICER_ROLE)
+    @app_commands.checks.has_any_role(OFFICER_ROLE, JUNIOR_OFFICER_ROLE)
     async def help_officer_commands(self, interaction: Interaction):
         command_help = [
             "### Registration:",
@@ -159,7 +160,7 @@ class LonghornRiichiUtilities(commands.Cog):
 
     @app_commands.command(name="terminate_any_game", description=f"Terminate the game of the specified player. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(nickname="Mahjong Soul nickname of a player that's in the game you want to terminate.")
-    @app_commands.checks.has_role(OFFICER_ROLE)
+    @app_commands.checks.has_any_role(OFFICER_ROLE, JUNIOR_OFFICER_ROLE)
     async def terminate_any_game(self, interaction: Interaction, nickname: str):
         await interaction.response.defer()
         await interaction.followup.send(content=self.try_all_lobbies("terminate_game", nickname))
@@ -172,7 +173,7 @@ class LonghornRiichiUtilities(commands.Cog):
     
     @app_commands.command(name="pause_any_game", description=f"Pause the game of the specified player. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(nickname="Mahjong Soul nickname of a player that's in the game you want to pause.")
-    @app_commands.checks.has_role(OFFICER_ROLE)
+    @app_commands.checks.has_any_role(OFFICER_ROLE, JUNIOR_OFFICER_ROLE)
     async def pause_any_game(self, interaction: Interaction, nickname: str):
         await interaction.response.defer()
         await interaction.followup.send(content=self.try_all_lobbies("pause_game", nickname))
@@ -185,7 +186,7 @@ class LonghornRiichiUtilities(commands.Cog):
     
     @app_commands.command(name="unpause_any_game", description=f"Unpause the paused game of the specified player. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(nickname="Mahjong Soul nickname of a player that's in the game you want to unpause.")
-    @app_commands.checks.has_role(OFFICER_ROLE)
+    @app_commands.checks.has_any_role(OFFICER_ROLE, JUNIOR_OFFICER_ROLE)
     async def unpause_any_game(self, interaction: Interaction, nickname: str):
         await interaction.response.defer()
         await interaction.followup.send(content=self.try_all_lobbies("unpause_game", nickname))
@@ -295,7 +296,7 @@ class LonghornRiichiUtilities(commands.Cog):
         server_member="The server member you want to register.",
         real_name=f"The given member's preferred, real-life name (no more than {REGISTRY_NAME_LENGTH} characters)",
         friend_id="(optional) Mahjong Soul friend ID. Find it in the Friends tab; this is not your username.")
-    @app_commands.checks.has_role(OFFICER_ROLE)
+    @app_commands.checks.has_any_role(OFFICER_ROLE, JUNIOR_OFFICER_ROLE)
     async def register_other(self, interaction: Interaction, server_member: discord.Member, real_name: str, friend_id: Optional[int] = None):
         await interaction.response.defer()
         response = await self._register(real_name, server_member, friend_id)
@@ -321,7 +322,7 @@ class LonghornRiichiUtilities(commands.Cog):
 
     @app_commands.command(name="unregister_other", description=f"Unregister the given server member. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(server_member="The server member you want to unregister.")
-    @app_commands.checks.has_role(OFFICER_ROLE)
+    @app_commands.checks.has_any_role(OFFICER_ROLE, JUNIOR_OFFICER_ROLE)
     async def unregister_other(self, interaction: Interaction, server_member: discord.Member):
         await interaction.response.defer()
         response = await self._unregister(server_member)
@@ -464,7 +465,7 @@ class LonghornRiichiUtilities(commands.Cog):
         app_commands.Choice(name=YT_NAME, value=YT_NAME),
         app_commands.Choice(name=SH_NAME, value=SH_NAME),
         app_commands.Choice(name=ST_NAME, value=ST_NAME)])
-    @app_commands.checks.has_role(OFFICER_ROLE)
+    @app_commands.checks.has_any_role(OFFICER_ROLE, JUNIOR_OFFICER_ROLE)
     async def toggle_auto_match(self, interaction: Interaction, lobby: app_commands.Choice[str], enabled: bool):
         await interaction.response.defer()
         lobby_manager = self.get_cog(lobby.value).manager
@@ -483,7 +484,7 @@ class LonghornRiichiUtilities(commands.Cog):
         app_commands.Choice(name=YT_NAME, value=YT_NAME),
         app_commands.Choice(name=SH_NAME, value=SH_NAME),
         app_commands.Choice(name=ST_NAME, value=ST_NAME)])
-    @app_commands.checks.has_role(OFFICER_ROLE)
+    @app_commands.checks.has_any_role(OFFICER_ROLE, JUNIOR_OFFICER_ROLE)
     async def reset_lobby(self, interaction: Interaction, lobby: app_commands.Choice[str], name: Optional[str] = None, desc: Optional[str] = None):
         await interaction.response.defer(ephemeral=True)
         try:
@@ -513,7 +514,7 @@ class LonghornRiichiUtilities(commands.Cog):
         app_commands.Choice(name="Hanchan", value="Hanchan"),
         app_commands.Choice(name="Tonpuu", value="Tonpuu")
     ])
-    @app_commands.checks.has_role(OFFICER_ROLE)
+    @app_commands.checks.has_any_role(OFFICER_ROLE, JUNIOR_OFFICER_ROLE)
     async def enter_scores(self, interaction: Interaction,
                                  game_type: app_commands.Choice[str],
                                  east_player: discord.Member, east_score: int,
@@ -577,7 +578,7 @@ class LonghornRiichiUtilities(commands.Cog):
         app_commands.Choice(name="Paid member", value="yes"),
         app_commands.Choice(name="Unpaid member", value="no")
     ])
-    @app_commands.checks.has_role(OFFICER_ROLE)
+    @app_commands.checks.has_any_role(OFFICER_ROLE, JUNIOR_OFFICER_ROLE)
     async def update_membership(self, interaction: Interaction,
                                       server_member: discord.Member,
                                       membership: app_commands.Choice[str]):
@@ -599,7 +600,7 @@ class LonghornRiichiUtilities(commands.Cog):
     @app_commands.command(name="replace_role", description=f"Remove/replace a role from everyone. Only usable by @{OFFICER_ROLE}.")
     @app_commands.describe(old_role="The role to be removed/replaced",
                            new_role="The new role to replace the old one with")
-    @app_commands.checks.has_role(OFFICER_ROLE)
+    @app_commands.checks.has_any_role(OFFICER_ROLE, JUNIOR_OFFICER_ROLE)
     async def replace_role(self, interaction: Interaction, old_role: discord.Role, new_role: Optional[discord.Role]):
         """
         This is good for scenarios like replacing @Paid Member with @Past Paid Member
@@ -645,7 +646,7 @@ class LonghornRiichiUtilities(commands.Cog):
                            link2="A Mahjong Soul club game link to submit.",
                            link3="A Mahjong Soul club game link to submit.",
                            link4="A Mahjong Soul club game link to submit.")
-    @app_commands.checks.has_role(OFFICER_ROLE)
+    @app_commands.checks.has_any_role(OFFICER_ROLE, JUNIOR_OFFICER_ROLE)
     async def submit_game(self, interaction: Interaction, link1: str, link2: Optional[str], link3: Optional[str], link4: Optional[str]):
         await interaction.response.defer()
         # extract the uuid from the game link
