@@ -67,7 +67,7 @@ class LobbyManager(commands.Cog):
         for uuid in self.games - games:
             self.manager.logger.info(f"Match ended for {self.game_type}: {uuid}")
             try:
-                resp = await self.add_game_to_leaderboard(self.game_type, uuid)
+                resp = await self.add_game_to_leaderboard(uuid)
             except Exception as e:
                 await self.bot_channel.send(content="Error: " + str(e))  # type: ignore[union-attr]
                 self.games = games
@@ -90,7 +90,7 @@ class LobbyManager(commands.Cog):
     async def poll_games_error(self, error):
         logging.error(f"Error in polling games: {error}")
 
-    async def add_game_to_leaderboard(self, lobby: str, uuid: str, record=None) -> str:
+    async def add_game_to_leaderboard(self, uuid: str, record=None) -> str:
         if record is None:
             assert account_manager is not None
             record_list = await account_manager.get_game_results([uuid])
@@ -105,7 +105,7 @@ class LobbyManager(commands.Cog):
         player_scores_rendered.append(f"https://mahjongsoul.game.yo-star.com/?paipu={uuid}")
 
         timestamp = str(datetime.datetime.now()).split(".")[0]
-        raw_scores_row = [timestamp, lobby, "no"] # a list of values for a "Raw Scores" row
+        raw_scores_row = [timestamp, self.game_type, "no"] # a list of values for a "Raw Scores" row
         not_registered = [] # list of unregistered players in game, if any
 
         seat_name = ["East", "South", "West", "North"]

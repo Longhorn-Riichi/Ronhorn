@@ -635,7 +635,7 @@ class LonghornRiichiUtilities(commands.Cog):
             uid_to_name = {YH_UNIQUE_ID: YH_NAME, YT_UNIQUE_ID: YT_NAME, SH_UNIQUE_ID: SH_NAME, ST_UNIQUE_ID: ST_NAME}
             if contest_uid not in uid_to_name.keys():
                 raise Exception(f"/submit_game was given a game which wasn't played in our lobby. (uid={contest_uid})\n{link}")
-            resp = await self.manager.add_game_to_leaderboard(uid_to_name[contest_uid], uuid, record)
+            resp = await self.get_cog(uid_to_name[contest_uid]).add_game_to_leaderboard(uuid, record)
         except Exception as e:
             await interaction.followup.send(content="Error: " + str(e))
             return ""
