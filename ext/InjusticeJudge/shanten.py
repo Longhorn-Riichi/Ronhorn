@@ -385,6 +385,7 @@ def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = Fa
     # assert_analyze_hand("234567m23488p67s", "58s") # ryanmen
 
     # # 1-shanten
+    # assert_analyze_hand("445789p3455789s", "34567p234567s") # kutsuki + headless
     # assert_analyze_hand("234567m2468p678s", "2345678p") # headless
     # assert_analyze_hand("23455667m56p678s", "12345678m4567p") # headless + complete
     # assert_analyze_hand("34445566p22256s", "234567p4567s") # headless + complete
@@ -393,7 +394,6 @@ def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = Fa
     # assert_analyze_hand("3334555m12678p1z", "23456m3p1z") # broken headless + floating with extensions
     # assert_analyze_hand("123456m55568p12s", "4678p123s") # headless + floating
     # assert_analyze_hand("1122345588899m", "1234569m") # chiitoi complete + floating
-    # 
     # # 2-shanten
     # assert_analyze_hand("123789m23458p1s2z", "123456789p123s2z") # super kuttsuki
     # assert_analyze_hand("123789m2267p1s23z", "258p123s23z") # kuttsuki
@@ -405,6 +405,7 @@ def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = Fa
     # assert_analyze_hand("12377m233p12566s", "7m134p3467s") # 2 complex diff suit
     # assert_analyze_hand("12377m233566p12s", "7m13467p3s") # 2 complex same suit diff from pair
     # assert_analyze_hand("123m23356699p12s", "134679p3s") # 2 complex same suit as pair
+    # assert_analyze_hand("123466m12445p571s", "56m346p6s") # many floating
     # assert_analyze_hand("123788m233557p1s", "146p") # floating
     # # 3-shanten
     # assert_analyze_hand("123788m23458p1s2z", "56789m123456789p123s2z") # kuttsuki
