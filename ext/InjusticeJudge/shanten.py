@@ -2,7 +2,7 @@ from typing import *
 from modules.InjusticeJudge.injustice_judge.display import ph, pt
 from modules.InjusticeJudge.injustice_judge.constants import SUCC, PRED, TANYAOHAI, YAOCHUUHAI
 from modules.InjusticeJudge.injustice_judge.shanten import to_suits, from_suits, eliminate_all_groups, get_shanten_type, calculate_chiitoitsu_shanten, calculate_kokushi_shanten, eliminate_some_taatsus, get_hand_shanten, get_tenpai_waits
-from modules.InjusticeJudge.injustice_judge.utils import normalize_red_fives, sorted_hand
+from modules.InjusticeJudge.injustice_judge.utils import normalize_red_fives, sorted_hand, to_sequence, to_triplet
 
 SHANTEN_STRINGS = {1: "iishanten", 2: "ryanshanten", 3: "sanshanten"}
 
@@ -62,6 +62,8 @@ def _analyze_hand(hand: Tuple[int, ...]) -> Tuple[List[str], Set[int]]:
             ret.extend(describe_headless_shanten(shanten_int, debug_info, waits))
             waits |= debug_info["headless_taatsu_waits"]
             waits |= debug_info["headless_tanki_waits"]
+            extended_waits = set(wait for waits, _, _ in debug_info["headless_tanki_extensions"] for wait in waits)
+            waits |= extended_waits
         if shanten_digits[3] in "123":
             ret.extend(describe_simple_shanten(shanten_int, debug_info, waits))
             for s_hand in debug_info["simple_hands"]:
@@ -149,8 +151,7 @@ def describe_simple_shanten(shanten: int, debug_info: Dict[str, Any], waits: Set
         floating_tiles = hand["floating_tiles"]
         simple_waits = hand["simple_waits"]
         complex_waits = hand["complex_waits"]
-        left_extensions = hand["left_extensions"]
-        right_extensions = hand["right_extensions"]
+        extensions = hand["extensions"]
         has_complex_pair = any(len(set(complex_shape)) == 2 for complex_shape in complex_shapes)
         perfect_str = ""
         is_complete = len(floating_tiles) == 0
@@ -201,10 +202,11 @@ def describe_simple_shanten(shanten: int, debug_info: Dict[str, Any], waits: Set
         ])
 
         waits |= simple_waits | complex_waits
-        ret.extend(describe_sequence_extensions(left_extensions, right_extensions, waits))
-        waits |= left_extensions | right_extensions
+        ret.extend(describe_extensions(extensions, waits))
+        extended_waits = set(wait for waits, _, _ in extensions for wait in waits)
+        waits |= extended_waits
 
-    n_waits = lambda h: len(h["simple_waits"] | h["complex_waits"] | h["left_extensions"] | h["right_extensions"] - waits)
+    n_waits = lambda h: len(h["simple_waits"] | h["complex_waits"] | set(wait for waits, _, _ in h["extensions"] for wait in waits) - waits)
     key = lambda h: -(10 * n_waits(h) + len(h["complex_shapes"]))
 
     all_hands = sorted(debug_info["simple_hands"], key=key)
@@ -213,22 +215,47 @@ def describe_simple_shanten(shanten: int, debug_info: Dict[str, Any], waits: Set
         all_hands = [hand for hand in sorted(all_hands[1:], key=key) if n_waits(hand) != 0]
     return ret
 
-def describe_sequence_extensions(left_extensions: Set[int], right_extensions: Set[int], waits: Set[int]) -> List[str]:
+def describe_extensions(extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]], waits: Set[int]) -> List[str]:
     ret = []
-    if len((left_extensions | right_extensions) - waits) > 0:
+    extended_waits = set(wait for waits, _, _ in extensions for wait in waits)
+    if len(extended_waits - waits) > 0:
+        used_sequence = False
+        used_adj_sequence = False
+        used_triplet = False
         extend_text = []
-        for wait in reversed(sorted(left_extensions - waits)):
-            seq = (SUCC[wait], SUCC[SUCC[wait]], SUCC[SUCC[SUCC[wait]]])
-            extend_text.append(f"the sequence {ph(seq)} extends the {pt(SUCC[SUCC[SUCC[wait]]])} wait to {pt(wait)}")
-        for wait in sorted(right_extensions - waits):
-            seq = (PRED[PRED[PRED[wait]]], PRED[PRED[wait]], PRED[wait])
-            extend_text.append(f"the sequence {ph(seq)} extends the {pt(PRED[PRED[PRED[wait]]])} wait to {pt(wait)}")
+
+        for new_waits, tile, group in extensions:
+            is_triplet = group[0] == group[1]
+            # skip if all the waits of this group are covered
+            if len(new_waits - waits) == 0:
+                continue
+            if is_triplet:
+                used_triplet = True
+            elif tile not in group:
+                used_adj_sequence = True
+            else:
+                used_sequence = True
+
+            extend_text.append(f"the {'triplet' if is_triplet else 'sequence'} {ph(sorted_hand(group))} extends the {pt(tile)} wait to {ph(sorted_hand(new_waits))}")
+
         if len(extend_text) > 1:
             extend_text[-1] = "and " + extend_text[-1]
-        ret = ["",
-            f"Sequences in hand can extend the waits if one of their ends overlaps a wait."
-            f" In particular, " + ", ".join(extend_text) + "."
-        ]
+
+        explain_text = []
+        if used_sequence:
+            explain_text.append(f"sequences in hand can extend the waits if one of their ends overlaps a wait")
+        if used_adj_sequence:
+            if used_sequence:
+                explain_text.append(f" or is adjacent to a tanki wait")
+            else:
+                explain_text.append(f"sequences in hand can extend a tanki wait if one of their ends is adjacent to the tanki wait")
+        if used_triplet:
+            explain_text.append(f"any triplet near a tanki wait extends a tanki wait")
+
+        if len(explain_text) > 1:
+            explain_text[-1] = "and " + explain_text[-1]
+
+        ret = ["", ", ".join(explain_text).capitalize() + ".", f" In particular, " + ", ".join(extend_text) + "."]
     return ret
 
 def describe_headless_shanten(shanten: int, debug_info: Dict[str, Any], waits: Set[int]) -> List[str]:
@@ -236,6 +263,7 @@ def describe_headless_shanten(shanten: int, debug_info: Dict[str, Any], waits: S
     floating_tiles = debug_info["headless_floating_tiles"]
     headless_tanki_waits = debug_info["headless_tanki_waits"]
     headless_taatsu_waits = debug_info["headless_taatsu_waits"]
+    extensions = debug_info["headless_tanki_extensions"]
     shanten_string = SHANTEN_STRINGS[shanten]
     shape_str = get_shape_str(shanten+1, simple_shapes, (), None, shanten+1, floating_tiles)
     is_broken = len(simple_shapes) == shanten
@@ -265,6 +293,9 @@ def describe_headless_shanten(shanten: int, debug_info: Dict[str, Any], waits: S
         f" are tanki waits on {'the floating tiles' if is_broken else 'each tile'}: {ph(sorted_hand(headless_tanki_waits))}"
         f" as well as the simple shape waits themselves: {ph(sorted_hand(headless_taatsu_waits))}{add_string}."
     ])
+
+    ret.extend(describe_extensions(extensions, waits | headless_tanki_waits | headless_taatsu_waits))
+
     return ret
 
 def describe_kuttsuki_shanten(shanten: int, debug_info: Dict[str, Any]) -> List[str]:
@@ -379,13 +410,15 @@ def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = Fa
         print("\n".join(ret))
 
 # debug
-# if __name__ == "__main__":
+if __name__ == "__main__":
+
     # TODO tenpai
     # assert_analyze_hand("234567m23456p66s", "147p") # sanmenchan
     # assert_analyze_hand("234567m23488p67s", "58s") # ryanmen
 
     # # 1-shanten
-    # assert_analyze_hand("445789p3455789s", "34567p234567s") # kutsuki + headless
+    # assert_analyze_hand("445789p3455789s", "34567p234567s") # kuttsuki + headless
+    # assert_analyze_hand("3334555s4555p23m", "14m346p23456s") # broken headless tatsumaki
     # assert_analyze_hand("234567m2468p678s", "2345678p") # headless
     # assert_analyze_hand("23455667m56p678s", "12345678m4567p") # headless + complete
     # assert_analyze_hand("34445566p22256s", "234567p4567s") # headless + complete
@@ -396,7 +429,7 @@ def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = Fa
     # assert_analyze_hand("1122345588899m", "1234569m") # chiitoi complete + floating
     # # 2-shanten
     # assert_analyze_hand("123789m23458p1s2z", "123456789p123s2z") # super kuttsuki
-    # assert_analyze_hand("123789m2267p1s23z", "258p123s23z") # kuttsuki
+    assert_analyze_hand("123789m2267p1s23z", "258p123s23z") # kuttsuki
     # assert_analyze_hand("123789m2367p12s3z", "12345678p123s3z") # headless
     # assert_analyze_hand("123789m2367p15s3z", "1458p15s3z") # broken headless
     # assert_analyze_hand("12377m2356p1245s", "147p36s") # simple with 4 taatsu
@@ -405,11 +438,11 @@ def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = Fa
     # assert_analyze_hand("12377m233p12566s", "7m134p3467s") # 2 complex diff suit
     # assert_analyze_hand("12377m233566p12s", "7m13467p3s") # 2 complex same suit diff from pair
     # assert_analyze_hand("123m23356699p12s", "134679p3s") # 2 complex same suit as pair
-    # assert_analyze_hand("123466m12445p571s", "56m346p6s") # many floating
+    # assert_analyze_hand("123466m12445p57s", "56m346p6s") # many floating
     # assert_analyze_hand("123788m233557p1s", "146p") # floating
     # # 3-shanten
     # assert_analyze_hand("123788m23458p1s2z", "56789m123456789p123s2z") # kuttsuki
-    # assert_analyze_hand("123788m233668p1s", "12356789m123456789p123s") # not sure
+    assert_analyze_hand("123788m233668p1s", "12356789m123456789p123s") # not sure
 
 
     # assert_analyze_hand("34445566p22256s", "234567p4567s", True) # headless + complete
