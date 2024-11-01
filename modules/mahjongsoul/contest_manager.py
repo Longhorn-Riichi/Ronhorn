@@ -21,7 +21,7 @@ class TournamentAPI:
     def __init__(self, log_messages=False, logger_name="Contest Manager"):
         self.logger = logging.getLogger(logger_name)
         self.log_messages = log_messages
-        self.endpoint = "https://contesten.mahjongsoul.com:8200/api/"
+        self.endpoint = "https://engame.mahjongsoul.com/api/contest_gate/api/"
         self.headers = {
             "Referer": "https://mahjongsoul.tournament.yo-star.com/",
             "Accept": "application/json, */*",
