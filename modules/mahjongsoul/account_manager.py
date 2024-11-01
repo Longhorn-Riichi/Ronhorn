@@ -213,6 +213,12 @@ class AccountManager(MajsoulChannel):
                 round_ends["tsumo"] = 0
             if "deal-in" not in round_ends:
                 round_ends["deal-in"] = 0
+            if "hit by tsumo" not in round_ends:
+                round_ends["hit by tsumo"] = 0
+            if "abortive draw" not in round_ends:
+                round_ends["abortive draw"] = 0
+            if "ryuukyoku" not in round_ends:
+                round_ends["ryuukyoku"] = 0
             total_wins = round_ends["ron"] + round_ends["tsumo"]
             s["Placement"] = "\n".join(f"{n}: **{100*p:.2f}%**" for n, p in zip(placement_names, placements))
 
