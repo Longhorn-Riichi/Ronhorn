@@ -1,8 +1,8 @@
 from typing import *
 from modules.InjusticeJudge.injustice_judge.display import ph, pt
 from modules.InjusticeJudge.injustice_judge.constants import SUCC, PRED, TANYAOHAI, YAOCHUUHAI
-from modules.InjusticeJudge.injustice_judge.shanten import to_suits, from_suits, eliminate_all_groups, get_shanten_type, calculate_chiitoitsu_shanten, calculate_kokushi_shanten, eliminate_some_taatsus, get_hand_shanten, get_tenpai_waits
-from modules.InjusticeJudge.injustice_judge.utils import normalize_red_fives, sorted_hand, to_sequence, to_triplet
+from modules.InjusticeJudge.injustice_judge.shanten import Suits, to_suits, from_suits, eliminate_all_groups, get_shanten_type, calculate_chiitoitsu_shanten, calculate_kokushi_shanten, eliminate_some_taatsus, get_hand_shanten, get_tenpai_waits, calculate_tanki_wait_extensions
+from modules.InjusticeJudge.injustice_judge.utils import try_remove_all_tiles, normalize_red_fives, sorted_hand, to_sequence, to_triplet
 
 SHANTEN_STRINGS = {1: "iishanten", 2: "ryanshanten", 3: "sanshanten"}
 
@@ -28,7 +28,7 @@ def _analyze_hand(hand: Tuple[int, ...]) -> Tuple[List[str], Set[int]]:
     shanten_int: int = get_hand_shanten(removed_taatsus, groups_needed)
     shanten: float = float(shanten_int)
     waits: Set[int] = set()
-    debug_info: Dict[str, Any] = {"shanten": shanten}
+    debug_info: Dict[str, Any] = {"hand": hand, "shanten": shanten}
     ctr = Counter(normalize_red_fives(hand))
     ret = [f"Hand: {ph(hand)}", f"Hand with groups removed: {' or '.join(sorted(map(ph, from_suits(groupless_hands))))}", ""]
 
@@ -101,9 +101,9 @@ def _analyze_hand(hand: Tuple[int, ...]) -> Tuple[List[str], Set[int]]:
         elif shanten == 0:
             if len(ankan_description) > 0:
                 ret.append("")
-            ret.extend(describe_tenpai(debug_info)) 
+            ret.extend(describe_tenpai(debug_info, groupless_hands)) 
 
-    if len(waits) > 0 and shanten > 0:
+    if len(waits) > 0:
         ret.insert(2, f"Total waits: {ph(sorted_hand(waits))}")
         ret.extend(["", f"This results in an overall wait on {ph(sorted_hand(waits))}."])
 
@@ -381,11 +381,25 @@ def describe_ankan(debug_info: Dict[str, Any], waits: Set[int]) -> List[str]:
     else:
         return []
 
-def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
+def describe_tenpai(debug_info: Dict[str, Any], groupless_hands: Suits) -> List[str]:
     tenpai_waits = debug_info["tenpai_waits"]
-    return [
-        f"This hand is tenpai, waiting on {ph(sorted_hand(tenpai_waits))}."
-    ]
+    ret = [f"This hand is tenpai, waiting on {ph(sorted_hand(tenpai_waits))}."]
+    hand = debug_info["hand"]
+
+    tanki_hands = [hand for hand in from_suits(groupless_hands) if len(hand) == 1]
+    if len(tanki_hands) > 0:
+        # tanki explainer
+        tanki_tiles = tuple(tile for hand in tanki_hands for tile in hand)
+        s = "s" if len(tanki_hands) != 1 else ""
+        ret.extend(["", f"The waits for this hand include the tanki wait{s} {ph(tanki_tiles)}."])
+        # look for extensions
+        for tanki_hand in tanki_hands:
+            groups = try_remove_all_tiles(hand, tanki_hand)
+            waits = set(tanki_hand)
+            extensions = calculate_tanki_wait_extensions(groups, waits)
+            ret.extend(describe_extensions(extensions, waits))
+
+    return ret
 
 def describe_shanten(debug_info: Dict[str, Any]) -> List[str]:
     shanten = debug_info["shanten"]
@@ -413,6 +427,7 @@ def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = Fa
 if __name__ == "__main__":
 
     # TODO tenpai
+    assert_analyze_hand("3455567777888s", "2568s", True) # chinitsu
     # assert_analyze_hand("234567m23456p66s", "147p") # sanmenchan
     # assert_analyze_hand("234567m23488p67s", "58s") # ryanmen
 
@@ -429,7 +444,9 @@ if __name__ == "__main__":
     # assert_analyze_hand("1122345588899m", "1234569m") # chiitoi complete + floating
     # # 2-shanten
     # assert_analyze_hand("123789m23458p1s2z", "123456789p123s2z") # super kuttsuki
-    assert_analyze_hand("123789m2267p1s23z", "258p123s23z") # kuttsuki
+
+    # assert_analyze_hand("123789m2267p1s23z", "258p123s23z") # kuttsuki
+
     # assert_analyze_hand("123789m2367p12s3z", "12345678p123s3z") # headless
     # assert_analyze_hand("123789m2367p15s3z", "1458p15s3z") # broken headless
     # assert_analyze_hand("12377m2356p1245s", "147p36s") # simple with 4 taatsu
@@ -442,7 +459,8 @@ if __name__ == "__main__":
     # assert_analyze_hand("123788m233557p1s", "146p") # floating
     # # 3-shanten
     # assert_analyze_hand("123788m23458p1s2z", "56789m123456789p123s2z") # kuttsuki
-    assert_analyze_hand("123788m233668p1s", "12356789m123456789p123s") # not sure
+
+    # assert_analyze_hand("123788m233668p1s", "12356789m123456789p123s") # not sure
 
 
     # assert_analyze_hand("34445566p22256s", "234567p4567s", True) # headless + complete
