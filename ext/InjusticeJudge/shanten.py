@@ -1,8 +1,8 @@
 from typing import *
 from modules.InjusticeJudge.injustice_judge.display import ph, pt
 from modules.InjusticeJudge.injustice_judge.constants import SUCC, PRED, TANYAOHAI, YAOCHUUHAI
-from modules.InjusticeJudge.injustice_judge.shanten import Suits, to_suits, from_suits, eliminate_all_groups, get_shanten_type, calculate_chiitoitsu_shanten, calculate_kokushi_shanten, eliminate_some_taatsus, get_hand_shanten, get_tenpai_waits, calculate_tanki_wait_extensions
-from modules.InjusticeJudge.injustice_judge.utils import try_remove_all_tiles, normalize_red_fives, sorted_hand, to_sequence, to_triplet
+from modules.InjusticeJudge.injustice_judge.shanten import Suits, to_suits, from_suits, eliminate_all_groups, eliminate_some_groups, get_shanten_type, calculate_chiitoitsu_shanten, calculate_kokushi_shanten, eliminate_some_taatsus, get_hand_shanten, get_tenpai_waits, calculate_wait_extensions, calculate_tanki_wait_extensions
+from modules.InjusticeJudge.injustice_judge.utils import try_remove_all_tiles, normalize_red_fives, sorted_hand, to_sequence, to_triplet, get_taatsu_wait
 
 SHANTEN_STRINGS = {1: "iishanten", 2: "ryanshanten", 3: "sanshanten"}
 
@@ -46,6 +46,7 @@ def _analyze_hand(hand: Tuple[int, ...]) -> Tuple[List[str], Set[int]]:
     if shanten_int == 0:
         waits = get_tenpai_waits(hand)
         debug_info["tenpai_waits"] = waits
+        ret.extend(describe_tenpai(debug_info))
     elif shanten_int in {1, 2, 3}:
         shanten, expected_waits, new_debug_info = get_shanten_type(shanten_int, hand, groupless_hands, groups_needed)
         debug_info.update(new_debug_info)
@@ -98,10 +99,6 @@ def _analyze_hand(hand: Tuple[int, ...]) -> Tuple[List[str], Set[int]]:
             if len(ankan_description) > 0:
                 ret.append("")
             ret.extend(describe_tanki_iishanten(debug_info))
-        elif shanten == 0:
-            if len(ankan_description) > 0:
-                ret.append("")
-            ret.extend(describe_tenpai(debug_info, groupless_hands)) 
 
     if len(waits) > 0:
         ret.insert(2, f"Total waits: {ph(sorted_hand(waits))}")
@@ -381,24 +378,80 @@ def describe_ankan(debug_info: Dict[str, Any], waits: Set[int]) -> List[str]:
     else:
         return []
 
-def describe_tenpai(debug_info: Dict[str, Any], groupless_hands: Suits) -> List[str]:
+def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
     tenpai_waits = debug_info["tenpai_waits"]
     ret = [f"This hand is tenpai, waiting on {ph(sorted_hand(tenpai_waits))}."]
     hand = debug_info["hand"]
+    suits = to_suits(hand)
+    groupless_removed = list(from_suits(eliminate_some_groups(suits)))
+    tanki_hands = [hand for hand in groupless_removed if len(hand) == 1]
+    def remove_pair(hand):
+        ctr = Counter(hand)
+        [pair_tile] = [tile for tile, cnt in ctr.items() if cnt > 1]
+        return try_remove_all_tiles(hand, (pair_tile, pair_tile))
+    taatsu_hands = [hand for hand in groupless_removed if len(hand) == 4 if set(Counter(hand).values()) in [{1, 2}, {1, 3}] if get_taatsu_wait(remove_pair(hand)) != set()]
+    shanpon_hands = [hand for hand in groupless_removed if len(hand) == 4 if set(Counter(hand).values()) == {2}]
+    waits: Set[int] = set()
 
-    tanki_hands = [hand for hand in from_suits(groupless_hands) if len(hand) == 1]
     if len(tanki_hands) > 0:
-        # tanki explainer
         tanki_tiles = tuple(tile for hand in tanki_hands for tile in hand)
         s = "s" if len(tanki_hands) != 1 else ""
         ret.extend(["", f"The waits for this hand include the tanki wait{s} {ph(tanki_tiles)}."])
         # look for extensions
+        waits |= set(tanki_tiles)
+        extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]] = []
         for tanki_hand in tanki_hands:
             groups = try_remove_all_tiles(hand, tanki_hand)
-            waits = set(tanki_hand)
-            extensions = calculate_tanki_wait_extensions(groups, waits)
-            ret.extend(describe_extensions(extensions, waits))
+            new_extensions = calculate_tanki_wait_extensions(groups, set(tanki_hand))
+            extensions.extend(extension for extension in new_extensions if not extension[0].issubset(waits))
+            waits |= set().union(wait for waits, _, _ in new_extensions for wait in waits)
 
+    taatsus_used: Set[Tuple[int, ...]] = set()
+    if len(taatsu_hands) > 0:
+        # look for extensions
+        # taatsus_used = [(taatsu, waits)]
+        taatsu_extensions: List[Tuple[Tuple[int, ...], Set[int], Set[int], List[Tuple[Set[int], int, Tuple[int, int, int]]]]] = []
+        for taatsu_hand in taatsu_hands:
+            groups = try_remove_all_tiles(hand, taatsu_hand)
+            taatsu = remove_pair(taatsu_hand)
+            new_waits = get_taatsu_wait(taatsu)
+            new_extensions = calculate_wait_extensions(groups, new_waits)
+            extended_waits = new_waits.union(wait for waits, _, _ in new_extensions for wait in waits)
+            if not (new_waits | extended_waits).issubset(waits):
+                taatsu_extensions.append((taatsu, new_waits, extended_waits, new_extensions))
+        taatsu_waits: Set[int] = set()
+        def add_taatsu_extension(taatsu, new_waits, extended_waits, new_extensions):
+            nonlocal waits
+            nonlocal taatsus_used
+            nonlocal taatsu_waits
+            print(taatsu, new_waits, extended_waits, extensions)
+            taatsus_used.add(taatsu)
+            taatsu_waits |= new_waits
+            waits |= new_waits
+            extensions.extend(extension for extension in new_extensions if not extension[0].issubset(waits))
+
+        n_waits = lambda h: len((h[1] | h[2]) - waits)
+        key = lambda h: -(10 * n_waits(h) + len(h[1]))
+        taatsu_extensions = sorted(taatsu_extensions, key=key)
+        while len(taatsu_extensions) > 0:
+            add_taatsu_extension(*taatsu_extensions[0])
+            taatsu_extensions = [h for h in sorted(taatsu_extensions[1:], key=key) if n_waits(h) != 0]
+
+        if len(taatsus_used) > 0:
+            s = "s" if len(taatsus_used) != 1 else ""
+            also = "also " if len(tanki_hands) > 0 else ""
+            ret.extend(["",
+                f"This hand {also}has the simple shape{s} {' '.join(ph(sorted_hand(taatsu)) for taatsu in taatsus_used)},"
+                f" adding {ph(sorted_hand(taatsu_waits))} to the wait."])
+
+    if len(shanpon_hands) > 0:
+        shanpon_waits = set(tile for hand in shanpon_hands for tile in hand)
+        also = "also " if len(tanki_hands) > 0 or len(taatsus_used) > 0 else ""
+        ret.extend(["",
+            f"This hand {also}has the shanpon {' '.join(ph((wait, wait)) for wait in shanpon_waits)},"
+            f" adding {ph(sorted_hand(shanpon_waits - waits))} to the wait."])
+
+    ret.extend(describe_extensions(extensions, set()))
     return ret
 
 def describe_shanten(debug_info: Dict[str, Any]) -> List[str]:
@@ -427,7 +480,9 @@ def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = Fa
 if __name__ == "__main__":
 
     # TODO tenpai
-    assert_analyze_hand("3455567777888s", "2568s", True) # chinitsu
+    assert_analyze_hand("2223344556677s", "2345678s", True) # chinitsu shanpon
+    # assert_analyze_hand("2345667777888s", "14568s") # chinitsu ryanmen
+    # assert_analyze_hand("2345567777888s", "2568s") # chinitsu tanki
     # assert_analyze_hand("234567m23456p66s", "147p") # sanmenchan
     # assert_analyze_hand("234567m23488p67s", "58s") # ryanmen
 
