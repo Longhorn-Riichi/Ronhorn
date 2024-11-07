@@ -234,6 +234,7 @@ def describe_extensions(extensions: List[Tuple[Set[int], int, Tuple[int, int, in
                 used_sequence = True
 
             extend_text.append(f"the {'triplet' if is_triplet else 'sequence'} {ph(sorted_hand(group))} extends the {pt(tile)} wait to {ph(sorted_hand(new_waits))}")
+            waits |= new_waits
 
         if len(extend_text) > 1:
             extend_text[-1] = "and " + extend_text[-1]
@@ -391,7 +392,9 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
         return try_remove_all_tiles(hand, (pair_tile, pair_tile))
     taatsu_hands = [hand for hand in groupless_removed if len(hand) == 4 if set(Counter(hand).values()) in [{1, 2}, {1, 3}] if get_taatsu_wait(remove_pair(hand)) != set()]
     shanpon_hands = [hand for hand in groupless_removed if len(hand) == 4 if set(Counter(hand).values()) == {2}]
+    orig_waits: Set[int] = set()
     waits: Set[int] = set()
+    extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]] = []
 
     if len(tanki_hands) > 0:
         tanki_tiles = tuple(tile for hand in tanki_hands for tile in hand)
@@ -399,7 +402,7 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
         ret.extend(["", f"The waits for this hand include the tanki wait{s} {ph(tanki_tiles)}."])
         # look for extensions
         waits |= set(tanki_tiles)
-        extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]] = []
+        orig_waits |= set(tanki_tiles)
         for tanki_hand in tanki_hands:
             groups = try_remove_all_tiles(hand, tanki_hand)
             new_extensions = calculate_tanki_wait_extensions(groups, set(tanki_hand))
@@ -422,9 +425,10 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
         taatsu_waits: Set[int] = set()
         def add_taatsu_extension(taatsu, new_waits, extended_waits, new_extensions):
             nonlocal waits
+            nonlocal orig_waits
             nonlocal taatsus_used
             nonlocal taatsu_waits
-            print(taatsu, new_waits, extended_waits, extensions)
+            nonlocal extensions
             taatsus_used.add(taatsu)
             taatsu_waits |= new_waits
             waits |= new_waits
@@ -438,6 +442,7 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
             taatsu_extensions = [h for h in sorted(taatsu_extensions[1:], key=key) if n_waits(h) != 0]
 
         if len(taatsus_used) > 0:
+            orig_waits |= taatsu_waits
             s = "s" if len(taatsus_used) != 1 else ""
             also = "also " if len(tanki_hands) > 0 else ""
             ret.extend(["",
@@ -446,12 +451,13 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
 
     if len(shanpon_hands) > 0:
         shanpon_waits = set(tile for hand in shanpon_hands for tile in hand)
+        orig_waits |= shanpon_waits
         also = "also " if len(tanki_hands) > 0 or len(taatsus_used) > 0 else ""
         ret.extend(["",
             f"This hand {also}has the shanpon {' '.join(ph((wait, wait)) for wait in shanpon_waits)},"
             f" adding {ph(sorted_hand(shanpon_waits - waits))} to the wait."])
 
-    ret.extend(describe_extensions(extensions, set()))
+    ret.extend(describe_extensions(extensions, orig_waits))
     return ret
 
 def describe_shanten(debug_info: Dict[str, Any]) -> List[str]:
@@ -478,9 +484,11 @@ def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = Fa
 
 # debug
 if __name__ == "__main__":
-
+    pass
     # TODO tenpai
-    assert_analyze_hand("2223344556677s", "2345678s", True) # chinitsu shanpon
+    # assert_analyze_hand("1223344445566m", "1567m")
+    # assert_analyze_hand("2233445555667m", "1467m")
+    # assert_analyze_hand("2223344556677s", "2345678s") # chinitsu shanpon
     # assert_analyze_hand("2345667777888s", "14568s") # chinitsu ryanmen
     # assert_analyze_hand("2345567777888s", "2568s") # chinitsu tanki
     # assert_analyze_hand("234567m23456p66s", "147p") # sanmenchan
