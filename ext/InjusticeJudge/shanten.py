@@ -425,7 +425,6 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
         taatsu_waits: Set[int] = set()
         def add_taatsu_extension(taatsu, new_waits, extended_waits, new_extensions):
             nonlocal waits
-            nonlocal orig_waits
             nonlocal taatsus_used
             nonlocal taatsu_waits
             nonlocal extensions
@@ -441,21 +440,22 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
             add_taatsu_extension(*taatsu_extensions[0])
             taatsu_extensions = [h for h in sorted(taatsu_extensions[1:], key=key) if n_waits(h) != 0]
 
-        if len(taatsus_used) > 0:
-            orig_waits |= taatsu_waits
+        if len(taatsus_used) > 0 and not taatsu_waits.issubset(orig_waits):
             s = "s" if len(taatsus_used) != 1 else ""
             also = "also " if len(tanki_hands) > 0 else ""
             ret.extend(["",
-                f"This hand {also}has the simple shape{s} {' '.join(ph(sorted_hand(taatsu)) for taatsu in taatsus_used)},"
-                f" adding {ph(sorted_hand(taatsu_waits))} to the wait."])
+                f"This hand {also}has the simple shape{s} {' '.join(ph(sorted_hand(taatsu)) for taatsu in sorted(taatsus_used))},"
+                f" adding {ph(sorted_hand(taatsu_waits - orig_waits))} to the wait."])
+            orig_waits |= taatsu_waits
 
     if len(shanpon_hands) > 0:
         shanpon_waits = set(tile for hand in shanpon_hands for tile in hand)
-        orig_waits |= shanpon_waits
-        also = "also " if len(tanki_hands) > 0 or len(taatsus_used) > 0 else ""
-        ret.extend(["",
-            f"This hand {also}has the shanpon {' '.join(ph((wait, wait)) for wait in shanpon_waits)},"
-            f" adding {ph(sorted_hand(shanpon_waits - waits))} to the wait."])
+        if not shanpon_waits.issubset(waits):
+            also = "also " if len(tanki_hands) > 0 or len(taatsus_used) > 0 else ""
+            ret.extend(["",
+                f"This hand {also}has the shanpon {' '.join(ph((wait, wait)) for wait in shanpon_waits)},"
+                f" adding {ph(sorted_hand(shanpon_waits - waits))} to the wait."])
+            orig_waits |= shanpon_waits
 
     ret.extend(describe_extensions(extensions, orig_waits))
     return ret
@@ -486,6 +486,9 @@ def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = Fa
 if __name__ == "__main__":
     pass
     # TODO tenpai
+    
+    # assert_analyze_hand("3334444555566p", "367p")
+    # assert_analyze_hand("3334444555666p", "23567p")
     # assert_analyze_hand("1223344445566m", "1567m")
     # assert_analyze_hand("2233445555667m", "1467m")
     # assert_analyze_hand("2223344556677s", "2345678s") # chinitsu shanpon
