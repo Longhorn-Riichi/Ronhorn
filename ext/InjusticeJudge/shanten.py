@@ -2,7 +2,7 @@ from typing import *
 from modules.InjusticeJudge.injustice_judge.display import ph, pt
 from modules.InjusticeJudge.injustice_judge.constants import SUCC, PRED, TANYAOHAI, YAOCHUUHAI
 from modules.InjusticeJudge.injustice_judge.shanten import Suits, to_suits, from_suits, eliminate_all_groups, eliminate_some_groups, get_shanten_type, calculate_chiitoitsu_shanten, calculate_kokushi_shanten, eliminate_some_taatsus, get_hand_shanten, get_tenpai_waits, calculate_wait_extensions, calculate_tanki_wait_extensions
-from modules.InjusticeJudge.injustice_judge.utils import try_remove_all_tiles, normalize_red_fives, sorted_hand, to_sequence, to_triplet, get_taatsu_wait
+from modules.InjusticeJudge.injustice_judge.utils import try_remove_all_tiles, normalize_red_fives, sorted_hand, get_taatsu_wait
 
 SHANTEN_STRINGS = {1: "iishanten", 2: "ryanshanten", 3: "sanshanten"}
 
@@ -135,7 +135,6 @@ def get_shape_str(max_shapes: int, simple_shapes: Tuple[Tuple[int, ...], ...], c
     floating_str = f"{floating_num_str} floating {ph(floating_tiles)}" if floating_num > 0 else "no floating tiles"
     return f" and ".join(s for s in [shape_str, pair_str, floating_str] if s != "")
 
-
 def describe_simple_shanten(shanten: int, debug_info: Dict[str, Any], waits: Set[int]) -> List[str]:
     ret = []
     is_ryanmen = lambda h: len(h) == 2 and SUCC[h[0]] == h[1] and h[0] not in {11,18,21,28,31,38}
@@ -199,7 +198,7 @@ def describe_simple_shanten(shanten: int, debug_info: Dict[str, Any], waits: Set
         ])
 
         waits |= simple_waits | complex_waits
-        ret.extend(describe_extensions(extensions, waits))
+        ret.extend(describe_extensions(waits, extensions, []))
         extended_waits = set(wait for waits, _, _ in extensions for wait in waits)
         waits |= extended_waits
 
@@ -212,48 +211,159 @@ def describe_simple_shanten(shanten: int, debug_info: Dict[str, Any], waits: Set
         all_hands = [hand for hand in sorted(all_hands[1:], key=key) if n_waits(hand) != 0]
     return ret
 
-def describe_extensions(extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]], waits: Set[int]) -> List[str]:
+def describe_extensions(
+        waits: Set[int],
+        extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]],
+        tanki_extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]]) -> List[str]:
     ret = []
-    extended_waits = set(wait for waits, _, _ in extensions for wait in waits)
-    if len(extended_waits - waits) > 0:
-        used_sequence = False
-        used_adj_sequence = False
-        used_triplet = False
-        extend_text = []
+    used_sequence = False
+    used_adj_sequence = False
+    used_triplet = False
+    extend_text = []
+    # (wait, is_tanki) => [relative groups like (1,2,3)]
+    extensions_for_tile: Dict[Tuple[int, bool], List[Tuple[int, ...]]] = {}
 
-        for new_waits, tile, group in extensions:
-            is_triplet = group[0] == group[1]
-            # skip if all the waits of this group are covered
-            if len(new_waits - waits) == 0:
-                continue
-            if is_triplet:
-                used_triplet = True
-            elif tile not in group:
-                used_adj_sequence = True
+    all_extensions = [(ext, False) for ext in extensions] + [(ext, True) for ext in tanki_extensions]
+    for (new_waits, tile, group), is_tanki in all_extensions:
+        # build up a catalog of relative extensions for each tile
+        if (tile, is_tanki) not in extensions_for_tile:
+            extensions_for_tile[(tile, is_tanki)] = []
+        extensions_for_tile[(tile, is_tanki)].append(tuple(t - tile for t in group))
+
+        # skip if all the waits of this group are covered
+        if len(new_waits - waits) == 0:
+            continue
+
+        # set flags based on kinds of groups we've used
+        is_triplet = group[0] == group[1]
+        if is_triplet:
+            used_triplet = True
+        elif tile not in group:
+            used_adj_sequence = True
+        else:
+            used_sequence = True
+
+        # actually describe the extension now
+        extend_text.append(f"the {'triplet' if is_triplet else 'sequence'} {ph(sorted_hand(group))} extends the {pt(tile)} wait to {ph(sorted_hand(new_waits))}")
+        waits |= new_waits
+
+    if len(extend_text) > 1:
+        extend_text[-1] = "and " + extend_text[-1]
+
+    # mention named shapes based on extensions
+    # the way we do this is by referencing the catalog we built
+    named_shape_text = []
+    ignore_nobetan = False
+    ignore_ryantan_pentan = False
+    ignore_sanmenchan = False
+    pg = lambda tile, ext_group: ph(tuple(t + tile for t in ext_group)) # print group
+    # we do a two-pass system since some shapes subsume other shapes
+    # first pass
+    for (wait, is_tanki), ext_groups in extensions_for_tile.items():
+        left_triplet = (-1,-1,-1) in ext_groups
+        right_adj_sequence = (1,2,3) in ext_groups
+        is_happoubijin = False
+        is_2223456 = False
+        is_2345666 = False
+        if is_tanki and right_adj_sequence: # nobetan
+            suji = (SUCC[SUCC[SUCC[wait]]], True)
+            if suji in extensions_for_tile:
+                suji_ext_groups = extensions_for_tile[suji]
+                if (1,1,1) in suji_ext_groups:
+                    if left_triplet:
+                        is_happoubijin = True
+                    else:
+                        is_2345666 = True
+            if left_triplet:
+                is_2223456 = True
+
+        if is_happoubijin or is_2223456 or is_2345666:
+            ignore_nobetan = True
+            ignore_ryantan_pentan = True
+            ignore_sanmenchan = True
+
+        if is_happoubijin:
+            named_shape_text.append(f"The extended shape {pg(wait, (-1,-1,-1,0,1,2,3,4,4,4))} is often called **happoubijin**, waiting on {pg(wait, (-2,-1,0,1,2,3,4,5))}.")
+        elif is_2223456:
+            named_shape_text.append(f"The extended shape {pg(wait, (-1,-1,-1,0,1,2,3))} is often seen as a combination of the **sanmenchan** {pg(wait, (-1,0,1,2,3))} and **nobetan** {pg(wait, (0,1,2,3))} shapes, waiting on {pg(wait, (-2,0,1,3,4))}.")
+        elif is_2345666:
+            named_shape_text.append(f"The extended shape {pg(wait, (0,1,2,3,4,4,4))} is often seen as a combination of the **sanmenchan** {pg(wait, (0,1,2,3,4))} and **nobetan** {pg(wait, (0,1,2,3))} shapes, waiting on {pg(wait, (-1,0,2,3,5))}.")
+
+    # second pass
+    # to deduplicate, we evaluate the leftmost tile with the most extensions first
+    for (wait, is_tanki), ext_groups in sorted(extensions_for_tile.items(), key=lambda x: -10*len(x[1])+(x[0][0]%10)):
+        left_triplet = (-1,-1,-1) in ext_groups
+        right_triplet = (1,1,1) in ext_groups
+        left_left_triplet = (-2,-2,-2) in ext_groups
+        right_right_triplet = (2,2,2) in ext_groups
+        right_sequence = (0,1,2) in ext_groups
+        left_sequence = (-2,-1,0) in ext_groups
+        left_adj_sequence = (-3,-2,-1) in ext_groups
+        right_adj_sequence = (1,2,3) in ext_groups
+        right_adj_sequence2 = (4,5,6) in ext_groups
+        if left_triplet and right_triplet:
+            named_shape_text.append(f"The extended tanki shape {pg(wait, (-1,-1,-1,0,1,1,1))} is often called **tatsumaki**, waiting on {pg(wait, (-2,-1,0,1,2))}.")
+        elif left_left_triplet and right_right_triplet:
+            named_shape_text.append(f"The extended tanki shape {pg(wait, (-2,-2,-2,0,2,2,2))} is often called **kankantan**, waiting on {pg(wait, (-1,0,1))}.")
+        elif left_triplet and not ignore_ryantan_pentan:
+            if SUCC[wait] != 0 and PRED[PRED[wait]] != 0:
+                named_shape_text.append(f"The extended tanki shape {pg(wait, (-1,-1,-1,0))} is often called **ryantan**, waiting on {pg(wait, (-2,0,1))}.")
+            elif SUCC[wait] == 0:
+                named_shape_text.append(f"The extended tanki shape {pg(wait, (-1,-1,-1,0))} is often called **pentan**, waiting on {pg(wait, (-2,0))}.")
             else:
-                used_sequence = True
+                named_shape_text.append(f"The extended tanki shape {pg(wait, (-1,-1,-1,0))} is often called **pentan**, waiting on {pg(wait, (0,1))}.")
+        elif right_triplet and not ignore_ryantan_pentan:
+            if PRED[wait] != 0 and SUCC[SUCC[wait]] != 0:
+                named_shape_text.append(f"The extended tanki shape {pg(wait, (0,1,1,1))} is often called **ryantan**, waiting on {pg(wait, (-1,0,2))}.")
+            elif PRED[wait] == 0:
+                named_shape_text.append(f"The extended tanki shape {pg(wait, (0,1,1,1))} is often called **pentan**, waiting on {pg(wait, (0,2))}.")
+            else:
+                named_shape_text.append(f"The extended tanki shape {pg(wait, (0,1,1,1))} is often called **pentan**, waiting on {pg(wait, (-1,0))}.")
+        elif left_left_triplet:
+            named_shape_text.append(f"The extended tanki shape {pg(wait, (-2,-2,-2,0))} is often called **kantan**, waiting on {pg(wait, (-1,0))}.")
+        elif right_right_triplet:
+            named_shape_text.append(f"The extended tanki shape {pg(wait, (0,2,2,2))} is often called **kantan**, waiting on {pg(wait, (0,1))}.")
 
-            extend_text.append(f"the {'triplet' if is_triplet else 'sequence'} {ph(sorted_hand(group))} extends the {pt(tile)} wait to {ph(sorted_hand(new_waits))}")
-            waits |= new_waits
+        if right_adj_sequence and not ignore_nobetan:
+            if right_adj_sequence2:
+                named_shape_text.append(f"The extended tanki shape {pg(wait, (0,1,2,3,4,5,6))} is often called **sanmentan**, waiting on {pg(wait, (0,3,6))}.")
+                ignore_nobetan = True
+            else:
+                named_shape_text.append(f"The extended tanki shape {pg(wait, (0,1,2,3))} is often called **nobetan**, waiting on {pg(wait, (0,3))}.")
+        elif left_sequence and is_tanki:
+            named_shape_text.append(f"The extended tanki shape {pg(wait, (-2,-1,0,0))} is often called **aryanmen**, waiting on {pg(wait, (-3,0))}.")
+        elif left_sequence and right_sequence and not ignore_sanmenchan:
+            named_shape_text.append(f"The extended shape {pg(wait, (-2,-1,0,1,2))} is often called **sanmenchan**, waiting on {pg(wait, (-3,0,3))}.")
+        elif right_sequence and is_tanki:
+            named_shape_text.append(f"The extended tanki shape {pg(wait, (0,0,1,2))} is often called **aryanmen**, waiting on {pg(wait, (0,3))}.")
 
-        if len(extend_text) > 1:
-            extend_text[-1] = "and " + extend_text[-1]
+    # TODO:
+    # - entotsu (shanpon extension)
 
-        explain_text = []
+    if len(named_shape_text) > 0:
+        named_shape_text[0] = "Note that t" + named_shape_text[0][1:]
+    if len(named_shape_text) > 1:
+        named_shape_text[-1] = "And t" + named_shape_text[-1][1:]
+
+    explain_text = []
+    if used_sequence:
+        explain_text.append(f"sequences in hand can extend the waits if one of their ends overlaps a wait")
+    if used_adj_sequence:
         if used_sequence:
-            explain_text.append(f"sequences in hand can extend the waits if one of their ends overlaps a wait")
-        if used_adj_sequence:
-            if used_sequence:
-                explain_text.append(f" or is adjacent to a tanki wait")
-            else:
-                explain_text.append(f"sequences in hand can extend a tanki wait if one of their ends is adjacent to the tanki wait")
-        if used_triplet:
-            explain_text.append(f"any triplet near a tanki wait extends a tanki wait")
+            explain_text.append(f" or is adjacent to a tanki wait")
+        else:
+            explain_text.append(f"sequences in hand can extend a tanki wait if one of their ends is adjacent to the tanki wait")
+    if used_triplet:
+        explain_text.append(f"any triplet near a tanki wait extends a tanki wait")
 
-        if len(explain_text) > 1:
-            explain_text[-1] = "and " + explain_text[-1]
+    if len(explain_text) > 1:
+        explain_text[-1] = "and " + explain_text[-1]
 
-        ret = ["", ", ".join(explain_text).capitalize() + ".", f" In particular, " + ", ".join(extend_text) + "."]
+    if len(extend_text) > 0:
+        ret.extend(["", ", ".join(explain_text).capitalize() + ".", f" In particular, " + ", ".join(extend_text) + "."])
+    if len(named_shape_text) > 0:
+        ret.extend(["", " ".join(named_shape_text)])
+
     return ret
 
 def describe_headless_shanten(shanten: int, debug_info: Dict[str, Any], waits: Set[int]) -> List[str]:
@@ -292,7 +402,7 @@ def describe_headless_shanten(shanten: int, debug_info: Dict[str, Any], waits: S
         f" as well as the simple shape waits themselves: {ph(sorted_hand(headless_taatsu_waits))}{add_string}."
     ])
 
-    ret.extend(describe_extensions(extensions, waits | headless_tanki_waits | headless_taatsu_waits))
+    ret.extend(describe_extensions(waits | headless_tanki_waits | headless_taatsu_waits, [], extensions))
 
     return ret
 
@@ -395,6 +505,7 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
     orig_waits: Set[int] = set()
     waits: Set[int] = set()
     extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]] = []
+    tanki_extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]] = []
 
     if len(tanki_hands) > 0:
         tanki_tiles = tuple(tile for hand in tanki_hands for tile in hand)
@@ -406,7 +517,7 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
         for tanki_hand in tanki_hands:
             groups = try_remove_all_tiles(hand, tanki_hand)
             new_extensions = calculate_tanki_wait_extensions(groups, set(tanki_hand))
-            extensions.extend(extension for extension in new_extensions if not extension[0].issubset(waits))
+            tanki_extensions.extend(new_extensions)
             waits |= set().union(wait for waits, _, _ in new_extensions for wait in waits)
 
     taatsus_used: Set[Tuple[int, ...]] = set()
@@ -431,7 +542,7 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
             taatsus_used.add(taatsu)
             taatsu_waits |= new_waits
             waits |= new_waits
-            extensions.extend(extension for extension in new_extensions if not extension[0].issubset(waits))
+            extensions.extend(new_extensions)
 
         n_waits = lambda h: len((h[1] | h[2]) - waits)
         key = lambda h: -(10 * n_waits(h) + len(h[1]))
@@ -457,7 +568,7 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
                 f" adding {ph(sorted_hand(shanpon_waits - waits))} to the wait."])
             orig_waits |= shanpon_waits
 
-    ret.extend(describe_extensions(extensions, orig_waits))
+    ret.extend(describe_extensions(orig_waits, extensions, tanki_extensions))
     return ret
 
 def describe_shanten(debug_info: Dict[str, Any]) -> List[str]:
@@ -471,7 +582,7 @@ def describe_shanten(debug_info: Dict[str, Any]) -> List[str]:
     else:
         return [f"This hand is {shanten}-shanten."]
 
-def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = False):
+def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = False, mentions: str = ""):
     ret, waits = _analyze_hand(translate_hand(hand))
     expected_wait_set = set(translate_hand(expected_waits))
     if waits != expected_wait_set:
@@ -479,14 +590,32 @@ def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = Fa
         # print(f"\nExpected to wait on {ph(sorted_hand(expected_wait_set))}.")
         print(f"\nMissing waits: {ph(sorted_hand(expected_wait_set - waits))}.")
         print(f"\nExtra waits: {ph(sorted_hand(waits - expected_wait_set))}.")
+    elif mentions != "" and not any(mentions in r for r in ret):
+        print("\n".join(ret))
+        print(f"\nExpected output to mention '{mentions}'.")
     elif print_anyways:
         print("\n".join(ret))
 
 # debug
 if __name__ == "__main__":
     pass
-    # TODO tenpai
-    
+    # # tenpai
+    # assert_analyze_hand("2345666m222444p", "12457m", mentions="combination")
+    # assert_analyze_hand("2223456m222444p", "13467m", mentions="combination")
+    # assert_analyze_hand("2223456777m222p", "12345678m", mentions="happoubijin")
+    # assert_analyze_hand("12345688p34567s", "258s", mentions="sanmenchan")
+    # assert_analyze_hand("123456p2234567s", "258s", mentions="aryanmen")
+    # assert_analyze_hand("123456p2345677s", "147s", mentions="aryanmen")
+    # assert_analyze_hand("123456p1234567s", "147s", mentions="sanmentan")
+    # assert_analyze_hand("123456789p1234s", "14s", mentions="nobetan")
+    # assert_analyze_hand("123456789p1222s", "13s", mentions="pentan")
+    # assert_analyze_hand("123456789p1112s", "23s", mentions="pentan")
+    # assert_analyze_hand("123456789p8999s", "78s", mentions="pentan")
+    # assert_analyze_hand("123456789p8889s", "79s", mentions="pentan")
+    # assert_analyze_hand("123456789p2333s", "124s", mentions="ryantan")
+    # assert_analyze_hand("123456789p3334s", "245s", mentions="ryantan")
+    # assert_analyze_hand("3334444555666p", "23567p", mentions="tatsumaki")
+    # assert_analyze_hand("2224444666999p", "35p", mentions="kankantan")
     # assert_analyze_hand("3334444555566p", "367p")
     # assert_analyze_hand("3334444555666p", "23567p")
     # assert_analyze_hand("1223344445566m", "1567m")
@@ -508,6 +637,7 @@ if __name__ == "__main__":
     # assert_analyze_hand("3334555m12678p1z", "23456m3p1z") # broken headless + floating with extensions
     # assert_analyze_hand("123456m55568p12s", "4678p123s") # headless + floating
     # assert_analyze_hand("1122345588899m", "1234569m") # chiitoi complete + floating
+    # assert_analyze_hand("7m45678p23456s11z", "369p147s") # two extensions
     # # 2-shanten
     # assert_analyze_hand("123789m23458p1s2z", "123456789p123s2z") # super kuttsuki
 
