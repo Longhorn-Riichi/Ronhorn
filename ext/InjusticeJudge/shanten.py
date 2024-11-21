@@ -214,21 +214,26 @@ def describe_simple_shanten(shanten: int, debug_info: Dict[str, Any], waits: Set
 def describe_extensions(
         waits: Set[int],
         extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]],
-        tanki_extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]]) -> List[str]:
+        tanki_extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]],
+        shanpon_extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]] = [],
+        shanpon_waits: Set[int] = set()) -> List[str]:
     ret = []
     used_sequence = False
     used_adj_sequence = False
     used_triplet = False
     extend_text = []
     # (wait, is_tanki) => [relative groups like (1,2,3)]
-    extensions_for_tile: Dict[Tuple[int, bool], List[Tuple[int, ...]]] = {}
+    extensions_for_tile: Dict[Tuple[int, str], List[Tuple[int, ...]]] = {}
 
-    all_extensions = [(ext, False) for ext in extensions] + [(ext, True) for ext in tanki_extensions]
-    for (new_waits, tile, group), is_tanki in all_extensions:
+    all_extensions = \
+        [(ext, "simple") for ext in extensions] \
+      + [(ext, "tanki") for ext in tanki_extensions] \
+      + [(ext, "shanpon") for ext in shanpon_extensions]
+    for (new_waits, tile, group), wait_type in all_extensions:
         # build up a catalog of relative extensions for each tile
-        if (tile, is_tanki) not in extensions_for_tile:
-            extensions_for_tile[(tile, is_tanki)] = []
-        extensions_for_tile[(tile, is_tanki)].append(tuple(t - tile for t in group))
+        if (tile, wait_type) not in extensions_for_tile:
+            extensions_for_tile[(tile, wait_type)] = []
+        extensions_for_tile[(tile, wait_type)].append(tuple(t - tile for t in group))
 
         # skip if all the waits of this group are covered
         if len(new_waits - waits) == 0:
@@ -259,7 +264,8 @@ def describe_extensions(
     pg = lambda tile, ext_group: ph(tuple(t + tile for t in ext_group)) # print group
     # we do a two-pass system since some shapes subsume other shapes
     # first pass
-    for (wait, is_tanki), ext_groups in extensions_for_tile.items():
+    for (wait, wait_type), ext_groups in extensions_for_tile.items():
+        is_tanki = wait_type == "tanki"
         left_triplet = (-1,-1,-1) in ext_groups
         right_adj_sequence = (1,2,3) in ext_groups
         is_happoubijin = False
@@ -291,7 +297,9 @@ def describe_extensions(
 
     # second pass
     # to deduplicate, we evaluate the leftmost tile with the most extensions first
-    for (wait, is_tanki), ext_groups in sorted(extensions_for_tile.items(), key=lambda x: -10*len(x[1])+(x[0][0]%10)):
+    for (wait, wait_type), ext_groups in sorted(extensions_for_tile.items(), key=lambda x: -10*len(x[1])+(x[0][0]%10)):
+        is_tanki = wait_type == "tanki"
+        is_shanpon = wait_type == "shanpon"
         left_triplet = (-1,-1,-1) in ext_groups
         right_triplet = (1,1,1) in ext_groups
         left_left_triplet = (-2,-2,-2) in ext_groups
@@ -336,9 +344,14 @@ def describe_extensions(
             named_shape_text.append(f"The extended shape {pg(wait, (-2,-1,0,1,2))} is often called **sanmenchan**, waiting on {pg(wait, (-3,0,3))}.")
         elif right_sequence and is_tanki:
             named_shape_text.append(f"The extended tanki shape {pg(wait, (0,0,1,2))} is often called **aryanmen**, waiting on {pg(wait, (0,3))}.")
-
-    # TODO:
-    # - entotsu (shanpon extension)
+        elif left_sequence and is_shanpon:
+            other_waits = shanpon_waits - {wait}
+            other_pairs = [tile for wait in other_waits for tile in [wait, wait]]
+            named_shape_text.append(f"This extended shanpon shape {pg(wait, (-2,-1,0,0,0))}{ph(other_pairs)} is often called **entotsu**, waiting on {pg(wait, (-3,0))}{ph(other_waits)}.")
+        elif right_sequence and is_shanpon:
+            other_waits = shanpon_waits - {wait}
+            other_pairs = [tile for wait in other_waits for tile in [wait, wait]]
+            named_shape_text.append(f"This extended shanpon shape {ph(other_pairs)}{pg(wait, (0,0,0,1,2))} is often called **entotsu**, waiting on {ph(other_waits)}{pg(wait, (0,3))}.")
 
     if len(named_shape_text) > 0:
         named_shape_text[0] = "Note that t" + named_shape_text[0][1:]
@@ -506,6 +519,7 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
     waits: Set[int] = set()
     extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]] = []
     tanki_extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]] = []
+    shanpon_extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]] = []
 
     if len(tanki_hands) > 0:
         tanki_tiles = tuple(tile for hand in tanki_hands for tile in hand)
@@ -559,6 +573,7 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
                 f" adding {ph(sorted_hand(taatsu_waits - orig_waits))} to the wait."])
             orig_waits |= taatsu_waits
 
+    shanpon_waits: Set[int] = set()
     if len(shanpon_hands) > 0:
         shanpon_waits = set(tile for hand in shanpon_hands for tile in hand)
         if not shanpon_waits.issubset(waits):
@@ -566,9 +581,13 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
             ret.extend(["",
                 f"This hand {also}has the shanpon {' '.join(ph((wait, wait)) for wait in shanpon_waits)},"
                 f" adding {ph(sorted_hand(shanpon_waits - waits))} to the wait."])
+            for shanpon_hand in shanpon_hands:
+                groups = try_remove_all_tiles(hand, shanpon_hand)
+                new_extensions = calculate_wait_extensions(groups, set(shanpon_hand))
+                shanpon_extensions.extend(new_extensions)
             orig_waits |= shanpon_waits
 
-    ret.extend(describe_extensions(orig_waits, extensions, tanki_extensions))
+    ret.extend(describe_extensions(orig_waits, extensions, tanki_extensions, shanpon_extensions, shanpon_waits))
     return ret
 
 def describe_shanten(debug_info: Dict[str, Any]) -> List[str]:
@@ -600,6 +619,9 @@ def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = Fa
 if __name__ == "__main__":
     pass
     # # tenpai
+    # assert_analyze_hand("11223344456m99s", "147m9s", mentions="entotsu")
+    # assert_analyze_hand("1123344555m123s", "125m", mentions="entotsu")
+    # assert_analyze_hand("1122233445m123s", "125m", mentions="entotsu")
     # assert_analyze_hand("2345666m222444p", "12457m", mentions="combination")
     # assert_analyze_hand("2223456m222444p", "13467m", mentions="combination")
     # assert_analyze_hand("2223456777m222p", "12345678m", mentions="happoubijin")
