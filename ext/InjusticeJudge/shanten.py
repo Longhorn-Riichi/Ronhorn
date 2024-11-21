@@ -503,8 +503,6 @@ def describe_ankan(debug_info: Dict[str, Any], waits: Set[int]) -> List[str]:
         return []
 
 def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
-    tenpai_waits = debug_info["tenpai_waits"]
-    ret = [f"This hand is tenpai, waiting on {ph(sorted_hand(tenpai_waits))}."]
     hand = debug_info["hand"]
     suits = to_suits(hand)
     groupless_removed = list(from_suits(eliminate_some_groups(suits)))
@@ -520,6 +518,12 @@ def describe_tenpai(debug_info: Dict[str, Any]) -> List[str]:
     extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]] = []
     tanki_extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]] = []
     shanpon_extensions: List[Tuple[Set[int], int, Tuple[int, int, int]]] = []
+
+    ret = []
+    if len(tanki_hands) > 0:
+        ret = [f"This hand is tenpai, because it has four completed groups, waiting on the pair."]
+    else:
+        ret = [f"This hand is tenpai, because it has a pair and three completed groups, waiting on the fourth."]
 
     if len(tanki_hands) > 0:
         tanki_tiles = tuple(tile for hand in tanki_hands for tile in hand)
@@ -619,6 +623,7 @@ def assert_analyze_hand(hand: str, expected_waits: str, print_anyways: bool = Fa
 if __name__ == "__main__":
     pass
     # # tenpai
+    assert_analyze_hand("3334444555666p", "1m")
     # assert_analyze_hand("11223344456m99s", "147m9s", mentions="entotsu")
     # assert_analyze_hand("1123344555m123s", "125m", mentions="entotsu")
     # assert_analyze_hand("1122233445m123s", "125m", mentions="entotsu")
