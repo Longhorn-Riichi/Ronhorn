@@ -213,7 +213,7 @@ async def parse_game(link: str, display_hands: Optional[str]="All winning hands 
                     if name == "round wind":
                         return winds[rnd//4]
                     elif name == "seat wind":
-                        return winds[result.winner]
+                        return winds[(result.winner-(rnd%4))%num_players]
                     else:
                         return name
                 result_string += f" *{', '.join(map(get_yaku_name, result.score.yaku))}*"
