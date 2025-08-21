@@ -17,18 +17,6 @@ AUTH: GamePlayerState
 SYNCING: GamePlayerState
 READY: GamePlayerState
 
-class NotifyCaptcha(_message.Message):
-    __slots__ = ["check_id", "start_time", "random_str", "type"]
-    CHECK_ID_FIELD_NUMBER: _ClassVar[int]
-    START_TIME_FIELD_NUMBER: _ClassVar[int]
-    RANDOM_STR_FIELD_NUMBER: _ClassVar[int]
-    TYPE_FIELD_NUMBER: _ClassVar[int]
-    check_id: int
-    start_time: int
-    random_str: str
-    type: int
-    def __init__(self, check_id: _Optional[int] = ..., start_time: _Optional[int] = ..., random_str: _Optional[str] = ..., type: _Optional[int] = ...) -> None: ...
-
 class NotifyRoomGameStart(_message.Message):
     __slots__ = ["game_url", "connect_token", "game_uuid", "location"]
     GAME_URL_FIELD_NUMBER: _ClassVar[int]
@@ -94,20 +82,20 @@ class NotifyRoomPlayerDressing(_message.Message):
     def __init__(self, account_id: _Optional[int] = ..., dressing: bool = ..., account_list: _Optional[_Union[NotifyRoomPlayerDressing.AccountDressingState, _Mapping]] = ..., seq: _Optional[int] = ...) -> None: ...
 
 class NotifyRoomPlayerUpdate(_message.Message):
-    __slots__ = ["update_list", "remove_list", "owner_id", "robot_count", "player_list", "seq"]
-    UPDATE_LIST_FIELD_NUMBER: _ClassVar[int]
-    REMOVE_LIST_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ["owner_id", "robot_count", "player_list", "seq", "robots", "positions"]
     OWNER_ID_FIELD_NUMBER: _ClassVar[int]
     ROBOT_COUNT_FIELD_NUMBER: _ClassVar[int]
     PLAYER_LIST_FIELD_NUMBER: _ClassVar[int]
     SEQ_FIELD_NUMBER: _ClassVar[int]
-    update_list: _containers.RepeatedCompositeFieldContainer[PlayerBaseView]
-    remove_list: _containers.RepeatedScalarFieldContainer[int]
+    ROBOTS_FIELD_NUMBER: _ClassVar[int]
+    POSITIONS_FIELD_NUMBER: _ClassVar[int]
     owner_id: int
     robot_count: int
-    player_list: _containers.RepeatedCompositeFieldContainer[PlayerBaseView]
+    player_list: _containers.RepeatedCompositeFieldContainer[PlayerGameView]
     seq: int
-    def __init__(self, update_list: _Optional[_Iterable[_Union[PlayerBaseView, _Mapping]]] = ..., remove_list: _Optional[_Iterable[int]] = ..., owner_id: _Optional[int] = ..., robot_count: _Optional[int] = ..., player_list: _Optional[_Iterable[_Union[PlayerBaseView, _Mapping]]] = ..., seq: _Optional[int] = ...) -> None: ...
+    robots: _containers.RepeatedCompositeFieldContainer[PlayerGameView]
+    positions: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, owner_id: _Optional[int] = ..., robot_count: _Optional[int] = ..., player_list: _Optional[_Iterable[_Union[PlayerGameView, _Mapping]]] = ..., seq: _Optional[int] = ..., robots: _Optional[_Iterable[_Union[PlayerGameView, _Mapping]]] = ..., positions: _Optional[_Iterable[int]] = ...) -> None: ...
 
 class NotifyRoomKickOut(_message.Message):
     __slots__ = []
@@ -300,10 +288,12 @@ class NotifyNewComment(_message.Message):
     def __init__(self) -> None: ...
 
 class NotifyRollingNotice(_message.Message):
-    __slots__ = ["notice"]
-    NOTICE_FIELD_NUMBER: _ClassVar[int]
-    notice: _containers.RepeatedCompositeFieldContainer[RollingNotice]
-    def __init__(self, notice: _Optional[_Iterable[_Union[RollingNotice, _Mapping]]] = ...) -> None: ...
+    __slots__ = []
+    def __init__(self) -> None: ...
+
+class NotifyMaintainNotice(_message.Message):
+    __slots__ = []
+    def __init__(self) -> None: ...
 
 class NotifyGiftSendRefresh(_message.Message):
     __slots__ = []
@@ -314,6 +304,10 @@ class NotifyShopUpdate(_message.Message):
     SHOP_INFO_FIELD_NUMBER: _ClassVar[int]
     shop_info: ShopInfo
     def __init__(self, shop_info: _Optional[_Union[ShopInfo, _Mapping]] = ...) -> None: ...
+
+class NotifyIntervalUpdate(_message.Message):
+    __slots__ = []
+    def __init__(self) -> None: ...
 
 class NotifyVipLevelChange(_message.Message):
     __slots__ = ["gift_limit", "friend_max_count", "zhp_free_refresh_limit", "zhp_cost_refresh_limit", "buddy_bonus", "record_collect_limit"]
@@ -394,6 +388,12 @@ class NotifyMatchTimeout(_message.Message):
     sid: str
     def __init__(self, sid: _Optional[str] = ...) -> None: ...
 
+class NotifyMatchFailed(_message.Message):
+    __slots__ = ["sid"]
+    SID_FIELD_NUMBER: _ClassVar[int]
+    sid: str
+    def __init__(self, sid: _Optional[str] = ...) -> None: ...
+
 class NotifyCustomContestState(_message.Message):
     __slots__ = ["unique_id", "state"]
     UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
@@ -425,7 +425,7 @@ class NotifyLoginQueueFinished(_message.Message):
     def __init__(self) -> None: ...
 
 class NotifyGameFinishRewardV2(_message.Message):
-    __slots__ = ["mode_id", "level_change", "match_chest", "main_character", "character_gift"]
+    __slots__ = ["mode_id", "level_change", "match_chest", "main_character", "character_gift", "badges"]
     class LevelChange(_message.Message):
         __slots__ = ["origin", "final", "type"]
         ORIGIN_FIELD_NUMBER: _ClassVar[int]
@@ -473,12 +473,14 @@ class NotifyGameFinishRewardV2(_message.Message):
     MATCH_CHEST_FIELD_NUMBER: _ClassVar[int]
     MAIN_CHARACTER_FIELD_NUMBER: _ClassVar[int]
     CHARACTER_GIFT_FIELD_NUMBER: _ClassVar[int]
+    BADGES_FIELD_NUMBER: _ClassVar[int]
     mode_id: int
     level_change: NotifyGameFinishRewardV2.LevelChange
     match_chest: NotifyGameFinishRewardV2.MatchChest
     main_character: NotifyGameFinishRewardV2.MainCharacter
     character_gift: NotifyGameFinishRewardV2.CharacterGift
-    def __init__(self, mode_id: _Optional[int] = ..., level_change: _Optional[_Union[NotifyGameFinishRewardV2.LevelChange, _Mapping]] = ..., match_chest: _Optional[_Union[NotifyGameFinishRewardV2.MatchChest, _Mapping]] = ..., main_character: _Optional[_Union[NotifyGameFinishRewardV2.MainCharacter, _Mapping]] = ..., character_gift: _Optional[_Union[NotifyGameFinishRewardV2.CharacterGift, _Mapping]] = ...) -> None: ...
+    badges: _containers.RepeatedCompositeFieldContainer[BadgeAchieveProgress]
+    def __init__(self, mode_id: _Optional[int] = ..., level_change: _Optional[_Union[NotifyGameFinishRewardV2.LevelChange, _Mapping]] = ..., match_chest: _Optional[_Union[NotifyGameFinishRewardV2.MatchChest, _Mapping]] = ..., main_character: _Optional[_Union[NotifyGameFinishRewardV2.MainCharacter, _Mapping]] = ..., character_gift: _Optional[_Union[NotifyGameFinishRewardV2.CharacterGift, _Mapping]] = ..., badges: _Optional[_Iterable[_Union[BadgeAchieveProgress, _Mapping]]] = ...) -> None: ...
 
 class NotifyActivityRewardV2(_message.Message):
     __slots__ = ["activity_reward"]
@@ -518,6 +520,20 @@ class NotifyLeaderboardPointV2(_message.Message):
     LEADERBOARD_POINTS_FIELD_NUMBER: _ClassVar[int]
     leaderboard_points: _containers.RepeatedCompositeFieldContainer[NotifyLeaderboardPointV2.LeaderboardPoint]
     def __init__(self, leaderboard_points: _Optional[_Iterable[_Union[NotifyLeaderboardPointV2.LeaderboardPoint, _Mapping]]] = ...) -> None: ...
+
+class NotifySeerReport(_message.Message):
+    __slots__ = ["report"]
+    REPORT_FIELD_NUMBER: _ClassVar[int]
+    report: SeerBrief
+    def __init__(self, report: _Optional[_Union[SeerBrief, _Mapping]] = ...) -> None: ...
+
+class NotifyConnectionShutdown(_message.Message):
+    __slots__ = ["reason", "close_at"]
+    REASON_FIELD_NUMBER: _ClassVar[int]
+    CLOSE_AT_FIELD_NUMBER: _ClassVar[int]
+    reason: int
+    close_at: int
+    def __init__(self, reason: _Optional[int] = ..., close_at: _Optional[int] = ...) -> None: ...
 
 class Error(_message.Message):
     __slots__ = ["code", "u32_params", "str_params", "json_param"]
@@ -573,6 +589,24 @@ class AntiAddiction(_message.Message):
     online_duration: int
     def __init__(self, online_duration: _Optional[int] = ...) -> None: ...
 
+class HighestHuRecord(_message.Message):
+    __slots__ = ["fanshu", "doranum", "title", "hands", "ming", "hupai", "title_id"]
+    FANSHU_FIELD_NUMBER: _ClassVar[int]
+    DORANUM_FIELD_NUMBER: _ClassVar[int]
+    TITLE_FIELD_NUMBER: _ClassVar[int]
+    HANDS_FIELD_NUMBER: _ClassVar[int]
+    MING_FIELD_NUMBER: _ClassVar[int]
+    HUPAI_FIELD_NUMBER: _ClassVar[int]
+    TITLE_ID_FIELD_NUMBER: _ClassVar[int]
+    fanshu: int
+    doranum: int
+    title: str
+    hands: _containers.RepeatedScalarFieldContainer[str]
+    ming: _containers.RepeatedScalarFieldContainer[str]
+    hupai: str
+    title_id: int
+    def __init__(self, fanshu: _Optional[int] = ..., doranum: _Optional[int] = ..., title: _Optional[str] = ..., hands: _Optional[_Iterable[str]] = ..., ming: _Optional[_Iterable[str]] = ..., hupai: _Optional[str] = ..., title_id: _Optional[int] = ...) -> None: ...
+
 class AccountMahjongStatistic(_message.Message):
     __slots__ = ["final_position_counts", "recent_round", "recent_hu", "highest_hu", "recent_20_hu_summary", "recent_10_hu_summary", "recent_10_game_result"]
     class RoundSummary(_message.Message):
@@ -595,23 +629,6 @@ class AccountMahjongStatistic(_message.Message):
         dora_round_count: int
         total_fan: int
         def __init__(self, total_count: _Optional[int] = ..., dora_round_count: _Optional[int] = ..., total_fan: _Optional[int] = ...) -> None: ...
-    class HighestHuRecord(_message.Message):
-        __slots__ = ["fanshu", "doranum", "title", "hands", "ming", "hupai", "title_id"]
-        FANSHU_FIELD_NUMBER: _ClassVar[int]
-        DORANUM_FIELD_NUMBER: _ClassVar[int]
-        TITLE_FIELD_NUMBER: _ClassVar[int]
-        HANDS_FIELD_NUMBER: _ClassVar[int]
-        MING_FIELD_NUMBER: _ClassVar[int]
-        HUPAI_FIELD_NUMBER: _ClassVar[int]
-        TITLE_ID_FIELD_NUMBER: _ClassVar[int]
-        fanshu: int
-        doranum: int
-        title: str
-        hands: _containers.RepeatedScalarFieldContainer[str]
-        ming: _containers.RepeatedScalarFieldContainer[str]
-        hupai: str
-        title_id: int
-        def __init__(self, fanshu: _Optional[int] = ..., doranum: _Optional[int] = ..., title: _Optional[str] = ..., hands: _Optional[_Iterable[str]] = ..., ming: _Optional[_Iterable[str]] = ..., hupai: _Optional[str] = ..., title_id: _Optional[int] = ...) -> None: ...
     class Liqi20Summary(_message.Message):
         __slots__ = ["total_count", "total_lidora_count", "average_hu_point"]
         TOTAL_COUNT_FIELD_NUMBER: _ClassVar[int]
@@ -645,11 +662,11 @@ class AccountMahjongStatistic(_message.Message):
     final_position_counts: _containers.RepeatedScalarFieldContainer[int]
     recent_round: AccountMahjongStatistic.RoundSummary
     recent_hu: AccountMahjongStatistic.HuSummary
-    highest_hu: AccountMahjongStatistic.HighestHuRecord
+    highest_hu: HighestHuRecord
     recent_20_hu_summary: AccountMahjongStatistic.Liqi20Summary
     recent_10_hu_summary: AccountMahjongStatistic.LiQi10Summary
     recent_10_game_result: _containers.RepeatedCompositeFieldContainer[AccountMahjongStatistic.GameResult]
-    def __init__(self, final_position_counts: _Optional[_Iterable[int]] = ..., recent_round: _Optional[_Union[AccountMahjongStatistic.RoundSummary, _Mapping]] = ..., recent_hu: _Optional[_Union[AccountMahjongStatistic.HuSummary, _Mapping]] = ..., highest_hu: _Optional[_Union[AccountMahjongStatistic.HighestHuRecord, _Mapping]] = ..., recent_20_hu_summary: _Optional[_Union[AccountMahjongStatistic.Liqi20Summary, _Mapping]] = ..., recent_10_hu_summary: _Optional[_Union[AccountMahjongStatistic.LiQi10Summary, _Mapping]] = ..., recent_10_game_result: _Optional[_Iterable[_Union[AccountMahjongStatistic.GameResult, _Mapping]]] = ...) -> None: ...
+    def __init__(self, final_position_counts: _Optional[_Iterable[int]] = ..., recent_round: _Optional[_Union[AccountMahjongStatistic.RoundSummary, _Mapping]] = ..., recent_hu: _Optional[_Union[AccountMahjongStatistic.HuSummary, _Mapping]] = ..., highest_hu: _Optional[_Union[HighestHuRecord, _Mapping]] = ..., recent_20_hu_summary: _Optional[_Union[AccountMahjongStatistic.Liqi20Summary, _Mapping]] = ..., recent_10_hu_summary: _Optional[_Union[AccountMahjongStatistic.LiQi10Summary, _Mapping]] = ..., recent_10_game_result: _Optional[_Iterable[_Union[AccountMahjongStatistic.GameResult, _Mapping]]] = ...) -> None: ...
 
 class AccountStatisticData(_message.Message):
     __slots__ = ["mahjong_category", "game_category", "statistic", "game_type"]
@@ -683,8 +700,20 @@ class ViewSlot(_message.Message):
     item_id_list: _containers.RepeatedScalarFieldContainer[int]
     def __init__(self, slot: _Optional[int] = ..., item_id: _Optional[int] = ..., type: _Optional[int] = ..., item_id_list: _Optional[_Iterable[int]] = ...) -> None: ...
 
+class FavoriteHu(_message.Message):
+    __slots__ = ["category", "type", "hu", "mode"]
+    CATEGORY_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    HU_FIELD_NUMBER: _ClassVar[int]
+    MODE_FIELD_NUMBER: _ClassVar[int]
+    category: int
+    type: int
+    hu: HighestHuRecord
+    mode: int
+    def __init__(self, category: _Optional[int] = ..., type: _Optional[int] = ..., hu: _Optional[_Union[HighestHuRecord, _Mapping]] = ..., mode: _Optional[int] = ...) -> None: ...
+
 class Account(_message.Message):
-    __slots__ = ["account_id", "nickname", "login_time", "logout_time", "room_id", "anti_addiction", "title", "signature", "email", "email_verify", "gold", "diamond", "avatar_id", "vip", "birthday", "phone", "phone_verify", "platform_diamond", "level", "level3", "avatar_frame", "skin_ticket", "platform_skin_ticket", "verified", "challenge_levels", "achievement_count", "frozen_state", "loading_image"]
+    __slots__ = ["account_id", "nickname", "login_time", "logout_time", "room_id", "anti_addiction", "title", "signature", "email", "email_verify", "gold", "diamond", "avatar_id", "vip", "birthday", "phone", "phone_verify", "platform_diamond", "level", "level3", "avatar_frame", "skin_ticket", "platform_skin_ticket", "verified", "challenge_levels", "frozen_state", "achievement_count", "loading_image", "favorite_hu", "badges"]
     class PlatformDiamond(_message.Message):
         __slots__ = ["id", "count"]
         ID_FIELD_NUMBER: _ClassVar[int]
@@ -715,6 +744,15 @@ class Account(_message.Message):
         rare: int
         count: int
         def __init__(self, rare: _Optional[int] = ..., count: _Optional[int] = ...) -> None: ...
+    class Badge(_message.Message):
+        __slots__ = ["id", "achieved_time", "achieved_counter"]
+        ID_FIELD_NUMBER: _ClassVar[int]
+        ACHIEVED_TIME_FIELD_NUMBER: _ClassVar[int]
+        ACHIEVED_COUNTER_FIELD_NUMBER: _ClassVar[int]
+        id: int
+        achieved_time: int
+        achieved_counter: int
+        def __init__(self, id: _Optional[int] = ..., achieved_time: _Optional[int] = ..., achieved_counter: _Optional[int] = ...) -> None: ...
     ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
     NICKNAME_FIELD_NUMBER: _ClassVar[int]
     LOGIN_TIME_FIELD_NUMBER: _ClassVar[int]
@@ -740,9 +778,11 @@ class Account(_message.Message):
     PLATFORM_SKIN_TICKET_FIELD_NUMBER: _ClassVar[int]
     VERIFIED_FIELD_NUMBER: _ClassVar[int]
     CHALLENGE_LEVELS_FIELD_NUMBER: _ClassVar[int]
-    ACHIEVEMENT_COUNT_FIELD_NUMBER: _ClassVar[int]
     FROZEN_STATE_FIELD_NUMBER: _ClassVar[int]
+    ACHIEVEMENT_COUNT_FIELD_NUMBER: _ClassVar[int]
     LOADING_IMAGE_FIELD_NUMBER: _ClassVar[int]
+    FAVORITE_HU_FIELD_NUMBER: _ClassVar[int]
+    BADGES_FIELD_NUMBER: _ClassVar[int]
     account_id: int
     nickname: str
     login_time: int
@@ -768,10 +808,12 @@ class Account(_message.Message):
     platform_skin_ticket: _containers.RepeatedCompositeFieldContainer[Account.PlatformSkinTicket]
     verified: int
     challenge_levels: _containers.RepeatedCompositeFieldContainer[Account.ChallengeLevel]
-    achievement_count: _containers.RepeatedCompositeFieldContainer[Account.AchievementCount]
     frozen_state: int
+    achievement_count: _containers.RepeatedCompositeFieldContainer[Account.AchievementCount]
     loading_image: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ..., login_time: _Optional[int] = ..., logout_time: _Optional[int] = ..., room_id: _Optional[int] = ..., anti_addiction: _Optional[_Union[AntiAddiction, _Mapping]] = ..., title: _Optional[int] = ..., signature: _Optional[str] = ..., email: _Optional[str] = ..., email_verify: _Optional[int] = ..., gold: _Optional[int] = ..., diamond: _Optional[int] = ..., avatar_id: _Optional[int] = ..., vip: _Optional[int] = ..., birthday: _Optional[int] = ..., phone: _Optional[str] = ..., phone_verify: _Optional[int] = ..., platform_diamond: _Optional[_Iterable[_Union[Account.PlatformDiamond, _Mapping]]] = ..., level: _Optional[_Union[AccountLevel, _Mapping]] = ..., level3: _Optional[_Union[AccountLevel, _Mapping]] = ..., avatar_frame: _Optional[int] = ..., skin_ticket: _Optional[int] = ..., platform_skin_ticket: _Optional[_Iterable[_Union[Account.PlatformSkinTicket, _Mapping]]] = ..., verified: _Optional[int] = ..., challenge_levels: _Optional[_Iterable[_Union[Account.ChallengeLevel, _Mapping]]] = ..., achievement_count: _Optional[_Iterable[_Union[Account.AchievementCount, _Mapping]]] = ..., frozen_state: _Optional[int] = ..., loading_image: _Optional[_Iterable[int]] = ...) -> None: ...
+    favorite_hu: _containers.RepeatedCompositeFieldContainer[FavoriteHu]
+    badges: _containers.RepeatedCompositeFieldContainer[Account.Badge]
+    def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ..., login_time: _Optional[int] = ..., logout_time: _Optional[int] = ..., room_id: _Optional[int] = ..., anti_addiction: _Optional[_Union[AntiAddiction, _Mapping]] = ..., title: _Optional[int] = ..., signature: _Optional[str] = ..., email: _Optional[str] = ..., email_verify: _Optional[int] = ..., gold: _Optional[int] = ..., diamond: _Optional[int] = ..., avatar_id: _Optional[int] = ..., vip: _Optional[int] = ..., birthday: _Optional[int] = ..., phone: _Optional[str] = ..., phone_verify: _Optional[int] = ..., platform_diamond: _Optional[_Iterable[_Union[Account.PlatformDiamond, _Mapping]]] = ..., level: _Optional[_Union[AccountLevel, _Mapping]] = ..., level3: _Optional[_Union[AccountLevel, _Mapping]] = ..., avatar_frame: _Optional[int] = ..., skin_ticket: _Optional[int] = ..., platform_skin_ticket: _Optional[_Iterable[_Union[Account.PlatformSkinTicket, _Mapping]]] = ..., verified: _Optional[int] = ..., challenge_levels: _Optional[_Iterable[_Union[Account.ChallengeLevel, _Mapping]]] = ..., frozen_state: _Optional[int] = ..., achievement_count: _Optional[_Iterable[_Union[Account.AchievementCount, _Mapping]]] = ..., loading_image: _Optional[_Iterable[int]] = ..., favorite_hu: _Optional[_Iterable[_Union[FavoriteHu, _Mapping]]] = ..., badges: _Optional[_Iterable[_Union[Account.Badge, _Mapping]]] = ...) -> None: ...
 
 class AccountOwnerData(_message.Message):
     __slots__ = ["unlock_characters"]
@@ -780,7 +822,7 @@ class AccountOwnerData(_message.Message):
     def __init__(self, unlock_characters: _Optional[_Iterable[int]] = ...) -> None: ...
 
 class AccountUpdate(_message.Message):
-    __slots__ = ["numerical", "character", "bag", "achievement", "shilian", "daily_task", "title", "new_recharged_list", "activity_task", "activity_flip_task", "activity_period_task", "activity_random_task", "challenge", "ab_match", "activity", "activity_segment_task"]
+    __slots__ = ["numerical", "character", "bag", "achievement", "shilian", "daily_task", "title", "new_recharged_list", "activity_task", "activity_flip_task", "activity_period_task", "activity_random_task", "challenge", "ab_match", "activity", "activity_segment_task", "month_ticket", "main_character", "badge"]
     class NumericalUpdate(_message.Message):
         __slots__ = ["id", "final"]
         ID_FIELD_NUMBER: _ClassVar[int]
@@ -875,6 +917,25 @@ class AccountUpdate(_message.Message):
         progresses: _containers.RepeatedCompositeFieldContainer[SegmentTaskProgress]
         task_list: _containers.RepeatedScalarFieldContainer[int]
         def __init__(self, progresses: _Optional[_Iterable[_Union[SegmentTaskProgress, _Mapping]]] = ..., task_list: _Optional[_Iterable[int]] = ...) -> None: ...
+    class MonthTicketUpdate(_message.Message):
+        __slots__ = ["end_time", "last_pay_time"]
+        END_TIME_FIELD_NUMBER: _ClassVar[int]
+        LAST_PAY_TIME_FIELD_NUMBER: _ClassVar[int]
+        end_time: int
+        last_pay_time: int
+        def __init__(self, end_time: _Optional[int] = ..., last_pay_time: _Optional[int] = ...) -> None: ...
+    class MainCharacterUpdate(_message.Message):
+        __slots__ = ["character_id", "skin_id"]
+        CHARACTER_ID_FIELD_NUMBER: _ClassVar[int]
+        SKIN_ID_FIELD_NUMBER: _ClassVar[int]
+        character_id: int
+        skin_id: int
+        def __init__(self, character_id: _Optional[int] = ..., skin_id: _Optional[int] = ...) -> None: ...
+    class BadgeUpdate(_message.Message):
+        __slots__ = ["progresses"]
+        PROGRESSES_FIELD_NUMBER: _ClassVar[int]
+        progresses: _containers.RepeatedCompositeFieldContainer[BadgeAchieveProgress]
+        def __init__(self, progresses: _Optional[_Iterable[_Union[BadgeAchieveProgress, _Mapping]]] = ...) -> None: ...
     NUMERICAL_FIELD_NUMBER: _ClassVar[int]
     CHARACTER_FIELD_NUMBER: _ClassVar[int]
     BAG_FIELD_NUMBER: _ClassVar[int]
@@ -891,6 +952,9 @@ class AccountUpdate(_message.Message):
     AB_MATCH_FIELD_NUMBER: _ClassVar[int]
     ACTIVITY_FIELD_NUMBER: _ClassVar[int]
     ACTIVITY_SEGMENT_TASK_FIELD_NUMBER: _ClassVar[int]
+    MONTH_TICKET_FIELD_NUMBER: _ClassVar[int]
+    MAIN_CHARACTER_FIELD_NUMBER: _ClassVar[int]
+    BADGE_FIELD_NUMBER: _ClassVar[int]
     numerical: _containers.RepeatedCompositeFieldContainer[AccountUpdate.NumericalUpdate]
     character: AccountUpdate.CharacterUpdate
     bag: BagUpdate
@@ -907,7 +971,10 @@ class AccountUpdate(_message.Message):
     ab_match: AccountUpdate.AccountABMatchUpdate
     activity: AccountActivityUpdate
     activity_segment_task: AccountUpdate.SegmentTaskUpdate
-    def __init__(self, numerical: _Optional[_Iterable[_Union[AccountUpdate.NumericalUpdate, _Mapping]]] = ..., character: _Optional[_Union[AccountUpdate.CharacterUpdate, _Mapping]] = ..., bag: _Optional[_Union[BagUpdate, _Mapping]] = ..., achievement: _Optional[_Union[AccountUpdate.AchievementUpdate, _Mapping]] = ..., shilian: _Optional[_Union[AccountShiLian, _Mapping]] = ..., daily_task: _Optional[_Union[AccountUpdate.DailyTaskUpdate, _Mapping]] = ..., title: _Optional[_Union[AccountUpdate.TitleUpdate, _Mapping]] = ..., new_recharged_list: _Optional[_Iterable[int]] = ..., activity_task: _Optional[_Union[AccountUpdate.TaskUpdate, _Mapping]] = ..., activity_flip_task: _Optional[_Union[AccountUpdate.TaskUpdate, _Mapping]] = ..., activity_period_task: _Optional[_Union[AccountUpdate.TaskUpdate, _Mapping]] = ..., activity_random_task: _Optional[_Union[AccountUpdate.TaskUpdate, _Mapping]] = ..., challenge: _Optional[_Union[AccountUpdate.AccountChallengeUpdate, _Mapping]] = ..., ab_match: _Optional[_Union[AccountUpdate.AccountABMatchUpdate, _Mapping]] = ..., activity: _Optional[_Union[AccountActivityUpdate, _Mapping]] = ..., activity_segment_task: _Optional[_Union[AccountUpdate.SegmentTaskUpdate, _Mapping]] = ...) -> None: ...
+    month_ticket: AccountUpdate.MonthTicketUpdate
+    main_character: AccountUpdate.MainCharacterUpdate
+    badge: AccountUpdate.BadgeUpdate
+    def __init__(self, numerical: _Optional[_Iterable[_Union[AccountUpdate.NumericalUpdate, _Mapping]]] = ..., character: _Optional[_Union[AccountUpdate.CharacterUpdate, _Mapping]] = ..., bag: _Optional[_Union[BagUpdate, _Mapping]] = ..., achievement: _Optional[_Union[AccountUpdate.AchievementUpdate, _Mapping]] = ..., shilian: _Optional[_Union[AccountShiLian, _Mapping]] = ..., daily_task: _Optional[_Union[AccountUpdate.DailyTaskUpdate, _Mapping]] = ..., title: _Optional[_Union[AccountUpdate.TitleUpdate, _Mapping]] = ..., new_recharged_list: _Optional[_Iterable[int]] = ..., activity_task: _Optional[_Union[AccountUpdate.TaskUpdate, _Mapping]] = ..., activity_flip_task: _Optional[_Union[AccountUpdate.TaskUpdate, _Mapping]] = ..., activity_period_task: _Optional[_Union[AccountUpdate.TaskUpdate, _Mapping]] = ..., activity_random_task: _Optional[_Union[AccountUpdate.TaskUpdate, _Mapping]] = ..., challenge: _Optional[_Union[AccountUpdate.AccountChallengeUpdate, _Mapping]] = ..., ab_match: _Optional[_Union[AccountUpdate.AccountABMatchUpdate, _Mapping]] = ..., activity: _Optional[_Union[AccountActivityUpdate, _Mapping]] = ..., activity_segment_task: _Optional[_Union[AccountUpdate.SegmentTaskUpdate, _Mapping]] = ..., month_ticket: _Optional[_Union[AccountUpdate.MonthTicketUpdate, _Mapping]] = ..., main_character: _Optional[_Union[AccountUpdate.MainCharacterUpdate, _Mapping]] = ..., badge: _Optional[_Union[AccountUpdate.BadgeUpdate, _Mapping]] = ...) -> None: ...
 
 class GameMetaData(_message.Message):
     __slots__ = ["room_id", "mode_id", "contest_uid"]
@@ -928,6 +995,14 @@ class AccountPlayingGame(_message.Message):
     category: int
     meta: GameMetaData
     def __init__(self, game_uuid: _Optional[str] = ..., category: _Optional[int] = ..., meta: _Optional[_Union[GameMetaData, _Mapping]] = ...) -> None: ...
+
+class RandomCharacter(_message.Message):
+    __slots__ = ["character_id", "skin_id"]
+    CHARACTER_ID_FIELD_NUMBER: _ClassVar[int]
+    SKIN_ID_FIELD_NUMBER: _ClassVar[int]
+    character_id: int
+    skin_id: int
+    def __init__(self, character_id: _Optional[int] = ..., skin_id: _Optional[int] = ...) -> None: ...
 
 class AccountCacheView(_message.Message):
     __slots__ = ["cache_version", "account_id", "nickname", "login_time", "logout_time", "is_online", "room_id", "title", "avatar_id", "vip", "level", "playing_game", "level3", "avatar_frame", "verified", "ban_deadline", "comment_ban", "ban_state"]
@@ -1048,7 +1123,7 @@ class GameTestingEnvironmentSet(_message.Message):
     def __init__(self, paixing: _Optional[int] = ..., left_count: _Optional[int] = ..., field_spell_var: _Optional[int] = ...) -> None: ...
 
 class GameDetailRule(_message.Message):
-    __slots__ = ["time_fixed", "time_add", "dora_count", "shiduan", "init_point", "fandian", "can_jifei", "tianbian_value", "liqibang_value", "changbang_value", "noting_fafu_1", "noting_fafu_2", "noting_fafu_3", "have_liujumanguan", "have_qieshangmanguan", "have_biao_dora", "have_gang_biao_dora", "ming_dora_immediately_open", "have_li_dora", "have_gang_li_dora", "have_sifenglianda", "have_sigangsanle", "have_sijializhi", "have_jiuzhongjiupai", "have_sanjiahele", "have_toutiao", "have_helelianzhuang", "have_helezhongju", "have_tingpailianzhuang", "have_tingpaizhongju", "have_yifa", "have_nanruxiru", "jingsuanyuandian", "shunweima_2", "shunweima_3", "shunweima_4", "bianjietishi", "ai_level", "have_zimosun", "disable_multi_yukaman", "fanfu", "guyi_mode", "dora3_mode", "begin_open_mode", "jiuchao_mode", "muyu_mode", "open_hand", "xuezhandaodi", "huansanzhang", "chuanma", "reveal_discard", "field_spell_mode", "zhanxing", "tianming_mode", "disable_leijiyiman", "disable_double_yakuman", "disable_composite_yakuman", "enable_shiti", "enable_nontsumo_liqi", "disable_double_wind_four_fu", "disable_angang_guoshi", "enable_renhe", "enable_baopai_extend_settings"]
+    __slots__ = ["time_fixed", "time_add", "dora_count", "shiduan", "init_point", "fandian", "can_jifei", "tianbian_value", "liqibang_value", "changbang_value", "noting_fafu_1", "noting_fafu_2", "noting_fafu_3", "have_liujumanguan", "have_qieshangmanguan", "have_biao_dora", "have_gang_biao_dora", "ming_dora_immediately_open", "have_li_dora", "have_gang_li_dora", "have_sifenglianda", "have_sigangsanle", "have_sijializhi", "have_jiuzhongjiupai", "have_sanjiahele", "have_toutiao", "have_helelianzhuang", "have_helezhongju", "have_tingpailianzhuang", "have_tingpaizhongju", "have_yifa", "have_nanruxiru", "jingsuanyuandian", "shunweima_2", "shunweima_3", "shunweima_4", "bianjietishi", "ai_level", "have_zimosun", "disable_multi_yukaman", "fanfu", "guyi_mode", "dora3_mode", "begin_open_mode", "jiuchao_mode", "muyu_mode", "open_hand", "xuezhandaodi", "huansanzhang", "chuanma", "reveal_discard", "field_spell_mode", "zhanxing", "tianming_mode", "disable_leijiyiman", "disable_double_yakuman", "disable_composite_yakuman", "enable_shiti", "enable_nontsumo_liqi", "disable_double_wind_four_fu", "disable_angang_guoshi", "enable_renhe", "enable_baopai_extend_settings", "yongchang_mode", "hunzhiyiji_mode", "wanxiangxiuluo_mode", "beishuizhizhan_mode"]
     TIME_FIXED_FIELD_NUMBER: _ClassVar[int]
     TIME_ADD_FIELD_NUMBER: _ClassVar[int]
     DORA_COUNT_FIELD_NUMBER: _ClassVar[int]
@@ -1112,6 +1187,10 @@ class GameDetailRule(_message.Message):
     DISABLE_ANGANG_GUOSHI_FIELD_NUMBER: _ClassVar[int]
     ENABLE_RENHE_FIELD_NUMBER: _ClassVar[int]
     ENABLE_BAOPAI_EXTEND_SETTINGS_FIELD_NUMBER: _ClassVar[int]
+    YONGCHANG_MODE_FIELD_NUMBER: _ClassVar[int]
+    HUNZHIYIJI_MODE_FIELD_NUMBER: _ClassVar[int]
+    WANXIANGXIULUO_MODE_FIELD_NUMBER: _ClassVar[int]
+    BEISHUIZHIZHAN_MODE_FIELD_NUMBER: _ClassVar[int]
     time_fixed: int
     time_add: int
     dora_count: int
@@ -1175,10 +1254,14 @@ class GameDetailRule(_message.Message):
     disable_angang_guoshi: int
     enable_renhe: int
     enable_baopai_extend_settings: int
-    def __init__(self, time_fixed: _Optional[int] = ..., time_add: _Optional[int] = ..., dora_count: _Optional[int] = ..., shiduan: _Optional[int] = ..., init_point: _Optional[int] = ..., fandian: _Optional[int] = ..., can_jifei: bool = ..., tianbian_value: _Optional[int] = ..., liqibang_value: _Optional[int] = ..., changbang_value: _Optional[int] = ..., noting_fafu_1: _Optional[int] = ..., noting_fafu_2: _Optional[int] = ..., noting_fafu_3: _Optional[int] = ..., have_liujumanguan: bool = ..., have_qieshangmanguan: bool = ..., have_biao_dora: bool = ..., have_gang_biao_dora: bool = ..., ming_dora_immediately_open: bool = ..., have_li_dora: bool = ..., have_gang_li_dora: bool = ..., have_sifenglianda: bool = ..., have_sigangsanle: bool = ..., have_sijializhi: bool = ..., have_jiuzhongjiupai: bool = ..., have_sanjiahele: bool = ..., have_toutiao: bool = ..., have_helelianzhuang: bool = ..., have_helezhongju: bool = ..., have_tingpailianzhuang: bool = ..., have_tingpaizhongju: bool = ..., have_yifa: bool = ..., have_nanruxiru: bool = ..., jingsuanyuandian: _Optional[int] = ..., shunweima_2: _Optional[int] = ..., shunweima_3: _Optional[int] = ..., shunweima_4: _Optional[int] = ..., bianjietishi: bool = ..., ai_level: _Optional[int] = ..., have_zimosun: bool = ..., disable_multi_yukaman: bool = ..., fanfu: _Optional[int] = ..., guyi_mode: _Optional[int] = ..., dora3_mode: _Optional[int] = ..., begin_open_mode: _Optional[int] = ..., jiuchao_mode: _Optional[int] = ..., muyu_mode: _Optional[int] = ..., open_hand: _Optional[int] = ..., xuezhandaodi: _Optional[int] = ..., huansanzhang: _Optional[int] = ..., chuanma: _Optional[int] = ..., reveal_discard: _Optional[int] = ..., field_spell_mode: _Optional[int] = ..., zhanxing: _Optional[int] = ..., tianming_mode: _Optional[int] = ..., disable_leijiyiman: bool = ..., disable_double_yakuman: _Optional[int] = ..., disable_composite_yakuman: _Optional[int] = ..., enable_shiti: _Optional[int] = ..., enable_nontsumo_liqi: _Optional[int] = ..., disable_double_wind_four_fu: _Optional[int] = ..., disable_angang_guoshi: _Optional[int] = ..., enable_renhe: _Optional[int] = ..., enable_baopai_extend_settings: _Optional[int] = ...) -> None: ...
+    yongchang_mode: int
+    hunzhiyiji_mode: int
+    wanxiangxiuluo_mode: int
+    beishuizhizhan_mode: int
+    def __init__(self, time_fixed: _Optional[int] = ..., time_add: _Optional[int] = ..., dora_count: _Optional[int] = ..., shiduan: _Optional[int] = ..., init_point: _Optional[int] = ..., fandian: _Optional[int] = ..., can_jifei: bool = ..., tianbian_value: _Optional[int] = ..., liqibang_value: _Optional[int] = ..., changbang_value: _Optional[int] = ..., noting_fafu_1: _Optional[int] = ..., noting_fafu_2: _Optional[int] = ..., noting_fafu_3: _Optional[int] = ..., have_liujumanguan: bool = ..., have_qieshangmanguan: bool = ..., have_biao_dora: bool = ..., have_gang_biao_dora: bool = ..., ming_dora_immediately_open: bool = ..., have_li_dora: bool = ..., have_gang_li_dora: bool = ..., have_sifenglianda: bool = ..., have_sigangsanle: bool = ..., have_sijializhi: bool = ..., have_jiuzhongjiupai: bool = ..., have_sanjiahele: bool = ..., have_toutiao: bool = ..., have_helelianzhuang: bool = ..., have_helezhongju: bool = ..., have_tingpailianzhuang: bool = ..., have_tingpaizhongju: bool = ..., have_yifa: bool = ..., have_nanruxiru: bool = ..., jingsuanyuandian: _Optional[int] = ..., shunweima_2: _Optional[int] = ..., shunweima_3: _Optional[int] = ..., shunweima_4: _Optional[int] = ..., bianjietishi: bool = ..., ai_level: _Optional[int] = ..., have_zimosun: bool = ..., disable_multi_yukaman: bool = ..., fanfu: _Optional[int] = ..., guyi_mode: _Optional[int] = ..., dora3_mode: _Optional[int] = ..., begin_open_mode: _Optional[int] = ..., jiuchao_mode: _Optional[int] = ..., muyu_mode: _Optional[int] = ..., open_hand: _Optional[int] = ..., xuezhandaodi: _Optional[int] = ..., huansanzhang: _Optional[int] = ..., chuanma: _Optional[int] = ..., reveal_discard: _Optional[int] = ..., field_spell_mode: _Optional[int] = ..., zhanxing: _Optional[int] = ..., tianming_mode: _Optional[int] = ..., disable_leijiyiman: bool = ..., disable_double_yakuman: _Optional[int] = ..., disable_composite_yakuman: _Optional[int] = ..., enable_shiti: _Optional[int] = ..., enable_nontsumo_liqi: _Optional[int] = ..., disable_double_wind_four_fu: _Optional[int] = ..., disable_angang_guoshi: _Optional[int] = ..., enable_renhe: _Optional[int] = ..., enable_baopai_extend_settings: _Optional[int] = ..., yongchang_mode: _Optional[int] = ..., hunzhiyiji_mode: _Optional[int] = ..., wanxiangxiuluo_mode: _Optional[int] = ..., beishuizhizhan_mode: _Optional[int] = ...) -> None: ...
 
 class Room(_message.Message):
-    __slots__ = ["room_id", "owner_id", "mode", "max_player_count", "persons", "ready_list", "is_playing", "public_live", "robot_count", "tournament_id", "seq"]
+    __slots__ = ["room_id", "owner_id", "mode", "max_player_count", "persons", "ready_list", "is_playing", "public_live", "robot_count", "tournament_id", "seq", "pre_rule", "robots", "positions"]
     ROOM_ID_FIELD_NUMBER: _ClassVar[int]
     OWNER_ID_FIELD_NUMBER: _ClassVar[int]
     MODE_FIELD_NUMBER: _ClassVar[int]
@@ -1190,6 +1273,9 @@ class Room(_message.Message):
     ROBOT_COUNT_FIELD_NUMBER: _ClassVar[int]
     TOURNAMENT_ID_FIELD_NUMBER: _ClassVar[int]
     SEQ_FIELD_NUMBER: _ClassVar[int]
+    PRE_RULE_FIELD_NUMBER: _ClassVar[int]
+    ROBOTS_FIELD_NUMBER: _ClassVar[int]
+    POSITIONS_FIELD_NUMBER: _ClassVar[int]
     room_id: int
     owner_id: int
     mode: GameMode
@@ -1201,7 +1287,10 @@ class Room(_message.Message):
     robot_count: int
     tournament_id: int
     seq: int
-    def __init__(self, room_id: _Optional[int] = ..., owner_id: _Optional[int] = ..., mode: _Optional[_Union[GameMode, _Mapping]] = ..., max_player_count: _Optional[int] = ..., persons: _Optional[_Iterable[_Union[PlayerGameView, _Mapping]]] = ..., ready_list: _Optional[_Iterable[int]] = ..., is_playing: bool = ..., public_live: bool = ..., robot_count: _Optional[int] = ..., tournament_id: _Optional[int] = ..., seq: _Optional[int] = ...) -> None: ...
+    pre_rule: str
+    robots: _containers.RepeatedCompositeFieldContainer[PlayerGameView]
+    positions: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, room_id: _Optional[int] = ..., owner_id: _Optional[int] = ..., mode: _Optional[_Union[GameMode, _Mapping]] = ..., max_player_count: _Optional[int] = ..., persons: _Optional[_Iterable[_Union[PlayerGameView, _Mapping]]] = ..., ready_list: _Optional[_Iterable[int]] = ..., is_playing: bool = ..., public_live: bool = ..., robot_count: _Optional[int] = ..., tournament_id: _Optional[int] = ..., seq: _Optional[int] = ..., pre_rule: _Optional[str] = ..., robots: _Optional[_Iterable[_Union[PlayerGameView, _Mapping]]] = ..., positions: _Optional[_Iterable[int]] = ...) -> None: ...
 
 class GameEndResult(_message.Message):
     __slots__ = ["players"]
@@ -1333,6 +1422,14 @@ class ExecuteReward(_message.Message):
     replace_count: int
     def __init__(self, reward: _Optional[_Union[RewardSlot, _Mapping]] = ..., replace: _Optional[_Union[RewardSlot, _Mapping]] = ..., replace_count: _Optional[int] = ...) -> None: ...
 
+class ExecuteResult(_message.Message):
+    __slots__ = ["id", "count"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    count: int
+    def __init__(self, id: _Optional[int] = ..., count: _Optional[int] = ...) -> None: ...
+
 class I18nContext(_message.Message):
     __slots__ = ["lang", "context"]
     LANG_FIELD_NUMBER: _ClassVar[int]
@@ -1382,6 +1479,18 @@ class AchievementProgress(_message.Message):
     rewarded: bool
     achieved_time: int
     def __init__(self, id: _Optional[int] = ..., counter: _Optional[int] = ..., achieved: bool = ..., rewarded: bool = ..., achieved_time: _Optional[int] = ...) -> None: ...
+
+class BadgeAchieveProgress(_message.Message):
+    __slots__ = ["id", "counter", "achieved_counter", "achieved_time"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    COUNTER_FIELD_NUMBER: _ClassVar[int]
+    ACHIEVED_COUNTER_FIELD_NUMBER: _ClassVar[int]
+    ACHIEVED_TIME_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    counter: int
+    achieved_counter: int
+    achieved_time: int
+    def __init__(self, id: _Optional[int] = ..., counter: _Optional[int] = ..., achieved_counter: _Optional[int] = ..., achieved_time: _Optional[int] = ...) -> None: ...
 
 class AccountStatisticByGameMode(_message.Message):
     __slots__ = ["mode", "game_count_sum", "game_final_position", "fly_count", "gold_earn_sum", "round_count_sum", "dadian_sum", "round_end", "ming_count_sum", "liqi_count_sum", "xun_count_sum", "highest_lianzhuang", "score_earn_sum", "rank_score"]
@@ -1542,7 +1651,7 @@ class AccountShiLian(_message.Message):
     def __init__(self, step: _Optional[int] = ..., state: _Optional[int] = ...) -> None: ...
 
 class ClientDeviceInfo(_message.Message):
-    __slots__ = ["platform", "hardware", "os", "os_version", "is_browser", "software", "sale_platform", "hardware_vendor", "model_number", "screen_width", "screen_height"]
+    __slots__ = ["platform", "hardware", "os", "os_version", "is_browser", "software", "sale_platform", "hardware_vendor", "model_number", "screen_width", "screen_height", "user_agent", "screen_type"]
     PLATFORM_FIELD_NUMBER: _ClassVar[int]
     HARDWARE_FIELD_NUMBER: _ClassVar[int]
     OS_FIELD_NUMBER: _ClassVar[int]
@@ -1554,6 +1663,8 @@ class ClientDeviceInfo(_message.Message):
     MODEL_NUMBER_FIELD_NUMBER: _ClassVar[int]
     SCREEN_WIDTH_FIELD_NUMBER: _ClassVar[int]
     SCREEN_HEIGHT_FIELD_NUMBER: _ClassVar[int]
+    USER_AGENT_FIELD_NUMBER: _ClassVar[int]
+    SCREEN_TYPE_FIELD_NUMBER: _ClassVar[int]
     platform: str
     hardware: str
     os: str
@@ -1565,7 +1676,9 @@ class ClientDeviceInfo(_message.Message):
     model_number: str
     screen_width: int
     screen_height: int
-    def __init__(self, platform: _Optional[str] = ..., hardware: _Optional[str] = ..., os: _Optional[str] = ..., os_version: _Optional[str] = ..., is_browser: bool = ..., software: _Optional[str] = ..., sale_platform: _Optional[str] = ..., hardware_vendor: _Optional[str] = ..., model_number: _Optional[str] = ..., screen_width: _Optional[int] = ..., screen_height: _Optional[int] = ...) -> None: ...
+    user_agent: str
+    screen_type: int
+    def __init__(self, platform: _Optional[str] = ..., hardware: _Optional[str] = ..., os: _Optional[str] = ..., os_version: _Optional[str] = ..., is_browser: bool = ..., software: _Optional[str] = ..., sale_platform: _Optional[str] = ..., hardware_vendor: _Optional[str] = ..., model_number: _Optional[str] = ..., screen_width: _Optional[int] = ..., screen_height: _Optional[int] = ..., user_agent: _Optional[str] = ..., screen_type: _Optional[int] = ...) -> None: ...
 
 class ClientVersionInfo(_message.Message):
     __slots__ = ["resource", "package"]
@@ -1588,18 +1701,20 @@ class Announcement(_message.Message):
     def __init__(self, id: _Optional[int] = ..., title: _Optional[str] = ..., content: _Optional[str] = ..., header_image: _Optional[str] = ...) -> None: ...
 
 class TaskProgress(_message.Message):
-    __slots__ = ["id", "counter", "achieved", "rewarded", "failed"]
+    __slots__ = ["id", "counter", "achieved", "rewarded", "failed", "rewarded_time"]
     ID_FIELD_NUMBER: _ClassVar[int]
     COUNTER_FIELD_NUMBER: _ClassVar[int]
     ACHIEVED_FIELD_NUMBER: _ClassVar[int]
     REWARDED_FIELD_NUMBER: _ClassVar[int]
     FAILED_FIELD_NUMBER: _ClassVar[int]
+    REWARDED_TIME_FIELD_NUMBER: _ClassVar[int]
     id: int
     counter: int
     achieved: bool
     rewarded: bool
     failed: bool
-    def __init__(self, id: _Optional[int] = ..., counter: _Optional[int] = ..., achieved: bool = ..., rewarded: bool = ..., failed: bool = ...) -> None: ...
+    rewarded_time: int
+    def __init__(self, id: _Optional[int] = ..., counter: _Optional[int] = ..., achieved: bool = ..., rewarded: bool = ..., failed: bool = ..., rewarded_time: _Optional[int] = ...) -> None: ...
 
 class GameConfig(_message.Message):
     __slots__ = ["category", "mode", "meta"]
@@ -1724,7 +1839,7 @@ class MineActivityData(_message.Message):
     def __init__(self, dig_point: _Optional[_Iterable[_Union[Point, _Mapping]]] = ..., map: _Optional[_Iterable[_Union[MineReward, _Mapping]]] = ..., id: _Optional[int] = ...) -> None: ...
 
 class AccountActivityUpdate(_message.Message):
-    __slots__ = ["mine_data", "rpg_data", "feed_data", "spot_data", "friend_gift_data", "upgrade_data", "gacha_data"]
+    __slots__ = ["mine_data", "rpg_data", "feed_data", "spot_data", "friend_gift_data", "upgrade_data", "gacha_data", "simulation_data", "combining_data", "village_data", "festival_data", "island_data", "story_data", "choose_up_data", "simulation_v2_data"]
     MINE_DATA_FIELD_NUMBER: _ClassVar[int]
     RPG_DATA_FIELD_NUMBER: _ClassVar[int]
     FEED_DATA_FIELD_NUMBER: _ClassVar[int]
@@ -1732,6 +1847,14 @@ class AccountActivityUpdate(_message.Message):
     FRIEND_GIFT_DATA_FIELD_NUMBER: _ClassVar[int]
     UPGRADE_DATA_FIELD_NUMBER: _ClassVar[int]
     GACHA_DATA_FIELD_NUMBER: _ClassVar[int]
+    SIMULATION_DATA_FIELD_NUMBER: _ClassVar[int]
+    COMBINING_DATA_FIELD_NUMBER: _ClassVar[int]
+    VILLAGE_DATA_FIELD_NUMBER: _ClassVar[int]
+    FESTIVAL_DATA_FIELD_NUMBER: _ClassVar[int]
+    ISLAND_DATA_FIELD_NUMBER: _ClassVar[int]
+    STORY_DATA_FIELD_NUMBER: _ClassVar[int]
+    CHOOSE_UP_DATA_FIELD_NUMBER: _ClassVar[int]
+    SIMULATION_V2_DATA_FIELD_NUMBER: _ClassVar[int]
     mine_data: _containers.RepeatedCompositeFieldContainer[MineActivityData]
     rpg_data: _containers.RepeatedCompositeFieldContainer[RPGActivity]
     feed_data: _containers.RepeatedCompositeFieldContainer[ActivityFeedData]
@@ -1739,7 +1862,15 @@ class AccountActivityUpdate(_message.Message):
     friend_gift_data: _containers.RepeatedCompositeFieldContainer[ActivityFriendGiftData]
     upgrade_data: _containers.RepeatedCompositeFieldContainer[ActivityUpgradeData]
     gacha_data: _containers.RepeatedCompositeFieldContainer[ActivityGachaUpdateData]
-    def __init__(self, mine_data: _Optional[_Iterable[_Union[MineActivityData, _Mapping]]] = ..., rpg_data: _Optional[_Iterable[_Union[RPGActivity, _Mapping]]] = ..., feed_data: _Optional[_Iterable[_Union[ActivityFeedData, _Mapping]]] = ..., spot_data: _Optional[_Iterable[_Union[ActivitySpotData, _Mapping]]] = ..., friend_gift_data: _Optional[_Iterable[_Union[ActivityFriendGiftData, _Mapping]]] = ..., upgrade_data: _Optional[_Iterable[_Union[ActivityUpgradeData, _Mapping]]] = ..., gacha_data: _Optional[_Iterable[_Union[ActivityGachaUpdateData, _Mapping]]] = ...) -> None: ...
+    simulation_data: _containers.RepeatedCompositeFieldContainer[ActivitySimulationData]
+    combining_data: _containers.RepeatedCompositeFieldContainer[ActivityCombiningLQData]
+    village_data: _containers.RepeatedCompositeFieldContainer[ActivityVillageData]
+    festival_data: _containers.RepeatedCompositeFieldContainer[ActivityFestivalData]
+    island_data: _containers.RepeatedCompositeFieldContainer[ActivityIslandData]
+    story_data: _containers.RepeatedCompositeFieldContainer[ActivityStoryData]
+    choose_up_data: _containers.RepeatedCompositeFieldContainer[ActivityChooseUpData]
+    simulation_v2_data: _containers.RepeatedCompositeFieldContainer[SimulationV2Data]
+    def __init__(self, mine_data: _Optional[_Iterable[_Union[MineActivityData, _Mapping]]] = ..., rpg_data: _Optional[_Iterable[_Union[RPGActivity, _Mapping]]] = ..., feed_data: _Optional[_Iterable[_Union[ActivityFeedData, _Mapping]]] = ..., spot_data: _Optional[_Iterable[_Union[ActivitySpotData, _Mapping]]] = ..., friend_gift_data: _Optional[_Iterable[_Union[ActivityFriendGiftData, _Mapping]]] = ..., upgrade_data: _Optional[_Iterable[_Union[ActivityUpgradeData, _Mapping]]] = ..., gacha_data: _Optional[_Iterable[_Union[ActivityGachaUpdateData, _Mapping]]] = ..., simulation_data: _Optional[_Iterable[_Union[ActivitySimulationData, _Mapping]]] = ..., combining_data: _Optional[_Iterable[_Union[ActivityCombiningLQData, _Mapping]]] = ..., village_data: _Optional[_Iterable[_Union[ActivityVillageData, _Mapping]]] = ..., festival_data: _Optional[_Iterable[_Union[ActivityFestivalData, _Mapping]]] = ..., island_data: _Optional[_Iterable[_Union[ActivityIslandData, _Mapping]]] = ..., story_data: _Optional[_Iterable[_Union[ActivityStoryData, _Mapping]]] = ..., choose_up_data: _Optional[_Iterable[_Union[ActivityChooseUpData, _Mapping]]] = ..., simulation_v2_data: _Optional[_Iterable[_Union[SimulationV2Data, _Mapping]]] = ...) -> None: ...
 
 class ActivityCombiningWorkbench(_message.Message):
     __slots__ = ["craft_id", "pos"]
@@ -1750,7 +1881,7 @@ class ActivityCombiningWorkbench(_message.Message):
     def __init__(self, craft_id: _Optional[int] = ..., pos: _Optional[int] = ...) -> None: ...
 
 class ActivityCombiningMenuData(_message.Message):
-    __slots__ = ["menu_group", "generated"]
+    __slots__ = ["menu_group", "generated", "multi_generated"]
     class MenuRequire(_message.Message):
         __slots__ = ["level", "count"]
         LEVEL_FIELD_NUMBER: _ClassVar[int]
@@ -1760,35 +1891,43 @@ class ActivityCombiningMenuData(_message.Message):
         def __init__(self, level: _Optional[int] = ..., count: _Optional[int] = ...) -> None: ...
     MENU_GROUP_FIELD_NUMBER: _ClassVar[int]
     GENERATED_FIELD_NUMBER: _ClassVar[int]
+    MULTI_GENERATED_FIELD_NUMBER: _ClassVar[int]
     menu_group: int
     generated: _containers.RepeatedCompositeFieldContainer[ActivityCombiningMenuData.MenuRequire]
-    def __init__(self, menu_group: _Optional[int] = ..., generated: _Optional[_Iterable[_Union[ActivityCombiningMenuData.MenuRequire, _Mapping]]] = ...) -> None: ...
+    multi_generated: _containers.RepeatedCompositeFieldContainer[ActivityCombiningMenuData.MenuRequire]
+    def __init__(self, menu_group: _Optional[int] = ..., generated: _Optional[_Iterable[_Union[ActivityCombiningMenuData.MenuRequire, _Mapping]]] = ..., multi_generated: _Optional[_Iterable[_Union[ActivityCombiningMenuData.MenuRequire, _Mapping]]] = ...) -> None: ...
 
 class ActivityCombiningOrderData(_message.Message):
-    __slots__ = ["id", "pos", "craft_id", "unlock_day"]
+    __slots__ = ["id", "pos", "unlock_day", "char_id", "finished_craft_id", "craft_id"]
     ID_FIELD_NUMBER: _ClassVar[int]
     POS_FIELD_NUMBER: _ClassVar[int]
-    CRAFT_ID_FIELD_NUMBER: _ClassVar[int]
     UNLOCK_DAY_FIELD_NUMBER: _ClassVar[int]
+    CHAR_ID_FIELD_NUMBER: _ClassVar[int]
+    FINISHED_CRAFT_ID_FIELD_NUMBER: _ClassVar[int]
+    CRAFT_ID_FIELD_NUMBER: _ClassVar[int]
     id: int
     pos: int
-    craft_id: int
     unlock_day: int
-    def __init__(self, id: _Optional[int] = ..., pos: _Optional[int] = ..., craft_id: _Optional[int] = ..., unlock_day: _Optional[int] = ...) -> None: ...
+    char_id: int
+    finished_craft_id: _containers.RepeatedScalarFieldContainer[int]
+    craft_id: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, id: _Optional[int] = ..., pos: _Optional[int] = ..., unlock_day: _Optional[int] = ..., char_id: _Optional[int] = ..., finished_craft_id: _Optional[_Iterable[int]] = ..., craft_id: _Optional[_Iterable[int]] = ...) -> None: ...
 
 class ActivityCombiningLQData(_message.Message):
-    __slots__ = ["activity_id", "workbench", "orders", "recycle_bin", "unlocked_craft"]
+    __slots__ = ["activity_id", "workbench", "orders", "recycle_bin", "unlocked_craft", "daily_bonus_count"]
     ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
     WORKBENCH_FIELD_NUMBER: _ClassVar[int]
     ORDERS_FIELD_NUMBER: _ClassVar[int]
     RECYCLE_BIN_FIELD_NUMBER: _ClassVar[int]
     UNLOCKED_CRAFT_FIELD_NUMBER: _ClassVar[int]
+    DAILY_BONUS_COUNT_FIELD_NUMBER: _ClassVar[int]
     activity_id: int
     workbench: _containers.RepeatedCompositeFieldContainer[ActivityCombiningWorkbench]
     orders: _containers.RepeatedCompositeFieldContainer[ActivityCombiningOrderData]
     recycle_bin: ActivityCombiningWorkbench
     unlocked_craft: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, activity_id: _Optional[int] = ..., workbench: _Optional[_Iterable[_Union[ActivityCombiningWorkbench, _Mapping]]] = ..., orders: _Optional[_Iterable[_Union[ActivityCombiningOrderData, _Mapping]]] = ..., recycle_bin: _Optional[_Union[ActivityCombiningWorkbench, _Mapping]] = ..., unlocked_craft: _Optional[_Iterable[int]] = ...) -> None: ...
+    daily_bonus_count: int
+    def __init__(self, activity_id: _Optional[int] = ..., workbench: _Optional[_Iterable[_Union[ActivityCombiningWorkbench, _Mapping]]] = ..., orders: _Optional[_Iterable[_Union[ActivityCombiningOrderData, _Mapping]]] = ..., recycle_bin: _Optional[_Union[ActivityCombiningWorkbench, _Mapping]] = ..., unlocked_craft: _Optional[_Iterable[int]] = ..., daily_bonus_count: _Optional[int] = ...) -> None: ...
 
 class ActivityCombiningPoolData(_message.Message):
     __slots__ = ["group", "count"]
@@ -1829,6 +1968,186 @@ class ActivityCombiningData(_message.Message):
     order_pool: _containers.RepeatedCompositeFieldContainer[ActivityCombiningPoolData]
     def __init__(self, activity_id: _Optional[int] = ..., workbench: _Optional[_Iterable[_Union[ActivityCombiningWorkbench, _Mapping]]] = ..., orders: _Optional[_Iterable[_Union[ActivityCombiningOrderData, _Mapping]]] = ..., recycle_bin: _Optional[_Union[ActivityCombiningWorkbench, _Mapping]] = ..., menu: _Optional[_Union[ActivityCombiningMenuData, _Mapping]] = ..., current_order_id: _Optional[int] = ..., bonus: _Optional[_Union[ActivityCombiningData.BonusData, _Mapping]] = ..., unlocked_craft: _Optional[_Iterable[int]] = ..., craft_pool: _Optional[_Iterable[_Union[ActivityCombiningPoolData, _Mapping]]] = ..., order_pool: _Optional[_Iterable[_Union[ActivityCombiningPoolData, _Mapping]]] = ...) -> None: ...
 
+class VillageReward(_message.Message):
+    __slots__ = ["id", "count"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    count: int
+    def __init__(self, id: _Optional[int] = ..., count: _Optional[int] = ...) -> None: ...
+
+class VillageBuildingData(_message.Message):
+    __slots__ = ["id", "reward", "workers"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    REWARD_FIELD_NUMBER: _ClassVar[int]
+    WORKERS_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    reward: _containers.RepeatedCompositeFieldContainer[VillageReward]
+    workers: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, id: _Optional[int] = ..., reward: _Optional[_Iterable[_Union[VillageReward, _Mapping]]] = ..., workers: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class VillageTripData(_message.Message):
+    __slots__ = ["start_round", "dest_id", "reward", "level", "info"]
+    START_ROUND_FIELD_NUMBER: _ClassVar[int]
+    DEST_ID_FIELD_NUMBER: _ClassVar[int]
+    REWARD_FIELD_NUMBER: _ClassVar[int]
+    LEVEL_FIELD_NUMBER: _ClassVar[int]
+    INFO_FIELD_NUMBER: _ClassVar[int]
+    start_round: int
+    dest_id: int
+    reward: _containers.RepeatedCompositeFieldContainer[VillageReward]
+    level: int
+    info: VillageTargetInfo
+    def __init__(self, start_round: _Optional[int] = ..., dest_id: _Optional[int] = ..., reward: _Optional[_Iterable[_Union[VillageReward, _Mapping]]] = ..., level: _Optional[int] = ..., info: _Optional[_Union[VillageTargetInfo, _Mapping]] = ...) -> None: ...
+
+class VillageTaskData(_message.Message):
+    __slots__ = ["id", "completed_count"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    COMPLETED_COUNT_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    completed_count: int
+    def __init__(self, id: _Optional[int] = ..., completed_count: _Optional[int] = ...) -> None: ...
+
+class VillageTargetInfo(_message.Message):
+    __slots__ = ["nickname", "avatar", "avatar_frame", "title", "verified"]
+    NICKNAME_FIELD_NUMBER: _ClassVar[int]
+    AVATAR_FIELD_NUMBER: _ClassVar[int]
+    AVATAR_FRAME_FIELD_NUMBER: _ClassVar[int]
+    TITLE_FIELD_NUMBER: _ClassVar[int]
+    VERIFIED_FIELD_NUMBER: _ClassVar[int]
+    nickname: str
+    avatar: int
+    avatar_frame: int
+    title: int
+    verified: int
+    def __init__(self, nickname: _Optional[str] = ..., avatar: _Optional[int] = ..., avatar_frame: _Optional[int] = ..., title: _Optional[int] = ..., verified: _Optional[int] = ...) -> None: ...
+
+class ActivityVillageData(_message.Message):
+    __slots__ = ["activity_id", "buildings", "trip", "tasks", "round"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    BUILDINGS_FIELD_NUMBER: _ClassVar[int]
+    TRIP_FIELD_NUMBER: _ClassVar[int]
+    TASKS_FIELD_NUMBER: _ClassVar[int]
+    ROUND_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    buildings: _containers.RepeatedCompositeFieldContainer[VillageBuildingData]
+    trip: _containers.RepeatedCompositeFieldContainer[VillageTripData]
+    tasks: _containers.RepeatedCompositeFieldContainer[VillageTaskData]
+    round: int
+    def __init__(self, activity_id: _Optional[int] = ..., buildings: _Optional[_Iterable[_Union[VillageBuildingData, _Mapping]]] = ..., trip: _Optional[_Iterable[_Union[VillageTripData, _Mapping]]] = ..., tasks: _Optional[_Iterable[_Union[VillageTaskData, _Mapping]]] = ..., round: _Optional[int] = ...) -> None: ...
+
+class TimeCounterData(_message.Message):
+    __slots__ = ["count", "update_time"]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_TIME_FIELD_NUMBER: _ClassVar[int]
+    count: int
+    update_time: int
+    def __init__(self, count: _Optional[int] = ..., update_time: _Optional[int] = ...) -> None: ...
+
+class SignedTimeCounterData(_message.Message):
+    __slots__ = ["count", "update_time"]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_TIME_FIELD_NUMBER: _ClassVar[int]
+    count: int
+    update_time: int
+    def __init__(self, count: _Optional[int] = ..., update_time: _Optional[int] = ...) -> None: ...
+
+class FestivalProposalData(_message.Message):
+    __slots__ = ["id", "proposal_id", "pos"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    PROPOSAL_ID_FIELD_NUMBER: _ClassVar[int]
+    POS_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    proposal_id: int
+    pos: int
+    def __init__(self, id: _Optional[int] = ..., proposal_id: _Optional[int] = ..., pos: _Optional[int] = ...) -> None: ...
+
+class ActivityFestivalData(_message.Message):
+    __slots__ = ["activity_id", "level", "proposal_list", "event_list", "buy_record"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    LEVEL_FIELD_NUMBER: _ClassVar[int]
+    PROPOSAL_LIST_FIELD_NUMBER: _ClassVar[int]
+    EVENT_LIST_FIELD_NUMBER: _ClassVar[int]
+    BUY_RECORD_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    level: int
+    proposal_list: _containers.RepeatedCompositeFieldContainer[FestivalProposalData]
+    event_list: _containers.RepeatedScalarFieldContainer[int]
+    buy_record: SignedTimeCounterData
+    def __init__(self, activity_id: _Optional[int] = ..., level: _Optional[int] = ..., proposal_list: _Optional[_Iterable[_Union[FestivalProposalData, _Mapping]]] = ..., event_list: _Optional[_Iterable[int]] = ..., buy_record: _Optional[_Union[SignedTimeCounterData, _Mapping]] = ...) -> None: ...
+
+class SimulationV2Data(_message.Message):
+    __slots__ = ["activity_id", "season", "highest_score", "upgrade", "event_pool", "season_count"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    SEASON_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_SCORE_FIELD_NUMBER: _ClassVar[int]
+    UPGRADE_FIELD_NUMBER: _ClassVar[int]
+    EVENT_POOL_FIELD_NUMBER: _ClassVar[int]
+    SEASON_COUNT_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    season: SimulationV2SeasonData
+    highest_score: int
+    upgrade: SimulationV2Ability
+    event_pool: _containers.RepeatedScalarFieldContainer[int]
+    season_count: int
+    def __init__(self, activity_id: _Optional[int] = ..., season: _Optional[_Union[SimulationV2SeasonData, _Mapping]] = ..., highest_score: _Optional[int] = ..., upgrade: _Optional[_Union[SimulationV2Ability, _Mapping]] = ..., event_pool: _Optional[_Iterable[int]] = ..., season_count: _Optional[int] = ...) -> None: ...
+
+class IslandBagItemData(_message.Message):
+    __slots__ = ["id", "pos", "rotate", "goods_id", "price"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    POS_FIELD_NUMBER: _ClassVar[int]
+    ROTATE_FIELD_NUMBER: _ClassVar[int]
+    GOODS_ID_FIELD_NUMBER: _ClassVar[int]
+    PRICE_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    pos: _containers.RepeatedScalarFieldContainer[int]
+    rotate: int
+    goods_id: int
+    price: int
+    def __init__(self, id: _Optional[int] = ..., pos: _Optional[_Iterable[int]] = ..., rotate: _Optional[int] = ..., goods_id: _Optional[int] = ..., price: _Optional[int] = ...) -> None: ...
+
+class IslandBagData(_message.Message):
+    __slots__ = ["id", "matrix", "items"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    MATRIX_FIELD_NUMBER: _ClassVar[int]
+    ITEMS_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    matrix: str
+    items: _containers.RepeatedCompositeFieldContainer[IslandBagItemData]
+    def __init__(self, id: _Optional[int] = ..., matrix: _Optional[str] = ..., items: _Optional[_Iterable[_Union[IslandBagItemData, _Mapping]]] = ...) -> None: ...
+
+class IslandGoodsData(_message.Message):
+    __slots__ = ["goods_id", "count", "update_time"]
+    GOODS_ID_FIELD_NUMBER: _ClassVar[int]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_TIME_FIELD_NUMBER: _ClassVar[int]
+    goods_id: int
+    count: int
+    update_time: int
+    def __init__(self, goods_id: _Optional[int] = ..., count: _Optional[int] = ..., update_time: _Optional[int] = ...) -> None: ...
+
+class IslandZoneData(_message.Message):
+    __slots__ = ["id", "currency_used", "goods_records"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    CURRENCY_USED_FIELD_NUMBER: _ClassVar[int]
+    GOODS_RECORDS_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    currency_used: SignedTimeCounterData
+    goods_records: _containers.RepeatedCompositeFieldContainer[IslandGoodsData]
+    def __init__(self, id: _Optional[int] = ..., currency_used: _Optional[_Union[SignedTimeCounterData, _Mapping]] = ..., goods_records: _Optional[_Iterable[_Union[IslandGoodsData, _Mapping]]] = ...) -> None: ...
+
+class ActivityIslandData(_message.Message):
+    __slots__ = ["activity_id", "zone", "bags", "zones"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    ZONE_FIELD_NUMBER: _ClassVar[int]
+    BAGS_FIELD_NUMBER: _ClassVar[int]
+    ZONES_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    zone: int
+    bags: _containers.RepeatedCompositeFieldContainer[IslandBagData]
+    zones: _containers.RepeatedCompositeFieldContainer[IslandZoneData]
+    def __init__(self, activity_id: _Optional[int] = ..., zone: _Optional[int] = ..., bags: _Optional[_Iterable[_Union[IslandBagData, _Mapping]]] = ..., zones: _Optional[_Iterable[_Union[IslandZoneData, _Mapping]]] = ...) -> None: ...
+
 class ActivityFeedData(_message.Message):
     __slots__ = ["activity_id", "feed_count", "friend_receive_data", "friend_send_data", "gift_inbox", "max_inbox_id"]
     class CountWithTimeData(_message.Message):
@@ -1866,6 +2185,48 @@ class ActivityFeedData(_message.Message):
     gift_inbox: _containers.RepeatedCompositeFieldContainer[ActivityFeedData.GiftBoxData]
     max_inbox_id: int
     def __init__(self, activity_id: _Optional[int] = ..., feed_count: _Optional[int] = ..., friend_receive_data: _Optional[_Union[ActivityFeedData.CountWithTimeData, _Mapping]] = ..., friend_send_data: _Optional[_Union[ActivityFeedData.CountWithTimeData, _Mapping]] = ..., gift_inbox: _Optional[_Iterable[_Union[ActivityFeedData.GiftBoxData, _Mapping]]] = ..., max_inbox_id: _Optional[int] = ...) -> None: ...
+
+class UnlockedStoryData(_message.Message):
+    __slots__ = ["story_id", "finished_ending", "rewarded_ending", "finish_rewarded", "all_finish_rewarded"]
+    STORY_ID_FIELD_NUMBER: _ClassVar[int]
+    FINISHED_ENDING_FIELD_NUMBER: _ClassVar[int]
+    REWARDED_ENDING_FIELD_NUMBER: _ClassVar[int]
+    FINISH_REWARDED_FIELD_NUMBER: _ClassVar[int]
+    ALL_FINISH_REWARDED_FIELD_NUMBER: _ClassVar[int]
+    story_id: int
+    finished_ending: _containers.RepeatedScalarFieldContainer[int]
+    rewarded_ending: _containers.RepeatedScalarFieldContainer[int]
+    finish_rewarded: int
+    all_finish_rewarded: int
+    def __init__(self, story_id: _Optional[int] = ..., finished_ending: _Optional[_Iterable[int]] = ..., rewarded_ending: _Optional[_Iterable[int]] = ..., finish_rewarded: _Optional[int] = ..., all_finish_rewarded: _Optional[int] = ...) -> None: ...
+
+class ActivityStoryData(_message.Message):
+    __slots__ = ["activity_id", "unlocked_story"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    UNLOCKED_STORY_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    unlocked_story: _containers.RepeatedCompositeFieldContainer[UnlockedStoryData]
+    def __init__(self, activity_id: _Optional[int] = ..., unlocked_story: _Optional[_Iterable[_Union[UnlockedStoryData, _Mapping]]] = ...) -> None: ...
+
+class ActivityProgressRewardData(_message.Message):
+    __slots__ = ["activity_id", "rewarded_progresses"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    REWARDED_PROGRESSES_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    rewarded_progresses: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, activity_id: _Optional[int] = ..., rewarded_progresses: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class ActivityChooseUpData(_message.Message):
+    __slots__ = ["activity_id", "chest_id", "selection", "is_end"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    CHEST_ID_FIELD_NUMBER: _ClassVar[int]
+    SELECTION_FIELD_NUMBER: _ClassVar[int]
+    IS_END_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    chest_id: int
+    selection: int
+    is_end: int
+    def __init__(self, activity_id: _Optional[int] = ..., chest_id: _Optional[int] = ..., selection: _Optional[int] = ..., is_end: _Optional[int] = ...) -> None: ...
 
 class ActivityFriendGiftData(_message.Message):
     __slots__ = ["activity_id", "max_inbox_id", "receive_data", "send_data", "gift_inbox"]
@@ -2015,14 +2376,16 @@ class ActivitySimulationData(_message.Message):
 class ActivitySpotData(_message.Message):
     __slots__ = ["activity_id", "spots"]
     class SpotData(_message.Message):
-        __slots__ = ["unique_id", "rewarded", "unlocked_ending"]
+        __slots__ = ["unique_id", "rewarded", "unlocked_ending", "unlocked"]
         UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
         REWARDED_FIELD_NUMBER: _ClassVar[int]
         UNLOCKED_ENDING_FIELD_NUMBER: _ClassVar[int]
+        UNLOCKED_FIELD_NUMBER: _ClassVar[int]
         unique_id: int
         rewarded: int
         unlocked_ending: _containers.RepeatedScalarFieldContainer[int]
-        def __init__(self, unique_id: _Optional[int] = ..., rewarded: _Optional[int] = ..., unlocked_ending: _Optional[_Iterable[int]] = ...) -> None: ...
+        unlocked: int
+        def __init__(self, unique_id: _Optional[int] = ..., rewarded: _Optional[int] = ..., unlocked_ending: _Optional[_Iterable[int]] = ..., unlocked: _Optional[int] = ...) -> None: ...
     ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
     SPOTS_FIELD_NUMBER: _ClassVar[int]
     activity_id: int
@@ -2044,12 +2407,14 @@ class AccountActiveState(_message.Message):
     def __init__(self, account_id: _Optional[int] = ..., login_time: _Optional[int] = ..., logout_time: _Optional[int] = ..., is_online: bool = ..., playing: _Optional[_Union[AccountPlayingGame, _Mapping]] = ...) -> None: ...
 
 class Friend(_message.Message):
-    __slots__ = ["base", "state"]
+    __slots__ = ["base", "state", "remark"]
     BASE_FIELD_NUMBER: _ClassVar[int]
     STATE_FIELD_NUMBER: _ClassVar[int]
+    REMARK_FIELD_NUMBER: _ClassVar[int]
     base: PlayerBaseView
     state: AccountActiveState
-    def __init__(self, base: _Optional[_Union[PlayerBaseView, _Mapping]] = ..., state: _Optional[_Union[AccountActiveState, _Mapping]] = ...) -> None: ...
+    remark: str
+    def __init__(self, base: _Optional[_Union[PlayerBaseView, _Mapping]] = ..., state: _Optional[_Union[AccountActiveState, _Mapping]] = ..., remark: _Optional[str] = ...) -> None: ...
 
 class Point(_message.Message):
     __slots__ = ["x", "y"]
@@ -2138,20 +2503,26 @@ class CommentItem(_message.Message):
     def __init__(self, comment_id: _Optional[int] = ..., timestamp: _Optional[int] = ..., commenter: _Optional[_Union[PlayerBaseView, _Mapping]] = ..., content: _Optional[str] = ..., is_banned: _Optional[int] = ...) -> None: ...
 
 class RollingNotice(_message.Message):
-    __slots__ = ["id", "content", "start_time", "end_time", "repeat_interval", "lang"]
-    ID_FIELD_NUMBER: _ClassVar[int]
+    __slots__ = ["content", "start_time", "end_time", "repeat_interval", "repeat_time", "repeat_type"]
     CONTENT_FIELD_NUMBER: _ClassVar[int]
     START_TIME_FIELD_NUMBER: _ClassVar[int]
     END_TIME_FIELD_NUMBER: _ClassVar[int]
     REPEAT_INTERVAL_FIELD_NUMBER: _ClassVar[int]
-    LANG_FIELD_NUMBER: _ClassVar[int]
-    id: int
+    REPEAT_TIME_FIELD_NUMBER: _ClassVar[int]
+    REPEAT_TYPE_FIELD_NUMBER: _ClassVar[int]
     content: str
     start_time: int
     end_time: int
     repeat_interval: int
-    lang: str
-    def __init__(self, id: _Optional[int] = ..., content: _Optional[str] = ..., start_time: _Optional[int] = ..., end_time: _Optional[int] = ..., repeat_interval: _Optional[int] = ..., lang: _Optional[str] = ...) -> None: ...
+    repeat_time: _containers.RepeatedScalarFieldContainer[int]
+    repeat_type: int
+    def __init__(self, content: _Optional[str] = ..., start_time: _Optional[int] = ..., end_time: _Optional[int] = ..., repeat_interval: _Optional[int] = ..., repeat_time: _Optional[_Iterable[int]] = ..., repeat_type: _Optional[int] = ...) -> None: ...
+
+class MaintainNotice(_message.Message):
+    __slots__ = ["maintain_time"]
+    MAINTAIN_TIME_FIELD_NUMBER: _ClassVar[int]
+    maintain_time: int
+    def __init__(self, maintain_time: _Optional[int] = ...) -> None: ...
 
 class BillingGoods(_message.Message):
     __slots__ = ["id", "name", "desc", "icon", "resource_id", "resource_count"]
@@ -2288,18 +2659,20 @@ class NicknameSetting(_message.Message):
 class PaymentSettingV2(_message.Message):
     __slots__ = ["open_payment", "payment_platforms"]
     class PaymentMaintain(_message.Message):
-        __slots__ = ["start_time", "end_time", "goods_click_action", "goods_click_text"]
+        __slots__ = ["start_time", "end_time", "goods_click_action", "goods_click_text", "enabled_channel"]
         START_TIME_FIELD_NUMBER: _ClassVar[int]
         END_TIME_FIELD_NUMBER: _ClassVar[int]
         GOODS_CLICK_ACTION_FIELD_NUMBER: _ClassVar[int]
         GOODS_CLICK_TEXT_FIELD_NUMBER: _ClassVar[int]
+        ENABLED_CHANNEL_FIELD_NUMBER: _ClassVar[int]
         start_time: int
         end_time: int
         goods_click_action: int
         goods_click_text: str
-        def __init__(self, start_time: _Optional[int] = ..., end_time: _Optional[int] = ..., goods_click_action: _Optional[int] = ..., goods_click_text: _Optional[str] = ...) -> None: ...
+        enabled_channel: _containers.RepeatedScalarFieldContainer[str]
+        def __init__(self, start_time: _Optional[int] = ..., end_time: _Optional[int] = ..., goods_click_action: _Optional[int] = ..., goods_click_text: _Optional[str] = ..., enabled_channel: _Optional[_Iterable[str]] = ...) -> None: ...
     class PaymentSettingUnit(_message.Message):
-        __slots__ = ["platform", "is_show", "goods_click_action", "goods_click_text", "maintain", "enable_for_frozen_account", "extra_data"]
+        __slots__ = ["platform", "is_show", "goods_click_action", "goods_click_text", "maintain", "enable_for_frozen_account", "extra_data", "enabled_channel"]
         PLATFORM_FIELD_NUMBER: _ClassVar[int]
         IS_SHOW_FIELD_NUMBER: _ClassVar[int]
         GOODS_CLICK_ACTION_FIELD_NUMBER: _ClassVar[int]
@@ -2307,6 +2680,7 @@ class PaymentSettingV2(_message.Message):
         MAINTAIN_FIELD_NUMBER: _ClassVar[int]
         ENABLE_FOR_FROZEN_ACCOUNT_FIELD_NUMBER: _ClassVar[int]
         EXTRA_DATA_FIELD_NUMBER: _ClassVar[int]
+        ENABLED_CHANNEL_FIELD_NUMBER: _ClassVar[int]
         platform: str
         is_show: bool
         goods_click_action: int
@@ -2314,7 +2688,8 @@ class PaymentSettingV2(_message.Message):
         maintain: PaymentSettingV2.PaymentMaintain
         enable_for_frozen_account: bool
         extra_data: str
-        def __init__(self, platform: _Optional[str] = ..., is_show: bool = ..., goods_click_action: _Optional[int] = ..., goods_click_text: _Optional[str] = ..., maintain: _Optional[_Union[PaymentSettingV2.PaymentMaintain, _Mapping]] = ..., enable_for_frozen_account: bool = ..., extra_data: _Optional[str] = ...) -> None: ...
+        enabled_channel: _containers.RepeatedScalarFieldContainer[str]
+        def __init__(self, platform: _Optional[str] = ..., is_show: bool = ..., goods_click_action: _Optional[int] = ..., goods_click_text: _Optional[str] = ..., maintain: _Optional[_Union[PaymentSettingV2.PaymentMaintain, _Mapping]] = ..., enable_for_frozen_account: bool = ..., extra_data: _Optional[str] = ..., enabled_channel: _Optional[_Iterable[str]] = ...) -> None: ...
     OPEN_PAYMENT_FIELD_NUMBER: _ClassVar[int]
     PAYMENT_PLATFORMS_FIELD_NUMBER: _ClassVar[int]
     open_payment: int
@@ -2396,7 +2771,7 @@ class FaithData(_message.Message):
     def __init__(self, faith_id: _Optional[int] = ..., total_open_count: _Optional[int] = ..., consume_count: _Optional[int] = ..., modify_count: _Optional[int] = ...) -> None: ...
 
 class CustomizedContestBase(_message.Message):
-    __slots__ = ["unique_id", "contest_id", "contest_name", "state", "creator_id", "create_time", "start_time", "finish_time", "open", "contest_type"]
+    __slots__ = ["unique_id", "contest_id", "contest_name", "state", "creator_id", "create_time", "start_time", "finish_time", "open", "contest_type", "public_notice", "check_state", "checking_name"]
     UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
     CONTEST_ID_FIELD_NUMBER: _ClassVar[int]
     CONTEST_NAME_FIELD_NUMBER: _ClassVar[int]
@@ -2407,6 +2782,9 @@ class CustomizedContestBase(_message.Message):
     FINISH_TIME_FIELD_NUMBER: _ClassVar[int]
     OPEN_FIELD_NUMBER: _ClassVar[int]
     CONTEST_TYPE_FIELD_NUMBER: _ClassVar[int]
+    PUBLIC_NOTICE_FIELD_NUMBER: _ClassVar[int]
+    CHECK_STATE_FIELD_NUMBER: _ClassVar[int]
+    CHECKING_NAME_FIELD_NUMBER: _ClassVar[int]
     unique_id: int
     contest_id: int
     contest_name: str
@@ -2417,7 +2795,10 @@ class CustomizedContestBase(_message.Message):
     finish_time: int
     open: bool
     contest_type: int
-    def __init__(self, unique_id: _Optional[int] = ..., contest_id: _Optional[int] = ..., contest_name: _Optional[str] = ..., state: _Optional[int] = ..., creator_id: _Optional[int] = ..., create_time: _Optional[int] = ..., start_time: _Optional[int] = ..., finish_time: _Optional[int] = ..., open: bool = ..., contest_type: _Optional[int] = ...) -> None: ...
+    public_notice: str
+    check_state: int
+    checking_name: str
+    def __init__(self, unique_id: _Optional[int] = ..., contest_id: _Optional[int] = ..., contest_name: _Optional[str] = ..., state: _Optional[int] = ..., creator_id: _Optional[int] = ..., create_time: _Optional[int] = ..., start_time: _Optional[int] = ..., finish_time: _Optional[int] = ..., open: bool = ..., contest_type: _Optional[int] = ..., public_notice: _Optional[str] = ..., check_state: _Optional[int] = ..., checking_name: _Optional[str] = ...) -> None: ...
 
 class CustomizedContestExtend(_message.Message):
     __slots__ = ["unique_id", "public_notice"]
@@ -2454,7 +2835,7 @@ class CustomizedContestAbstract(_message.Message):
     def __init__(self, unique_id: _Optional[int] = ..., contest_id: _Optional[int] = ..., contest_name: _Optional[str] = ..., state: _Optional[int] = ..., creator_id: _Optional[int] = ..., create_time: _Optional[int] = ..., start_time: _Optional[int] = ..., finish_time: _Optional[int] = ..., open: bool = ..., public_notice: _Optional[str] = ..., contest_type: _Optional[int] = ...) -> None: ...
 
 class CustomizedContestDetail(_message.Message):
-    __slots__ = ["unique_id", "contest_id", "contest_name", "state", "creator_id", "create_time", "start_time", "finish_time", "open", "rank_rule", "game_mode", "private_notice", "observer_switch", "emoji_switch", "contest_type", "disable_broadcast"]
+    __slots__ = ["unique_id", "contest_id", "contest_name", "state", "creator_id", "create_time", "start_time", "finish_time", "open", "rank_rule", "game_mode", "private_notice", "observer_switch", "emoji_switch", "contest_type", "disable_broadcast", "signup_start_time", "signup_end_time", "signup_type", "auto_match"]
     UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
     CONTEST_ID_FIELD_NUMBER: _ClassVar[int]
     CONTEST_NAME_FIELD_NUMBER: _ClassVar[int]
@@ -2471,6 +2852,10 @@ class CustomizedContestDetail(_message.Message):
     EMOJI_SWITCH_FIELD_NUMBER: _ClassVar[int]
     CONTEST_TYPE_FIELD_NUMBER: _ClassVar[int]
     DISABLE_BROADCAST_FIELD_NUMBER: _ClassVar[int]
+    SIGNUP_START_TIME_FIELD_NUMBER: _ClassVar[int]
+    SIGNUP_END_TIME_FIELD_NUMBER: _ClassVar[int]
+    SIGNUP_TYPE_FIELD_NUMBER: _ClassVar[int]
+    AUTO_MATCH_FIELD_NUMBER: _ClassVar[int]
     unique_id: int
     contest_id: int
     contest_name: str
@@ -2487,7 +2872,11 @@ class CustomizedContestDetail(_message.Message):
     emoji_switch: int
     contest_type: int
     disable_broadcast: int
-    def __init__(self, unique_id: _Optional[int] = ..., contest_id: _Optional[int] = ..., contest_name: _Optional[str] = ..., state: _Optional[int] = ..., creator_id: _Optional[int] = ..., create_time: _Optional[int] = ..., start_time: _Optional[int] = ..., finish_time: _Optional[int] = ..., open: bool = ..., rank_rule: _Optional[int] = ..., game_mode: _Optional[_Union[GameMode, _Mapping]] = ..., private_notice: _Optional[str] = ..., observer_switch: _Optional[int] = ..., emoji_switch: _Optional[int] = ..., contest_type: _Optional[int] = ..., disable_broadcast: _Optional[int] = ...) -> None: ...
+    signup_start_time: int
+    signup_end_time: int
+    signup_type: int
+    auto_match: int
+    def __init__(self, unique_id: _Optional[int] = ..., contest_id: _Optional[int] = ..., contest_name: _Optional[str] = ..., state: _Optional[int] = ..., creator_id: _Optional[int] = ..., create_time: _Optional[int] = ..., start_time: _Optional[int] = ..., finish_time: _Optional[int] = ..., open: bool = ..., rank_rule: _Optional[int] = ..., game_mode: _Optional[_Union[GameMode, _Mapping]] = ..., private_notice: _Optional[str] = ..., observer_switch: _Optional[int] = ..., emoji_switch: _Optional[int] = ..., contest_type: _Optional[int] = ..., disable_broadcast: _Optional[int] = ..., signup_start_time: _Optional[int] = ..., signup_end_time: _Optional[int] = ..., signup_type: _Optional[int] = ..., auto_match: _Optional[int] = ...) -> None: ...
 
 class CustomizedContestPlayerReport(_message.Message):
     __slots__ = ["rank_rule", "rank", "point", "game_ranks", "total_game_count"]
@@ -2504,7 +2893,7 @@ class CustomizedContestPlayerReport(_message.Message):
     def __init__(self, rank_rule: _Optional[int] = ..., rank: _Optional[int] = ..., point: _Optional[int] = ..., game_ranks: _Optional[_Iterable[int]] = ..., total_game_count: _Optional[int] = ...) -> None: ...
 
 class RecordGame(_message.Message):
-    __slots__ = ["uuid", "start_time", "end_time", "config", "accounts", "result"]
+    __slots__ = ["uuid", "start_time", "end_time", "config", "accounts", "result", "robots", "standard_rule"]
     class AccountInfo(_message.Message):
         __slots__ = ["account_id", "seat", "nickname", "avatar_id", "character", "title", "level", "level3", "avatar_frame", "verified", "views"]
         ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
@@ -2536,13 +2925,69 @@ class RecordGame(_message.Message):
     CONFIG_FIELD_NUMBER: _ClassVar[int]
     ACCOUNTS_FIELD_NUMBER: _ClassVar[int]
     RESULT_FIELD_NUMBER: _ClassVar[int]
+    ROBOTS_FIELD_NUMBER: _ClassVar[int]
+    STANDARD_RULE_FIELD_NUMBER: _ClassVar[int]
     uuid: str
     start_time: int
     end_time: int
     config: GameConfig
     accounts: _containers.RepeatedCompositeFieldContainer[RecordGame.AccountInfo]
     result: GameEndResult
-    def __init__(self, uuid: _Optional[str] = ..., start_time: _Optional[int] = ..., end_time: _Optional[int] = ..., config: _Optional[_Union[GameConfig, _Mapping]] = ..., accounts: _Optional[_Iterable[_Union[RecordGame.AccountInfo, _Mapping]]] = ..., result: _Optional[_Union[GameEndResult, _Mapping]] = ...) -> None: ...
+    robots: _containers.RepeatedCompositeFieldContainer[RecordGame.AccountInfo]
+    standard_rule: int
+    def __init__(self, uuid: _Optional[str] = ..., start_time: _Optional[int] = ..., end_time: _Optional[int] = ..., config: _Optional[_Union[GameConfig, _Mapping]] = ..., accounts: _Optional[_Iterable[_Union[RecordGame.AccountInfo, _Mapping]]] = ..., result: _Optional[_Union[GameEndResult, _Mapping]] = ..., robots: _Optional[_Iterable[_Union[RecordGame.AccountInfo, _Mapping]]] = ..., standard_rule: _Optional[int] = ...) -> None: ...
+
+class RecordListEntry(_message.Message):
+    __slots__ = ["version", "uuid", "start_time", "end_time", "tag", "subtag", "players", "standard_rule"]
+    VERSION_FIELD_NUMBER: _ClassVar[int]
+    UUID_FIELD_NUMBER: _ClassVar[int]
+    START_TIME_FIELD_NUMBER: _ClassVar[int]
+    END_TIME_FIELD_NUMBER: _ClassVar[int]
+    TAG_FIELD_NUMBER: _ClassVar[int]
+    SUBTAG_FIELD_NUMBER: _ClassVar[int]
+    PLAYERS_FIELD_NUMBER: _ClassVar[int]
+    STANDARD_RULE_FIELD_NUMBER: _ClassVar[int]
+    version: int
+    uuid: str
+    start_time: int
+    end_time: int
+    tag: int
+    subtag: int
+    players: _containers.RepeatedCompositeFieldContainer[RecordPlayerResult]
+    standard_rule: int
+    def __init__(self, version: _Optional[int] = ..., uuid: _Optional[str] = ..., start_time: _Optional[int] = ..., end_time: _Optional[int] = ..., tag: _Optional[int] = ..., subtag: _Optional[int] = ..., players: _Optional[_Iterable[_Union[RecordPlayerResult, _Mapping]]] = ..., standard_rule: _Optional[int] = ...) -> None: ...
+
+class RecordPlayerResult(_message.Message):
+    __slots__ = ["rank", "account_id", "nickname", "level", "level3", "seat", "pt", "point", "max_hu_type", "action_liqi", "action_rong", "action_zimo", "action_chong", "verified"]
+    RANK_FIELD_NUMBER: _ClassVar[int]
+    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
+    NICKNAME_FIELD_NUMBER: _ClassVar[int]
+    LEVEL_FIELD_NUMBER: _ClassVar[int]
+    LEVEL3_FIELD_NUMBER: _ClassVar[int]
+    SEAT_FIELD_NUMBER: _ClassVar[int]
+    PT_FIELD_NUMBER: _ClassVar[int]
+    POINT_FIELD_NUMBER: _ClassVar[int]
+    MAX_HU_TYPE_FIELD_NUMBER: _ClassVar[int]
+    ACTION_LIQI_FIELD_NUMBER: _ClassVar[int]
+    ACTION_RONG_FIELD_NUMBER: _ClassVar[int]
+    ACTION_ZIMO_FIELD_NUMBER: _ClassVar[int]
+    ACTION_CHONG_FIELD_NUMBER: _ClassVar[int]
+    VERIFIED_FIELD_NUMBER: _ClassVar[int]
+    rank: int
+    account_id: int
+    nickname: str
+    level: AccountLevel
+    level3: AccountLevel
+    seat: int
+    pt: int
+    point: int
+    max_hu_type: int
+    action_liqi: int
+    action_rong: int
+    action_zimo: int
+    action_chong: int
+    verified: int
+    def __init__(self, rank: _Optional[int] = ..., account_id: _Optional[int] = ..., nickname: _Optional[str] = ..., level: _Optional[_Union[AccountLevel, _Mapping]] = ..., level3: _Optional[_Union[AccountLevel, _Mapping]] = ..., seat: _Optional[int] = ..., pt: _Optional[int] = ..., point: _Optional[int] = ..., max_hu_type: _Optional[int] = ..., action_liqi: _Optional[int] = ..., action_rong: _Optional[int] = ..., action_zimo: _Optional[int] = ..., action_chong: _Optional[int] = ..., verified: _Optional[int] = ...) -> None: ...
 
 class CustomizedContestGameStart(_message.Message):
     __slots__ = ["players"]
@@ -2615,7 +3060,7 @@ class ActivityRankPointData(_message.Message):
     def __init__(self, leaderboard_id: _Optional[int] = ..., point: _Optional[int] = ..., gained_reward: bool = ..., gainable_time: _Optional[int] = ...) -> None: ...
 
 class GameRoundHuData(_message.Message):
-    __slots__ = ["hupai", "fans", "score", "xun", "title_id", "fan_sum", "fu_sum", "yakuman_count", "biao_dora_count", "red_dora_count", "li_dora_count", "babei_count", "xuan_shang_count"]
+    __slots__ = ["hupai", "fans", "score", "xun", "title_id", "fan_sum", "fu_sum", "yakuman_count", "biao_dora_count", "red_dora_count", "li_dora_count", "babei_count", "xuan_shang_count", "pai_left_count"]
     class HuPai(_message.Message):
         __slots__ = ["tile", "seat", "liqi"]
         TILE_FIELD_NUMBER: _ClassVar[int]
@@ -2647,6 +3092,7 @@ class GameRoundHuData(_message.Message):
     LI_DORA_COUNT_FIELD_NUMBER: _ClassVar[int]
     BABEI_COUNT_FIELD_NUMBER: _ClassVar[int]
     XUAN_SHANG_COUNT_FIELD_NUMBER: _ClassVar[int]
+    PAI_LEFT_COUNT_FIELD_NUMBER: _ClassVar[int]
     hupai: GameRoundHuData.HuPai
     fans: _containers.RepeatedCompositeFieldContainer[GameRoundHuData.Fan]
     score: int
@@ -2660,10 +3106,21 @@ class GameRoundHuData(_message.Message):
     li_dora_count: int
     babei_count: int
     xuan_shang_count: int
-    def __init__(self, hupai: _Optional[_Union[GameRoundHuData.HuPai, _Mapping]] = ..., fans: _Optional[_Iterable[_Union[GameRoundHuData.Fan, _Mapping]]] = ..., score: _Optional[int] = ..., xun: _Optional[int] = ..., title_id: _Optional[int] = ..., fan_sum: _Optional[int] = ..., fu_sum: _Optional[int] = ..., yakuman_count: _Optional[int] = ..., biao_dora_count: _Optional[int] = ..., red_dora_count: _Optional[int] = ..., li_dora_count: _Optional[int] = ..., babei_count: _Optional[int] = ..., xuan_shang_count: _Optional[int] = ...) -> None: ...
+    pai_left_count: int
+    def __init__(self, hupai: _Optional[_Union[GameRoundHuData.HuPai, _Mapping]] = ..., fans: _Optional[_Iterable[_Union[GameRoundHuData.Fan, _Mapping]]] = ..., score: _Optional[int] = ..., xun: _Optional[int] = ..., title_id: _Optional[int] = ..., fan_sum: _Optional[int] = ..., fu_sum: _Optional[int] = ..., yakuman_count: _Optional[int] = ..., biao_dora_count: _Optional[int] = ..., red_dora_count: _Optional[int] = ..., li_dora_count: _Optional[int] = ..., babei_count: _Optional[int] = ..., xuan_shang_count: _Optional[int] = ..., pai_left_count: _Optional[int] = ...) -> None: ...
+
+class GameRoundPlayerFangChongInfo(_message.Message):
+    __slots__ = ["seat", "tile", "pai_left_count"]
+    SEAT_FIELD_NUMBER: _ClassVar[int]
+    TILE_FIELD_NUMBER: _ClassVar[int]
+    PAI_LEFT_COUNT_FIELD_NUMBER: _ClassVar[int]
+    seat: int
+    tile: str
+    pai_left_count: int
+    def __init__(self, seat: _Optional[int] = ..., tile: _Optional[str] = ..., pai_left_count: _Optional[int] = ...) -> None: ...
 
 class GameRoundPlayerResult(_message.Message):
-    __slots__ = ["type", "hands", "ming", "liqi_type", "is_fulu", "is_liujumanguan", "lian_zhuang", "hu"]
+    __slots__ = ["type", "hands", "ming", "liqi_type", "is_fulu", "is_liujumanguan", "lian_zhuang", "hu", "fangchongs", "liqi_fangchong", "liqi_failed"]
     TYPE_FIELD_NUMBER: _ClassVar[int]
     HANDS_FIELD_NUMBER: _ClassVar[int]
     MING_FIELD_NUMBER: _ClassVar[int]
@@ -2672,6 +3129,9 @@ class GameRoundPlayerResult(_message.Message):
     IS_LIUJUMANGUAN_FIELD_NUMBER: _ClassVar[int]
     LIAN_ZHUANG_FIELD_NUMBER: _ClassVar[int]
     HU_FIELD_NUMBER: _ClassVar[int]
+    FANGCHONGS_FIELD_NUMBER: _ClassVar[int]
+    LIQI_FANGCHONG_FIELD_NUMBER: _ClassVar[int]
+    LIQI_FAILED_FIELD_NUMBER: _ClassVar[int]
     type: int
     hands: _containers.RepeatedScalarFieldContainer[str]
     ming: _containers.RepeatedScalarFieldContainer[str]
@@ -2680,7 +3140,10 @@ class GameRoundPlayerResult(_message.Message):
     is_liujumanguan: bool
     lian_zhuang: int
     hu: GameRoundHuData
-    def __init__(self, type: _Optional[int] = ..., hands: _Optional[_Iterable[str]] = ..., ming: _Optional[_Iterable[str]] = ..., liqi_type: _Optional[int] = ..., is_fulu: bool = ..., is_liujumanguan: bool = ..., lian_zhuang: _Optional[int] = ..., hu: _Optional[_Union[GameRoundHuData, _Mapping]] = ...) -> None: ...
+    fangchongs: _containers.RepeatedCompositeFieldContainer[GameRoundPlayerFangChongInfo]
+    liqi_fangchong: bool
+    liqi_failed: bool
+    def __init__(self, type: _Optional[int] = ..., hands: _Optional[_Iterable[str]] = ..., ming: _Optional[_Iterable[str]] = ..., liqi_type: _Optional[int] = ..., is_fulu: bool = ..., is_liujumanguan: bool = ..., lian_zhuang: _Optional[int] = ..., hu: _Optional[_Union[GameRoundHuData, _Mapping]] = ..., fangchongs: _Optional[_Iterable[_Union[GameRoundPlayerFangChongInfo, _Mapping]]] = ..., liqi_fangchong: bool = ..., liqi_failed: bool = ...) -> None: ...
 
 class GameRoundPlayer(_message.Message):
     __slots__ = ["score", "rank", "result"]
@@ -2703,7 +3166,7 @@ class GameRoundSnapshot(_message.Message):
     def __init__(self, ju: _Optional[int] = ..., ben: _Optional[int] = ..., players: _Optional[_Iterable[_Union[GameRoundPlayer, _Mapping]]] = ...) -> None: ...
 
 class GameFinalSnapshot(_message.Message):
-    __slots__ = ["uuid", "state", "category", "mode", "meta", "calculate_param", "create_time", "start_time", "finish_time", "seats", "rounds", "account_views", "final_players", "afk_info"]
+    __slots__ = ["uuid", "state", "category", "mode", "meta", "calculate_param", "create_time", "start_time", "finish_time", "seats", "rounds", "account_views", "final_players", "afk_info", "robot_views"]
     class CalculateParam(_message.Message):
         __slots__ = ["init_point", "jingsuanyuandian", "rank_points"]
         INIT_POINT_FIELD_NUMBER: _ClassVar[int]
@@ -2764,6 +3227,7 @@ class GameFinalSnapshot(_message.Message):
     ACCOUNT_VIEWS_FIELD_NUMBER: _ClassVar[int]
     FINAL_PLAYERS_FIELD_NUMBER: _ClassVar[int]
     AFK_INFO_FIELD_NUMBER: _ClassVar[int]
+    ROBOT_VIEWS_FIELD_NUMBER: _ClassVar[int]
     uuid: str
     state: int
     category: int
@@ -2778,7 +3242,8 @@ class GameFinalSnapshot(_message.Message):
     account_views: _containers.RepeatedCompositeFieldContainer[PlayerGameView]
     final_players: _containers.RepeatedCompositeFieldContainer[GameFinalSnapshot.FinalPlayer]
     afk_info: _containers.RepeatedCompositeFieldContainer[GameFinalSnapshot.AFKInfo]
-    def __init__(self, uuid: _Optional[str] = ..., state: _Optional[int] = ..., category: _Optional[int] = ..., mode: _Optional[_Union[GameMode, _Mapping]] = ..., meta: _Optional[_Union[GameMetaData, _Mapping]] = ..., calculate_param: _Optional[_Union[GameFinalSnapshot.CalculateParam, _Mapping]] = ..., create_time: _Optional[int] = ..., start_time: _Optional[int] = ..., finish_time: _Optional[int] = ..., seats: _Optional[_Iterable[_Union[GameFinalSnapshot.GameSeat, _Mapping]]] = ..., rounds: _Optional[_Iterable[_Union[GameRoundSnapshot, _Mapping]]] = ..., account_views: _Optional[_Iterable[_Union[PlayerGameView, _Mapping]]] = ..., final_players: _Optional[_Iterable[_Union[GameFinalSnapshot.FinalPlayer, _Mapping]]] = ..., afk_info: _Optional[_Iterable[_Union[GameFinalSnapshot.AFKInfo, _Mapping]]] = ...) -> None: ...
+    robot_views: _containers.RepeatedCompositeFieldContainer[PlayerGameView]
+    def __init__(self, uuid: _Optional[str] = ..., state: _Optional[int] = ..., category: _Optional[int] = ..., mode: _Optional[_Union[GameMode, _Mapping]] = ..., meta: _Optional[_Union[GameMetaData, _Mapping]] = ..., calculate_param: _Optional[_Union[GameFinalSnapshot.CalculateParam, _Mapping]] = ..., create_time: _Optional[int] = ..., start_time: _Optional[int] = ..., finish_time: _Optional[int] = ..., seats: _Optional[_Iterable[_Union[GameFinalSnapshot.GameSeat, _Mapping]]] = ..., rounds: _Optional[_Iterable[_Union[GameRoundSnapshot, _Mapping]]] = ..., account_views: _Optional[_Iterable[_Union[PlayerGameView, _Mapping]]] = ..., final_players: _Optional[_Iterable[_Union[GameFinalSnapshot.FinalPlayer, _Mapping]]] = ..., afk_info: _Optional[_Iterable[_Union[GameFinalSnapshot.AFKInfo, _Mapping]]] = ..., robot_views: _Optional[_Iterable[_Union[PlayerGameView, _Mapping]]] = ...) -> None: ...
 
 class RecordCollectedData(_message.Message):
     __slots__ = ["uuid", "remarks", "start_time", "end_time"]
@@ -3095,7 +3560,7 @@ class RecordPeiPaiInfo(_message.Message):
     def __init__(self, dora_count: _Optional[int] = ..., r_dora_count: _Optional[int] = ..., bei_count: _Optional[int] = ...) -> None: ...
 
 class RecordRoundInfo(_message.Message):
-    __slots__ = ["name", "chang", "ju", "ben", "scores", "liqi_infos", "gang_infos", "peipai_infos", "babai_infos", "hules_info", "liuju_info", "no_tile_info"]
+    __slots__ = ["name", "chang", "ju", "ben", "scores", "liqi_infos", "gang_infos", "peipai_infos", "babai_infos", "hules_info", "liuju_info", "no_tile_info", "xiuluo_hules_info"]
     NAME_FIELD_NUMBER: _ClassVar[int]
     CHANG_FIELD_NUMBER: _ClassVar[int]
     JU_FIELD_NUMBER: _ClassVar[int]
@@ -3108,6 +3573,7 @@ class RecordRoundInfo(_message.Message):
     HULES_INFO_FIELD_NUMBER: _ClassVar[int]
     LIUJU_INFO_FIELD_NUMBER: _ClassVar[int]
     NO_TILE_INFO_FIELD_NUMBER: _ClassVar[int]
+    XIULUO_HULES_INFO_FIELD_NUMBER: _ClassVar[int]
     name: str
     chang: int
     ju: int
@@ -3120,7 +3586,8 @@ class RecordRoundInfo(_message.Message):
     hules_info: RecordHulesInfo
     liuju_info: RecordLiujuInfo
     no_tile_info: RecordNoTileInfo
-    def __init__(self, name: _Optional[str] = ..., chang: _Optional[int] = ..., ju: _Optional[int] = ..., ben: _Optional[int] = ..., scores: _Optional[_Iterable[int]] = ..., liqi_infos: _Optional[_Iterable[_Union[RecordLiqiInfo, _Mapping]]] = ..., gang_infos: _Optional[_Iterable[_Union[RecordGangInfo, _Mapping]]] = ..., peipai_infos: _Optional[_Iterable[_Union[RecordPeiPaiInfo, _Mapping]]] = ..., babai_infos: _Optional[_Iterable[_Union[RecordBaBeiInfo, _Mapping]]] = ..., hules_info: _Optional[_Union[RecordHulesInfo, _Mapping]] = ..., liuju_info: _Optional[_Union[RecordLiujuInfo, _Mapping]] = ..., no_tile_info: _Optional[_Union[RecordNoTileInfo, _Mapping]] = ...) -> None: ...
+    xiuluo_hules_info: _containers.RepeatedCompositeFieldContainer[RecordHulesInfo]
+    def __init__(self, name: _Optional[str] = ..., chang: _Optional[int] = ..., ju: _Optional[int] = ..., ben: _Optional[int] = ..., scores: _Optional[_Iterable[int]] = ..., liqi_infos: _Optional[_Iterable[_Union[RecordLiqiInfo, _Mapping]]] = ..., gang_infos: _Optional[_Iterable[_Union[RecordGangInfo, _Mapping]]] = ..., peipai_infos: _Optional[_Iterable[_Union[RecordPeiPaiInfo, _Mapping]]] = ..., babai_infos: _Optional[_Iterable[_Union[RecordBaBeiInfo, _Mapping]]] = ..., hules_info: _Optional[_Union[RecordHulesInfo, _Mapping]] = ..., liuju_info: _Optional[_Union[RecordLiujuInfo, _Mapping]] = ..., no_tile_info: _Optional[_Union[RecordNoTileInfo, _Mapping]] = ..., xiuluo_hules_info: _Optional[_Iterable[_Union[RecordHulesInfo, _Mapping]]] = ...) -> None: ...
 
 class RecordAnalysisedData(_message.Message):
     __slots__ = ["round_infos"]
@@ -3139,15 +3606,19 @@ class VoteData(_message.Message):
     def __init__(self, activity_id: _Optional[int] = ..., vote: _Optional[int] = ..., count: _Optional[int] = ...) -> None: ...
 
 class ActivityBuffData(_message.Message):
-    __slots__ = ["buff_id", "level"]
+    __slots__ = ["buff_id", "level", "count", "update_time"]
     BUFF_ID_FIELD_NUMBER: _ClassVar[int]
     LEVEL_FIELD_NUMBER: _ClassVar[int]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_TIME_FIELD_NUMBER: _ClassVar[int]
     buff_id: int
     level: int
-    def __init__(self, buff_id: _Optional[int] = ..., level: _Optional[int] = ...) -> None: ...
+    count: int
+    update_time: int
+    def __init__(self, buff_id: _Optional[int] = ..., level: _Optional[int] = ..., count: _Optional[int] = ..., update_time: _Optional[int] = ...) -> None: ...
 
 class AccountResourceSnapshot(_message.Message):
-    __slots__ = ["bag_item", "currency", "title", "used_title"]
+    __slots__ = ["bag_item", "currency", "title", "used_title", "currency_convert"]
     class BagItemSnapshot(_message.Message):
         __slots__ = ["resource_id", "resource_count", "resource_version"]
         RESOURCE_ID_FIELD_NUMBER: _ClassVar[int]
@@ -3178,11 +3649,13 @@ class AccountResourceSnapshot(_message.Message):
     CURRENCY_FIELD_NUMBER: _ClassVar[int]
     TITLE_FIELD_NUMBER: _ClassVar[int]
     USED_TITLE_FIELD_NUMBER: _ClassVar[int]
+    CURRENCY_CONVERT_FIELD_NUMBER: _ClassVar[int]
     bag_item: _containers.RepeatedCompositeFieldContainer[AccountResourceSnapshot.BagItemSnapshot]
     currency: _containers.RepeatedCompositeFieldContainer[AccountResourceSnapshot.CurrencySnapshot]
     title: AccountResourceSnapshot.TitleSnapshot
     used_title: AccountResourceSnapshot.UsedTitleSnapshot
-    def __init__(self, bag_item: _Optional[_Iterable[_Union[AccountResourceSnapshot.BagItemSnapshot, _Mapping]]] = ..., currency: _Optional[_Iterable[_Union[AccountResourceSnapshot.CurrencySnapshot, _Mapping]]] = ..., title: _Optional[_Union[AccountResourceSnapshot.TitleSnapshot, _Mapping]] = ..., used_title: _Optional[_Union[AccountResourceSnapshot.UsedTitleSnapshot, _Mapping]] = ...) -> None: ...
+    currency_convert: int
+    def __init__(self, bag_item: _Optional[_Iterable[_Union[AccountResourceSnapshot.BagItemSnapshot, _Mapping]]] = ..., currency: _Optional[_Iterable[_Union[AccountResourceSnapshot.CurrencySnapshot, _Mapping]]] = ..., title: _Optional[_Union[AccountResourceSnapshot.TitleSnapshot, _Mapping]] = ..., used_title: _Optional[_Union[AccountResourceSnapshot.UsedTitleSnapshot, _Mapping]] = ..., currency_convert: _Optional[int] = ...) -> None: ...
 
 class AccountCharacterSnapshot(_message.Message):
     __slots__ = ["created_characters", "removed_characters", "modified_characters", "main_character", "skins", "hidden_characters"]
@@ -3261,7 +3734,7 @@ class AccountAchievementSnapshot(_message.Message):
     def __init__(self, achievements: _Optional[_Iterable[_Union[AchievementProgress, _Mapping]]] = ..., rewarded_group: _Optional[_Union[AccountAchievementSnapshot.RewardedGroupSnapshot, _Mapping]] = ..., version: _Optional[_Union[AccountAchievementSnapshot.AchievementVersion, _Mapping]] = ...) -> None: ...
 
 class AccountMiscSnapshot(_message.Message):
-    __slots__ = ["faith_data", "vip_reward_gained", "vip", "shop_info", "month_ticket"]
+    __slots__ = ["faith_data", "vip_reward_gained", "vip", "shop_info", "month_ticket", "recharged", "month_ticket_v2"]
     class AccountVIPRewardSnapshot(_message.Message):
         __slots__ = ["rewarded"]
         REWARDED_FIELD_NUMBER: _ClassVar[int]
@@ -3290,17 +3763,46 @@ class AccountMiscSnapshot(_message.Message):
         VIP_FIELD_NUMBER: _ClassVar[int]
         vip: int
         def __init__(self, vip: _Optional[int] = ...) -> None: ...
+    class AccountRechargeInfo(_message.Message):
+        __slots__ = ["records", "has_data"]
+        class RechargeRecord(_message.Message):
+            __slots__ = ["level", "recharge_time"]
+            LEVEL_FIELD_NUMBER: _ClassVar[int]
+            RECHARGE_TIME_FIELD_NUMBER: _ClassVar[int]
+            level: int
+            recharge_time: int
+            def __init__(self, level: _Optional[int] = ..., recharge_time: _Optional[int] = ...) -> None: ...
+        RECORDS_FIELD_NUMBER: _ClassVar[int]
+        HAS_DATA_FIELD_NUMBER: _ClassVar[int]
+        records: _containers.RepeatedCompositeFieldContainer[AccountMiscSnapshot.AccountRechargeInfo.RechargeRecord]
+        has_data: int
+        def __init__(self, records: _Optional[_Iterable[_Union[AccountMiscSnapshot.AccountRechargeInfo.RechargeRecord, _Mapping]]] = ..., has_data: _Optional[int] = ...) -> None: ...
+    class AccountMonthTicketSnapshotV2(_message.Message):
+        __slots__ = ["end_time", "last_pay_time", "record_start_time", "history"]
+        END_TIME_FIELD_NUMBER: _ClassVar[int]
+        LAST_PAY_TIME_FIELD_NUMBER: _ClassVar[int]
+        RECORD_START_TIME_FIELD_NUMBER: _ClassVar[int]
+        HISTORY_FIELD_NUMBER: _ClassVar[int]
+        end_time: int
+        last_pay_time: int
+        record_start_time: int
+        history: _containers.RepeatedScalarFieldContainer[int]
+        def __init__(self, end_time: _Optional[int] = ..., last_pay_time: _Optional[int] = ..., record_start_time: _Optional[int] = ..., history: _Optional[_Iterable[int]] = ...) -> None: ...
     FAITH_DATA_FIELD_NUMBER: _ClassVar[int]
     VIP_REWARD_GAINED_FIELD_NUMBER: _ClassVar[int]
     VIP_FIELD_NUMBER: _ClassVar[int]
     SHOP_INFO_FIELD_NUMBER: _ClassVar[int]
     MONTH_TICKET_FIELD_NUMBER: _ClassVar[int]
+    RECHARGED_FIELD_NUMBER: _ClassVar[int]
+    MONTH_TICKET_V2_FIELD_NUMBER: _ClassVar[int]
     faith_data: FaithData
     vip_reward_gained: AccountMiscSnapshot.AccountVIPRewardSnapshot
     vip: AccountMiscSnapshot.AccountVIP
     shop_info: ShopInfo
     month_ticket: AccountMiscSnapshot.AccountMonthTicketSnapshot
-    def __init__(self, faith_data: _Optional[_Union[FaithData, _Mapping]] = ..., vip_reward_gained: _Optional[_Union[AccountMiscSnapshot.AccountVIPRewardSnapshot, _Mapping]] = ..., vip: _Optional[_Union[AccountMiscSnapshot.AccountVIP, _Mapping]] = ..., shop_info: _Optional[_Union[ShopInfo, _Mapping]] = ..., month_ticket: _Optional[_Union[AccountMiscSnapshot.AccountMonthTicketSnapshot, _Mapping]] = ...) -> None: ...
+    recharged: AccountMiscSnapshot.AccountRechargeInfo
+    month_ticket_v2: AccountMiscSnapshot.AccountMonthTicketSnapshotV2
+    def __init__(self, faith_data: _Optional[_Union[FaithData, _Mapping]] = ..., vip_reward_gained: _Optional[_Union[AccountMiscSnapshot.AccountVIPRewardSnapshot, _Mapping]] = ..., vip: _Optional[_Union[AccountMiscSnapshot.AccountVIP, _Mapping]] = ..., shop_info: _Optional[_Union[ShopInfo, _Mapping]] = ..., month_ticket: _Optional[_Union[AccountMiscSnapshot.AccountMonthTicketSnapshot, _Mapping]] = ..., recharged: _Optional[_Union[AccountMiscSnapshot.AccountRechargeInfo, _Mapping]] = ..., month_ticket_v2: _Optional[_Union[AccountMiscSnapshot.AccountMonthTicketSnapshotV2, _Mapping]] = ...) -> None: ...
 
 class AccountGiftCodeRecord(_message.Message):
     __slots__ = ["used_gift_code"]
@@ -3345,6 +3847,525 @@ class TransparentData(_message.Message):
     session: str
     remote: NetworkEndpoint
     def __init__(self, method: _Optional[str] = ..., data: _Optional[bytes] = ..., session: _Optional[str] = ..., remote: _Optional[_Union[NetworkEndpoint, _Mapping]] = ...) -> None: ...
+
+class QuestionnaireReward(_message.Message):
+    __slots__ = ["resource_id", "count"]
+    RESOURCE_ID_FIELD_NUMBER: _ClassVar[int]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
+    resource_id: int
+    count: int
+    def __init__(self, resource_id: _Optional[int] = ..., count: _Optional[int] = ...) -> None: ...
+
+class QuestionnaireDetail(_message.Message):
+    __slots__ = ["id", "version_id", "effective_time_start", "effective_time_end", "rewards", "banner_title", "title", "announcement_title", "announcement_content", "final_text", "questions", "type"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    VERSION_ID_FIELD_NUMBER: _ClassVar[int]
+    EFFECTIVE_TIME_START_FIELD_NUMBER: _ClassVar[int]
+    EFFECTIVE_TIME_END_FIELD_NUMBER: _ClassVar[int]
+    REWARDS_FIELD_NUMBER: _ClassVar[int]
+    BANNER_TITLE_FIELD_NUMBER: _ClassVar[int]
+    TITLE_FIELD_NUMBER: _ClassVar[int]
+    ANNOUNCEMENT_TITLE_FIELD_NUMBER: _ClassVar[int]
+    ANNOUNCEMENT_CONTENT_FIELD_NUMBER: _ClassVar[int]
+    FINAL_TEXT_FIELD_NUMBER: _ClassVar[int]
+    QUESTIONS_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    version_id: int
+    effective_time_start: int
+    effective_time_end: int
+    rewards: _containers.RepeatedCompositeFieldContainer[QuestionnaireReward]
+    banner_title: str
+    title: str
+    announcement_title: str
+    announcement_content: str
+    final_text: str
+    questions: _containers.RepeatedCompositeFieldContainer[QuestionnaireQuestion]
+    type: int
+    def __init__(self, id: _Optional[int] = ..., version_id: _Optional[int] = ..., effective_time_start: _Optional[int] = ..., effective_time_end: _Optional[int] = ..., rewards: _Optional[_Iterable[_Union[QuestionnaireReward, _Mapping]]] = ..., banner_title: _Optional[str] = ..., title: _Optional[str] = ..., announcement_title: _Optional[str] = ..., announcement_content: _Optional[str] = ..., final_text: _Optional[str] = ..., questions: _Optional[_Iterable[_Union[QuestionnaireQuestion, _Mapping]]] = ..., type: _Optional[int] = ...) -> None: ...
+
+class QuestionnaireQuestion(_message.Message):
+    __slots__ = ["id", "title", "describe", "type", "sub_type", "options", "option_random_sort", "require", "max_choice", "next_question", "matrix_row", "option_random_sort_index"]
+    class QuestionOption(_message.Message):
+        __slots__ = ["label", "value", "allow_input"]
+        LABEL_FIELD_NUMBER: _ClassVar[int]
+        VALUE_FIELD_NUMBER: _ClassVar[int]
+        ALLOW_INPUT_FIELD_NUMBER: _ClassVar[int]
+        label: str
+        value: str
+        allow_input: bool
+        def __init__(self, label: _Optional[str] = ..., value: _Optional[str] = ..., allow_input: bool = ...) -> None: ...
+    class NextQuestionData(_message.Message):
+        __slots__ = ["target_question_id", "conditions"]
+        class QuestionCondition(_message.Message):
+            __slots__ = ["question_id", "op", "values"]
+            QUESTION_ID_FIELD_NUMBER: _ClassVar[int]
+            OP_FIELD_NUMBER: _ClassVar[int]
+            VALUES_FIELD_NUMBER: _ClassVar[int]
+            question_id: int
+            op: str
+            values: _containers.RepeatedScalarFieldContainer[str]
+            def __init__(self, question_id: _Optional[int] = ..., op: _Optional[str] = ..., values: _Optional[_Iterable[str]] = ...) -> None: ...
+        class QuestionconditionWrapper(_message.Message):
+            __slots__ = ["conditions"]
+            CONDITIONS_FIELD_NUMBER: _ClassVar[int]
+            conditions: _containers.RepeatedCompositeFieldContainer[QuestionnaireQuestion.NextQuestionData.QuestionCondition]
+            def __init__(self, conditions: _Optional[_Iterable[_Union[QuestionnaireQuestion.NextQuestionData.QuestionCondition, _Mapping]]] = ...) -> None: ...
+        TARGET_QUESTION_ID_FIELD_NUMBER: _ClassVar[int]
+        CONDITIONS_FIELD_NUMBER: _ClassVar[int]
+        target_question_id: int
+        conditions: _containers.RepeatedCompositeFieldContainer[QuestionnaireQuestion.NextQuestionData.QuestionconditionWrapper]
+        def __init__(self, target_question_id: _Optional[int] = ..., conditions: _Optional[_Iterable[_Union[QuestionnaireQuestion.NextQuestionData.QuestionconditionWrapper, _Mapping]]] = ...) -> None: ...
+    ID_FIELD_NUMBER: _ClassVar[int]
+    TITLE_FIELD_NUMBER: _ClassVar[int]
+    DESCRIBE_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    SUB_TYPE_FIELD_NUMBER: _ClassVar[int]
+    OPTIONS_FIELD_NUMBER: _ClassVar[int]
+    OPTION_RANDOM_SORT_FIELD_NUMBER: _ClassVar[int]
+    REQUIRE_FIELD_NUMBER: _ClassVar[int]
+    MAX_CHOICE_FIELD_NUMBER: _ClassVar[int]
+    NEXT_QUESTION_FIELD_NUMBER: _ClassVar[int]
+    MATRIX_ROW_FIELD_NUMBER: _ClassVar[int]
+    OPTION_RANDOM_SORT_INDEX_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    title: str
+    describe: str
+    type: str
+    sub_type: str
+    options: _containers.RepeatedCompositeFieldContainer[QuestionnaireQuestion.QuestionOption]
+    option_random_sort: bool
+    require: bool
+    max_choice: int
+    next_question: _containers.RepeatedCompositeFieldContainer[QuestionnaireQuestion.NextQuestionData]
+    matrix_row: _containers.RepeatedScalarFieldContainer[str]
+    option_random_sort_index: int
+    def __init__(self, id: _Optional[int] = ..., title: _Optional[str] = ..., describe: _Optional[str] = ..., type: _Optional[str] = ..., sub_type: _Optional[str] = ..., options: _Optional[_Iterable[_Union[QuestionnaireQuestion.QuestionOption, _Mapping]]] = ..., option_random_sort: bool = ..., require: bool = ..., max_choice: _Optional[int] = ..., next_question: _Optional[_Iterable[_Union[QuestionnaireQuestion.NextQuestionData, _Mapping]]] = ..., matrix_row: _Optional[_Iterable[str]] = ..., option_random_sort_index: _Optional[int] = ...) -> None: ...
+
+class QuestionnaireBrief(_message.Message):
+    __slots__ = ["id", "version_id", "effective_time_start", "effective_time_end", "rewards", "banner_title", "title", "type"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    VERSION_ID_FIELD_NUMBER: _ClassVar[int]
+    EFFECTIVE_TIME_START_FIELD_NUMBER: _ClassVar[int]
+    EFFECTIVE_TIME_END_FIELD_NUMBER: _ClassVar[int]
+    REWARDS_FIELD_NUMBER: _ClassVar[int]
+    BANNER_TITLE_FIELD_NUMBER: _ClassVar[int]
+    TITLE_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    version_id: int
+    effective_time_start: int
+    effective_time_end: int
+    rewards: _containers.RepeatedCompositeFieldContainer[QuestionnaireReward]
+    banner_title: str
+    title: str
+    type: int
+    def __init__(self, id: _Optional[int] = ..., version_id: _Optional[int] = ..., effective_time_start: _Optional[int] = ..., effective_time_end: _Optional[int] = ..., rewards: _Optional[_Iterable[_Union[QuestionnaireReward, _Mapping]]] = ..., banner_title: _Optional[str] = ..., title: _Optional[str] = ..., type: _Optional[int] = ...) -> None: ...
+
+class SeerReport(_message.Message):
+    __slots__ = ["uuid", "events", "rounds"]
+    UUID_FIELD_NUMBER: _ClassVar[int]
+    EVENTS_FIELD_NUMBER: _ClassVar[int]
+    ROUNDS_FIELD_NUMBER: _ClassVar[int]
+    uuid: str
+    events: _containers.RepeatedCompositeFieldContainer[SeerEvent]
+    rounds: _containers.RepeatedCompositeFieldContainer[SeerRound]
+    def __init__(self, uuid: _Optional[str] = ..., events: _Optional[_Iterable[_Union[SeerEvent, _Mapping]]] = ..., rounds: _Optional[_Iterable[_Union[SeerRound, _Mapping]]] = ...) -> None: ...
+
+class SeerEvent(_message.Message):
+    __slots__ = ["record_index", "seer_index", "recommends"]
+    RECORD_INDEX_FIELD_NUMBER: _ClassVar[int]
+    SEER_INDEX_FIELD_NUMBER: _ClassVar[int]
+    RECOMMENDS_FIELD_NUMBER: _ClassVar[int]
+    record_index: int
+    seer_index: int
+    recommends: _containers.RepeatedCompositeFieldContainer[SeerRecommend]
+    def __init__(self, record_index: _Optional[int] = ..., seer_index: _Optional[int] = ..., recommends: _Optional[_Iterable[_Union[SeerRecommend, _Mapping]]] = ...) -> None: ...
+
+class SeerRecommend(_message.Message):
+    __slots__ = ["seat", "predictions"]
+    SEAT_FIELD_NUMBER: _ClassVar[int]
+    PREDICTIONS_FIELD_NUMBER: _ClassVar[int]
+    seat: int
+    predictions: _containers.RepeatedCompositeFieldContainer[SeerPrediction]
+    def __init__(self, seat: _Optional[int] = ..., predictions: _Optional[_Iterable[_Union[SeerPrediction, _Mapping]]] = ...) -> None: ...
+
+class SeerPrediction(_message.Message):
+    __slots__ = ["action", "score"]
+    ACTION_FIELD_NUMBER: _ClassVar[int]
+    SCORE_FIELD_NUMBER: _ClassVar[int]
+    action: int
+    score: int
+    def __init__(self, action: _Optional[int] = ..., score: _Optional[int] = ...) -> None: ...
+
+class SeerRound(_message.Message):
+    __slots__ = ["chang", "ju", "ben", "player_scores"]
+    CHANG_FIELD_NUMBER: _ClassVar[int]
+    JU_FIELD_NUMBER: _ClassVar[int]
+    BEN_FIELD_NUMBER: _ClassVar[int]
+    PLAYER_SCORES_FIELD_NUMBER: _ClassVar[int]
+    chang: int
+    ju: int
+    ben: int
+    player_scores: _containers.RepeatedCompositeFieldContainer[SeerScore]
+    def __init__(self, chang: _Optional[int] = ..., ju: _Optional[int] = ..., ben: _Optional[int] = ..., player_scores: _Optional[_Iterable[_Union[SeerScore, _Mapping]]] = ...) -> None: ...
+
+class SeerScore(_message.Message):
+    __slots__ = ["seat", "rating"]
+    SEAT_FIELD_NUMBER: _ClassVar[int]
+    RATING_FIELD_NUMBER: _ClassVar[int]
+    seat: int
+    rating: int
+    def __init__(self, seat: _Optional[int] = ..., rating: _Optional[int] = ...) -> None: ...
+
+class SeerBrief(_message.Message):
+    __slots__ = ["uuid", "state", "expire_time", "player_scores", "create_time"]
+    UUID_FIELD_NUMBER: _ClassVar[int]
+    STATE_FIELD_NUMBER: _ClassVar[int]
+    EXPIRE_TIME_FIELD_NUMBER: _ClassVar[int]
+    PLAYER_SCORES_FIELD_NUMBER: _ClassVar[int]
+    CREATE_TIME_FIELD_NUMBER: _ClassVar[int]
+    uuid: str
+    state: int
+    expire_time: int
+    player_scores: _containers.RepeatedCompositeFieldContainer[SeerScore]
+    create_time: int
+    def __init__(self, uuid: _Optional[str] = ..., state: _Optional[int] = ..., expire_time: _Optional[int] = ..., player_scores: _Optional[_Iterable[_Union[SeerScore, _Mapping]]] = ..., create_time: _Optional[int] = ...) -> None: ...
+
+class SimulationV2SeasonData(_message.Message):
+    __slots__ = ["round", "ability", "effect_list", "match", "event", "event_history", "record", "total_score", "match_history"]
+    ROUND_FIELD_NUMBER: _ClassVar[int]
+    ABILITY_FIELD_NUMBER: _ClassVar[int]
+    EFFECT_LIST_FIELD_NUMBER: _ClassVar[int]
+    MATCH_FIELD_NUMBER: _ClassVar[int]
+    EVENT_FIELD_NUMBER: _ClassVar[int]
+    EVENT_HISTORY_FIELD_NUMBER: _ClassVar[int]
+    RECORD_FIELD_NUMBER: _ClassVar[int]
+    TOTAL_SCORE_FIELD_NUMBER: _ClassVar[int]
+    MATCH_HISTORY_FIELD_NUMBER: _ClassVar[int]
+    round: int
+    ability: SimulationV2Ability
+    effect_list: _containers.RepeatedCompositeFieldContainer[SimulationV2Effect]
+    match: SimulationV2Match
+    event: SimulationV2Event
+    event_history: _containers.RepeatedCompositeFieldContainer[SimulationV2EventHistory]
+    record: SimulationV2Record
+    total_score: int
+    match_history: _containers.RepeatedCompositeFieldContainer[SimulationV2MatchRecord]
+    def __init__(self, round: _Optional[int] = ..., ability: _Optional[_Union[SimulationV2Ability, _Mapping]] = ..., effect_list: _Optional[_Iterable[_Union[SimulationV2Effect, _Mapping]]] = ..., match: _Optional[_Union[SimulationV2Match, _Mapping]] = ..., event: _Optional[_Union[SimulationV2Event, _Mapping]] = ..., event_history: _Optional[_Iterable[_Union[SimulationV2EventHistory, _Mapping]]] = ..., record: _Optional[_Union[SimulationV2Record, _Mapping]] = ..., total_score: _Optional[int] = ..., match_history: _Optional[_Iterable[_Union[SimulationV2MatchRecord, _Mapping]]] = ...) -> None: ...
+
+class SimulationV2PlayerRecord(_message.Message):
+    __slots__ = ["id", "main", "score", "rank", "seat"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    MAIN_FIELD_NUMBER: _ClassVar[int]
+    SCORE_FIELD_NUMBER: _ClassVar[int]
+    RANK_FIELD_NUMBER: _ClassVar[int]
+    SEAT_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    main: bool
+    score: int
+    rank: int
+    seat: int
+    def __init__(self, id: _Optional[int] = ..., main: bool = ..., score: _Optional[int] = ..., rank: _Optional[int] = ..., seat: _Optional[int] = ...) -> None: ...
+
+class SimulationV2MatchRecord(_message.Message):
+    __slots__ = ["players", "round"]
+    PLAYERS_FIELD_NUMBER: _ClassVar[int]
+    ROUND_FIELD_NUMBER: _ClassVar[int]
+    players: _containers.RepeatedCompositeFieldContainer[SimulationV2PlayerRecord]
+    round: int
+    def __init__(self, players: _Optional[_Iterable[_Union[SimulationV2PlayerRecord, _Mapping]]] = ..., round: _Optional[int] = ...) -> None: ...
+
+class SimulationV2EventHistory(_message.Message):
+    __slots__ = ["id", "round"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    ROUND_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    round: int
+    def __init__(self, id: _Optional[int] = ..., round: _Optional[int] = ...) -> None: ...
+
+class SimulationV2Event(_message.Message):
+    __slots__ = ["id", "selections", "next_round"]
+    class SimulationV2EventSelection(_message.Message):
+        __slots__ = ["id", "results"]
+        class SimulationV2EventResult(_message.Message):
+            __slots__ = ["id", "weight"]
+            ID_FIELD_NUMBER: _ClassVar[int]
+            WEIGHT_FIELD_NUMBER: _ClassVar[int]
+            id: int
+            weight: int
+            def __init__(self, id: _Optional[int] = ..., weight: _Optional[int] = ...) -> None: ...
+        ID_FIELD_NUMBER: _ClassVar[int]
+        RESULTS_FIELD_NUMBER: _ClassVar[int]
+        id: int
+        results: _containers.RepeatedCompositeFieldContainer[SimulationV2Event.SimulationV2EventSelection.SimulationV2EventResult]
+        def __init__(self, id: _Optional[int] = ..., results: _Optional[_Iterable[_Union[SimulationV2Event.SimulationV2EventSelection.SimulationV2EventResult, _Mapping]]] = ...) -> None: ...
+    ID_FIELD_NUMBER: _ClassVar[int]
+    SELECTIONS_FIELD_NUMBER: _ClassVar[int]
+    NEXT_ROUND_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    selections: _containers.RepeatedCompositeFieldContainer[SimulationV2Event.SimulationV2EventSelection]
+    next_round: int
+    def __init__(self, id: _Optional[int] = ..., selections: _Optional[_Iterable[_Union[SimulationV2Event.SimulationV2EventSelection, _Mapping]]] = ..., next_round: _Optional[int] = ...) -> None: ...
+
+class SimulationV2Ability(_message.Message):
+    __slots__ = ["luk", "tec", "ins", "int", "res"]
+    LUK_FIELD_NUMBER: _ClassVar[int]
+    TEC_FIELD_NUMBER: _ClassVar[int]
+    INS_FIELD_NUMBER: _ClassVar[int]
+    INT_FIELD_NUMBER: _ClassVar[int]
+    RES_FIELD_NUMBER: _ClassVar[int]
+    luk: int
+    tec: int
+    ins: int
+    int: int
+    res: int
+    def __init__(self, luk: _Optional[int] = ..., tec: _Optional[int] = ..., ins: _Optional[int] = ..., int: _Optional[int] = ..., res: _Optional[int] = ...) -> None: ...
+
+class SimulationV2Buff(_message.Message):
+    __slots__ = ["id", "round", "store"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    ROUND_FIELD_NUMBER: _ClassVar[int]
+    STORE_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    round: int
+    store: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, id: _Optional[int] = ..., round: _Optional[int] = ..., store: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class SimulationV2Effect(_message.Message):
+    __slots__ = ["id"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    def __init__(self, id: _Optional[int] = ...) -> None: ...
+
+class SimulationV2MatchInfo(_message.Message):
+    __slots__ = ["chang", "ju", "ben", "gong", "remain"]
+    CHANG_FIELD_NUMBER: _ClassVar[int]
+    JU_FIELD_NUMBER: _ClassVar[int]
+    BEN_FIELD_NUMBER: _ClassVar[int]
+    GONG_FIELD_NUMBER: _ClassVar[int]
+    REMAIN_FIELD_NUMBER: _ClassVar[int]
+    chang: int
+    ju: int
+    ben: int
+    gong: int
+    remain: int
+    def __init__(self, chang: _Optional[int] = ..., ju: _Optional[int] = ..., ben: _Optional[int] = ..., gong: _Optional[int] = ..., remain: _Optional[int] = ...) -> None: ...
+
+class SimulationV2Record(_message.Message):
+    __slots__ = ["hu_count", "chong_count", "highest_hu", "rank", "round_count"]
+    HU_COUNT_FIELD_NUMBER: _ClassVar[int]
+    CHONG_COUNT_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_HU_FIELD_NUMBER: _ClassVar[int]
+    RANK_FIELD_NUMBER: _ClassVar[int]
+    ROUND_COUNT_FIELD_NUMBER: _ClassVar[int]
+    hu_count: int
+    chong_count: int
+    highest_hu: int
+    rank: _containers.RepeatedScalarFieldContainer[int]
+    round_count: int
+    def __init__(self, hu_count: _Optional[int] = ..., chong_count: _Optional[int] = ..., highest_hu: _Optional[int] = ..., rank: _Optional[_Iterable[int]] = ..., round_count: _Optional[int] = ...) -> None: ...
+
+class SimulationV2MatchHistory(_message.Message):
+    __slots__ = ["type", "remain", "score_modify", "round_start", "riichi", "fulu", "hule", "push_ting", "find_ting", "liuju", "story"]
+    class RoundStartArgs(_message.Message):
+        __slots__ = ["info", "scores", "ting", "effected_buff_list"]
+        INFO_FIELD_NUMBER: _ClassVar[int]
+        SCORES_FIELD_NUMBER: _ClassVar[int]
+        TING_FIELD_NUMBER: _ClassVar[int]
+        EFFECTED_BUFF_LIST_FIELD_NUMBER: _ClassVar[int]
+        info: SimulationV2MatchInfo
+        scores: _containers.RepeatedScalarFieldContainer[int]
+        ting: int
+        effected_buff_list: _containers.RepeatedScalarFieldContainer[int]
+        def __init__(self, info: _Optional[_Union[SimulationV2MatchInfo, _Mapping]] = ..., scores: _Optional[_Iterable[int]] = ..., ting: _Optional[int] = ..., effected_buff_list: _Optional[_Iterable[int]] = ...) -> None: ...
+    class RiichiArgs(_message.Message):
+        __slots__ = ["seat"]
+        SEAT_FIELD_NUMBER: _ClassVar[int]
+        seat: int
+        def __init__(self, seat: _Optional[int] = ...) -> None: ...
+    class FuluArgs(_message.Message):
+        __slots__ = ["seat", "ting", "fulu"]
+        SEAT_FIELD_NUMBER: _ClassVar[int]
+        TING_FIELD_NUMBER: _ClassVar[int]
+        FULU_FIELD_NUMBER: _ClassVar[int]
+        seat: int
+        ting: int
+        fulu: int
+        def __init__(self, seat: _Optional[int] = ..., ting: _Optional[int] = ..., fulu: _Optional[int] = ...) -> None: ...
+    class HuleArgs(_message.Message):
+        __slots__ = ["seat", "zimo", "chong_seat", "point", "fan", "score_modify"]
+        SEAT_FIELD_NUMBER: _ClassVar[int]
+        ZIMO_FIELD_NUMBER: _ClassVar[int]
+        CHONG_SEAT_FIELD_NUMBER: _ClassVar[int]
+        POINT_FIELD_NUMBER: _ClassVar[int]
+        FAN_FIELD_NUMBER: _ClassVar[int]
+        SCORE_MODIFY_FIELD_NUMBER: _ClassVar[int]
+        seat: int
+        zimo: bool
+        chong_seat: int
+        point: int
+        fan: int
+        score_modify: _containers.RepeatedScalarFieldContainer[int]
+        def __init__(self, seat: _Optional[int] = ..., zimo: bool = ..., chong_seat: _Optional[int] = ..., point: _Optional[int] = ..., fan: _Optional[int] = ..., score_modify: _Optional[_Iterable[int]] = ...) -> None: ...
+    class PushTingArgs(_message.Message):
+        __slots__ = ["seat", "ting"]
+        SEAT_FIELD_NUMBER: _ClassVar[int]
+        TING_FIELD_NUMBER: _ClassVar[int]
+        seat: int
+        ting: int
+        def __init__(self, seat: _Optional[int] = ..., ting: _Optional[int] = ...) -> None: ...
+    class FindTingArgs(_message.Message):
+        __slots__ = ["seat", "target"]
+        SEAT_FIELD_NUMBER: _ClassVar[int]
+        TARGET_FIELD_NUMBER: _ClassVar[int]
+        seat: int
+        target: int
+        def __init__(self, seat: _Optional[int] = ..., target: _Optional[int] = ...) -> None: ...
+    class LiujuArgs(_message.Message):
+        __slots__ = ["ting"]
+        TING_FIELD_NUMBER: _ClassVar[int]
+        ting: _containers.RepeatedScalarFieldContainer[int]
+        def __init__(self, ting: _Optional[_Iterable[int]] = ...) -> None: ...
+    class StoryArgs(_message.Message):
+        __slots__ = ["story_id"]
+        STORY_ID_FIELD_NUMBER: _ClassVar[int]
+        story_id: int
+        def __init__(self, story_id: _Optional[int] = ...) -> None: ...
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    REMAIN_FIELD_NUMBER: _ClassVar[int]
+    SCORE_MODIFY_FIELD_NUMBER: _ClassVar[int]
+    ROUND_START_FIELD_NUMBER: _ClassVar[int]
+    RIICHI_FIELD_NUMBER: _ClassVar[int]
+    FULU_FIELD_NUMBER: _ClassVar[int]
+    HULE_FIELD_NUMBER: _ClassVar[int]
+    PUSH_TING_FIELD_NUMBER: _ClassVar[int]
+    FIND_TING_FIELD_NUMBER: _ClassVar[int]
+    LIUJU_FIELD_NUMBER: _ClassVar[int]
+    STORY_FIELD_NUMBER: _ClassVar[int]
+    type: int
+    remain: int
+    score_modify: _containers.RepeatedScalarFieldContainer[int]
+    round_start: SimulationV2MatchHistory.RoundStartArgs
+    riichi: SimulationV2MatchHistory.RiichiArgs
+    fulu: SimulationV2MatchHistory.FuluArgs
+    hule: _containers.RepeatedCompositeFieldContainer[SimulationV2MatchHistory.HuleArgs]
+    push_ting: SimulationV2MatchHistory.PushTingArgs
+    find_ting: SimulationV2MatchHistory.FindTingArgs
+    liuju: SimulationV2MatchHistory.LiujuArgs
+    story: SimulationV2MatchHistory.StoryArgs
+    def __init__(self, type: _Optional[int] = ..., remain: _Optional[int] = ..., score_modify: _Optional[_Iterable[int]] = ..., round_start: _Optional[_Union[SimulationV2MatchHistory.RoundStartArgs, _Mapping]] = ..., riichi: _Optional[_Union[SimulationV2MatchHistory.RiichiArgs, _Mapping]] = ..., fulu: _Optional[_Union[SimulationV2MatchHistory.FuluArgs, _Mapping]] = ..., hule: _Optional[_Iterable[_Union[SimulationV2MatchHistory.HuleArgs, _Mapping]]] = ..., push_ting: _Optional[_Union[SimulationV2MatchHistory.PushTingArgs, _Mapping]] = ..., find_ting: _Optional[_Union[SimulationV2MatchHistory.FindTingArgs, _Mapping]] = ..., liuju: _Optional[_Union[SimulationV2MatchHistory.LiujuArgs, _Mapping]] = ..., story: _Optional[_Union[SimulationV2MatchHistory.StoryArgs, _Mapping]] = ...) -> None: ...
+
+class SimulationV2Match(_message.Message):
+    __slots__ = ["info", "players", "history", "rank", "is_match_end", "actions", "buff_list", "is_first_round", "last_event_remain", "effected_buff_list", "triggered_story"]
+    class SimulationV2Player(_message.Message):
+        __slots__ = ["id", "main", "ting", "score", "fulu", "riichi", "find_ting", "seat", "con_push_ting", "con_keep_ting", "ippatsu"]
+        ID_FIELD_NUMBER: _ClassVar[int]
+        MAIN_FIELD_NUMBER: _ClassVar[int]
+        TING_FIELD_NUMBER: _ClassVar[int]
+        SCORE_FIELD_NUMBER: _ClassVar[int]
+        FULU_FIELD_NUMBER: _ClassVar[int]
+        RIICHI_FIELD_NUMBER: _ClassVar[int]
+        FIND_TING_FIELD_NUMBER: _ClassVar[int]
+        SEAT_FIELD_NUMBER: _ClassVar[int]
+        CON_PUSH_TING_FIELD_NUMBER: _ClassVar[int]
+        CON_KEEP_TING_FIELD_NUMBER: _ClassVar[int]
+        IPPATSU_FIELD_NUMBER: _ClassVar[int]
+        id: int
+        main: bool
+        ting: int
+        score: int
+        fulu: int
+        riichi: bool
+        find_ting: _containers.RepeatedScalarFieldContainer[int]
+        seat: int
+        con_push_ting: int
+        con_keep_ting: int
+        ippatsu: bool
+        def __init__(self, id: _Optional[int] = ..., main: bool = ..., ting: _Optional[int] = ..., score: _Optional[int] = ..., fulu: _Optional[int] = ..., riichi: bool = ..., find_ting: _Optional[_Iterable[int]] = ..., seat: _Optional[int] = ..., con_push_ting: _Optional[int] = ..., con_keep_ting: _Optional[int] = ..., ippatsu: bool = ...) -> None: ...
+    INFO_FIELD_NUMBER: _ClassVar[int]
+    PLAYERS_FIELD_NUMBER: _ClassVar[int]
+    HISTORY_FIELD_NUMBER: _ClassVar[int]
+    RANK_FIELD_NUMBER: _ClassVar[int]
+    IS_MATCH_END_FIELD_NUMBER: _ClassVar[int]
+    ACTIONS_FIELD_NUMBER: _ClassVar[int]
+    BUFF_LIST_FIELD_NUMBER: _ClassVar[int]
+    IS_FIRST_ROUND_FIELD_NUMBER: _ClassVar[int]
+    LAST_EVENT_REMAIN_FIELD_NUMBER: _ClassVar[int]
+    EFFECTED_BUFF_LIST_FIELD_NUMBER: _ClassVar[int]
+    TRIGGERED_STORY_FIELD_NUMBER: _ClassVar[int]
+    info: SimulationV2MatchInfo
+    players: _containers.RepeatedCompositeFieldContainer[SimulationV2Match.SimulationV2Player]
+    history: _containers.RepeatedCompositeFieldContainer[SimulationV2MatchHistory]
+    rank: _containers.RepeatedScalarFieldContainer[int]
+    is_match_end: bool
+    actions: _containers.RepeatedCompositeFieldContainer[SimulationActionData]
+    buff_list: _containers.RepeatedCompositeFieldContainer[SimulationV2Buff]
+    is_first_round: bool
+    last_event_remain: int
+    effected_buff_list: _containers.RepeatedScalarFieldContainer[int]
+    triggered_story: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, info: _Optional[_Union[SimulationV2MatchInfo, _Mapping]] = ..., players: _Optional[_Iterable[_Union[SimulationV2Match.SimulationV2Player, _Mapping]]] = ..., history: _Optional[_Iterable[_Union[SimulationV2MatchHistory, _Mapping]]] = ..., rank: _Optional[_Iterable[int]] = ..., is_match_end: bool = ..., actions: _Optional[_Iterable[_Union[SimulationActionData, _Mapping]]] = ..., buff_list: _Optional[_Iterable[_Union[SimulationV2Buff, _Mapping]]] = ..., is_first_round: bool = ..., last_event_remain: _Optional[int] = ..., effected_buff_list: _Optional[_Iterable[int]] = ..., triggered_story: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class SimulationActionData(_message.Message):
+    __slots__ = ["type", "riichi", "hule", "fulu", "discard_tile", "deal_tile"]
+    class ActionRiichiData(_message.Message):
+        __slots__ = ["seat"]
+        SEAT_FIELD_NUMBER: _ClassVar[int]
+        seat: int
+        def __init__(self, seat: _Optional[int] = ...) -> None: ...
+    class ActionHuleData(_message.Message):
+        __slots__ = ["hule"]
+        class HuleInfo(_message.Message):
+            __slots__ = ["fan", "zimo", "point", "oya", "player", "chong", "toutiao"]
+            FAN_FIELD_NUMBER: _ClassVar[int]
+            ZIMO_FIELD_NUMBER: _ClassVar[int]
+            POINT_FIELD_NUMBER: _ClassVar[int]
+            OYA_FIELD_NUMBER: _ClassVar[int]
+            PLAYER_FIELD_NUMBER: _ClassVar[int]
+            CHONG_FIELD_NUMBER: _ClassVar[int]
+            TOUTIAO_FIELD_NUMBER: _ClassVar[int]
+            fan: int
+            zimo: bool
+            point: int
+            oya: bool
+            player: int
+            chong: int
+            toutiao: bool
+            def __init__(self, fan: _Optional[int] = ..., zimo: bool = ..., point: _Optional[int] = ..., oya: bool = ..., player: _Optional[int] = ..., chong: _Optional[int] = ..., toutiao: bool = ...) -> None: ...
+        HULE_FIELD_NUMBER: _ClassVar[int]
+        hule: _containers.RepeatedCompositeFieldContainer[SimulationActionData.ActionHuleData.HuleInfo]
+        def __init__(self, hule: _Optional[_Iterable[_Union[SimulationActionData.ActionHuleData.HuleInfo, _Mapping]]] = ...) -> None: ...
+    class ActionFuluData(_message.Message):
+        __slots__ = ["seat"]
+        SEAT_FIELD_NUMBER: _ClassVar[int]
+        seat: int
+        def __init__(self, seat: _Optional[int] = ...) -> None: ...
+    class ActionDiscardData(_message.Message):
+        __slots__ = ["seat", "riichi"]
+        SEAT_FIELD_NUMBER: _ClassVar[int]
+        RIICHI_FIELD_NUMBER: _ClassVar[int]
+        seat: int
+        riichi: bool
+        def __init__(self, seat: _Optional[int] = ..., riichi: bool = ...) -> None: ...
+    class ActionDealTileData(_message.Message):
+        __slots__ = ["seat"]
+        SEAT_FIELD_NUMBER: _ClassVar[int]
+        seat: int
+        def __init__(self, seat: _Optional[int] = ...) -> None: ...
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    RIICHI_FIELD_NUMBER: _ClassVar[int]
+    HULE_FIELD_NUMBER: _ClassVar[int]
+    FULU_FIELD_NUMBER: _ClassVar[int]
+    DISCARD_TILE_FIELD_NUMBER: _ClassVar[int]
+    DEAL_TILE_FIELD_NUMBER: _ClassVar[int]
+    type: int
+    riichi: SimulationActionData.ActionRiichiData
+    hule: SimulationActionData.ActionHuleData
+    fulu: SimulationActionData.ActionFuluData
+    discard_tile: SimulationActionData.ActionDiscardData
+    deal_tile: SimulationActionData.ActionDealTileData
+    def __init__(self, type: _Optional[int] = ..., riichi: _Optional[_Union[SimulationActionData.ActionRiichiData, _Mapping]] = ..., hule: _Optional[_Union[SimulationActionData.ActionHuleData, _Mapping]] = ..., fulu: _Optional[_Union[SimulationActionData.ActionFuluData, _Mapping]] = ..., discard_tile: _Optional[_Union[SimulationActionData.ActionDiscardData, _Mapping]] = ..., deal_tile: _Optional[_Union[SimulationActionData.ActionDealTileData, _Mapping]] = ...) -> None: ...
 
 class ResConnectionInfo(_message.Message):
     __slots__ = ["error", "client_endpoint"]
@@ -3449,6 +4470,24 @@ class ResLogin(_message.Message):
     logined_version: _containers.RepeatedScalarFieldContainer[int]
     rewarded_version: _containers.RepeatedScalarFieldContainer[int]
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., account_id: _Optional[int] = ..., account: _Optional[_Union[Account, _Mapping]] = ..., game_info: _Optional[_Union[GameConnectInfo, _Mapping]] = ..., has_unread_announcement: bool = ..., access_token: _Optional[str] = ..., signup_time: _Optional[int] = ..., is_id_card_authed: bool = ..., country: _Optional[str] = ..., logined_version: _Optional[_Iterable[int]] = ..., rewarded_version: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class ReqPrepareLogin(_message.Message):
+    __slots__ = ["access_token", "type"]
+    ACCESS_TOKEN_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    access_token: str
+    type: int
+    def __init__(self, access_token: _Optional[str] = ..., type: _Optional[int] = ...) -> None: ...
+
+class ResFastLogin(_message.Message):
+    __slots__ = ["error", "game_info", "room"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    GAME_INFO_FIELD_NUMBER: _ClassVar[int]
+    ROOM_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    game_info: GameConnectInfo
+    room: Room
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., game_info: _Optional[_Union[GameConnectInfo, _Mapping]] = ..., room: _Optional[_Union[Room, _Mapping]] = ...) -> None: ...
 
 class ReqEmailLogin(_message.Message):
     __slots__ = ["email", "password", "reconnect", "device", "random_key", "client_version", "gen_access_token", "currency_platforms"]
@@ -3684,6 +4723,20 @@ class ReqHeatBeat(_message.Message):
     no_operation_counter: int
     def __init__(self, no_operation_counter: _Optional[int] = ...) -> None: ...
 
+class ReqSearchAccountByEidLobby(_message.Message):
+    __slots__ = ["eid"]
+    EID_FIELD_NUMBER: _ClassVar[int]
+    eid: int
+    def __init__(self, eid: _Optional[int] = ...) -> None: ...
+
+class ResSearchAccountbyEidLobby(_message.Message):
+    __slots__ = ["error", "account_id"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    account_id: int
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., account_id: _Optional[int] = ...) -> None: ...
+
 class ReqLoginBeat(_message.Message):
     __slots__ = ["contract"]
     CONTRACT_FIELD_NUMBER: _ClassVar[int]
@@ -3752,17 +4805,27 @@ class ResSelfRoom(_message.Message):
     room: Room
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., room: _Optional[_Union[Room, _Mapping]] = ...) -> None: ...
 
+class ResFetchGamingInfo(_message.Message):
+    __slots__ = ["error", "game_info"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    GAME_INFO_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    game_info: GameConnectInfo
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., game_info: _Optional[_Union[GameConnectInfo, _Mapping]] = ...) -> None: ...
+
 class ReqCreateRoom(_message.Message):
-    __slots__ = ["player_count", "mode", "public_live", "client_version_string"]
+    __slots__ = ["player_count", "mode", "public_live", "client_version_string", "pre_rule"]
     PLAYER_COUNT_FIELD_NUMBER: _ClassVar[int]
     MODE_FIELD_NUMBER: _ClassVar[int]
     PUBLIC_LIVE_FIELD_NUMBER: _ClassVar[int]
     CLIENT_VERSION_STRING_FIELD_NUMBER: _ClassVar[int]
+    PRE_RULE_FIELD_NUMBER: _ClassVar[int]
     player_count: int
     mode: GameMode
     public_live: bool
     client_version_string: str
-    def __init__(self, player_count: _Optional[int] = ..., mode: _Optional[_Union[GameMode, _Mapping]] = ..., public_live: bool = ..., client_version_string: _Optional[str] = ...) -> None: ...
+    pre_rule: str
+    def __init__(self, player_count: _Optional[int] = ..., mode: _Optional[_Union[GameMode, _Mapping]] = ..., public_live: bool = ..., client_version_string: _Optional[str] = ..., pre_rule: _Optional[str] = ...) -> None: ...
 
 class ResCreateRoom(_message.Message):
     __slots__ = ["error", "room"]
@@ -3804,17 +4867,23 @@ class ReqRoomStart(_message.Message):
     __slots__ = []
     def __init__(self) -> None: ...
 
-class ReqRoomKick(_message.Message):
-    __slots__ = ["account_id"]
-    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-    account_id: int
-    def __init__(self, account_id: _Optional[int] = ...) -> None: ...
+class ReqRoomKickPlayer(_message.Message):
+    __slots__ = ["id"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    def __init__(self, id: _Optional[int] = ...) -> None: ...
 
 class ReqModifyRoom(_message.Message):
     __slots__ = ["robot_count"]
     ROBOT_COUNT_FIELD_NUMBER: _ClassVar[int]
     robot_count: int
     def __init__(self, robot_count: _Optional[int] = ...) -> None: ...
+
+class ReqAddRoomRobot(_message.Message):
+    __slots__ = ["position"]
+    POSITION_FIELD_NUMBER: _ClassVar[int]
+    position: int
+    def __init__(self, position: _Optional[int] = ...) -> None: ...
 
 class ReqChangeAvatar(_message.Message):
     __slots__ = ["avatar_id"]
@@ -3919,6 +4988,60 @@ class ResGameRecordList(_message.Message):
     record_list: _containers.RepeatedCompositeFieldContainer[RecordGame]
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., total_count: _Optional[int] = ..., record_list: _Optional[_Iterable[_Union[RecordGame, _Mapping]]] = ...) -> None: ...
 
+class ReqGameRecordListV2(_message.Message):
+    __slots__ = ["tag", "begin_time", "end_time", "ranks", "modes", "max_hu_type", "level_mode"]
+    TAG_FIELD_NUMBER: _ClassVar[int]
+    BEGIN_TIME_FIELD_NUMBER: _ClassVar[int]
+    END_TIME_FIELD_NUMBER: _ClassVar[int]
+    RANKS_FIELD_NUMBER: _ClassVar[int]
+    MODES_FIELD_NUMBER: _ClassVar[int]
+    MAX_HU_TYPE_FIELD_NUMBER: _ClassVar[int]
+    LEVEL_MODE_FIELD_NUMBER: _ClassVar[int]
+    tag: int
+    begin_time: int
+    end_time: int
+    ranks: _containers.RepeatedScalarFieldContainer[int]
+    modes: _containers.RepeatedScalarFieldContainer[int]
+    max_hu_type: int
+    level_mode: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, tag: _Optional[int] = ..., begin_time: _Optional[int] = ..., end_time: _Optional[int] = ..., ranks: _Optional[_Iterable[int]] = ..., modes: _Optional[_Iterable[int]] = ..., max_hu_type: _Optional[int] = ..., level_mode: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class ResGameRecordListV2(_message.Message):
+    __slots__ = ["error", "iterator", "iterator_expire", "actual_begin_time", "actual_end_time"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    ITERATOR_FIELD_NUMBER: _ClassVar[int]
+    ITERATOR_EXPIRE_FIELD_NUMBER: _ClassVar[int]
+    ACTUAL_BEGIN_TIME_FIELD_NUMBER: _ClassVar[int]
+    ACTUAL_END_TIME_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    iterator: str
+    iterator_expire: int
+    actual_begin_time: int
+    actual_end_time: int
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., iterator: _Optional[str] = ..., iterator_expire: _Optional[int] = ..., actual_begin_time: _Optional[int] = ..., actual_end_time: _Optional[int] = ...) -> None: ...
+
+class ReqNextGameRecordList(_message.Message):
+    __slots__ = ["iterator", "count"]
+    ITERATOR_FIELD_NUMBER: _ClassVar[int]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
+    iterator: str
+    count: int
+    def __init__(self, iterator: _Optional[str] = ..., count: _Optional[int] = ...) -> None: ...
+
+class ResNextGameRecordList(_message.Message):
+    __slots__ = ["error", "next", "entries", "iterator_expire", "next_end_time"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    NEXT_FIELD_NUMBER: _ClassVar[int]
+    ENTRIES_FIELD_NUMBER: _ClassVar[int]
+    ITERATOR_EXPIRE_FIELD_NUMBER: _ClassVar[int]
+    NEXT_END_TIME_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    next: bool
+    entries: _containers.RepeatedCompositeFieldContainer[RecordListEntry]
+    iterator_expire: int
+    next_end_time: int
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., next: bool = ..., entries: _Optional[_Iterable[_Union[RecordListEntry, _Mapping]]] = ..., iterator_expire: _Optional[int] = ..., next_end_time: _Optional[int] = ...) -> None: ...
+
 class ResCollectedGameRecordList(_message.Message):
     __slots__ = ["error", "record_list", "record_collect_limit"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
@@ -3942,6 +5065,20 @@ class ResGameRecordsDetail(_message.Message):
     error: Error
     record_list: _containers.RepeatedCompositeFieldContainer[RecordGame]
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., record_list: _Optional[_Iterable[_Union[RecordGame, _Mapping]]] = ...) -> None: ...
+
+class ReqGameRecordsDetailV2(_message.Message):
+    __slots__ = ["uuid_list"]
+    UUID_LIST_FIELD_NUMBER: _ClassVar[int]
+    uuid_list: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, uuid_list: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class ResGameRecordsDetailV2(_message.Message):
+    __slots__ = ["error", "entries"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    ENTRIES_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    entries: _containers.RepeatedCompositeFieldContainer[RecordListEntry]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., entries: _Optional[_Iterable[_Union[RecordListEntry, _Mapping]]] = ...) -> None: ...
 
 class ReqAddCollectedGameRecord(_message.Message):
     __slots__ = ["uuid", "remarks", "start_time", "end_time"]
@@ -4192,10 +5329,12 @@ class ReqOpenManualItem(_message.Message):
     def __init__(self, item_id: _Optional[int] = ..., count: _Optional[int] = ..., select_id: _Optional[int] = ...) -> None: ...
 
 class ReqOpenRandomRewardItem(_message.Message):
-    __slots__ = ["item_id"]
+    __slots__ = ["item_id", "count"]
     ITEM_ID_FIELD_NUMBER: _ClassVar[int]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
     item_id: int
-    def __init__(self, item_id: _Optional[int] = ...) -> None: ...
+    count: int
+    def __init__(self, item_id: _Optional[int] = ..., count: _Optional[int] = ...) -> None: ...
 
 class ResOpenRandomRewardItem(_message.Message):
     __slots__ = ["error", "results"]
@@ -4399,18 +5538,39 @@ class ResCurrentMatchInfo(_message.Message):
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., matches: _Optional[_Iterable[_Union[ResCurrentMatchInfo.CurrentMatchInfo, _Mapping]]] = ...) -> None: ...
 
 class ReqUserComplain(_message.Message):
-    __slots__ = ["target_id", "type"]
+    __slots__ = ["target_id", "type", "content", "game_uuid", "round_info"]
+    class GameRoundInfo(_message.Message):
+        __slots__ = ["chang", "ju", "ben", "seat", "xun"]
+        CHANG_FIELD_NUMBER: _ClassVar[int]
+        JU_FIELD_NUMBER: _ClassVar[int]
+        BEN_FIELD_NUMBER: _ClassVar[int]
+        SEAT_FIELD_NUMBER: _ClassVar[int]
+        XUN_FIELD_NUMBER: _ClassVar[int]
+        chang: int
+        ju: int
+        ben: int
+        seat: int
+        xun: int
+        def __init__(self, chang: _Optional[int] = ..., ju: _Optional[int] = ..., ben: _Optional[int] = ..., seat: _Optional[int] = ..., xun: _Optional[int] = ...) -> None: ...
     TARGET_ID_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
+    CONTENT_FIELD_NUMBER: _ClassVar[int]
+    GAME_UUID_FIELD_NUMBER: _ClassVar[int]
+    ROUND_INFO_FIELD_NUMBER: _ClassVar[int]
     target_id: int
     type: int
-    def __init__(self, target_id: _Optional[int] = ..., type: _Optional[int] = ...) -> None: ...
+    content: str
+    game_uuid: str
+    round_info: ReqUserComplain.GameRoundInfo
+    def __init__(self, target_id: _Optional[int] = ..., type: _Optional[int] = ..., content: _Optional[str] = ..., game_uuid: _Optional[str] = ..., round_info: _Optional[_Union[ReqUserComplain.GameRoundInfo, _Mapping]] = ...) -> None: ...
 
 class ReqReadAnnouncement(_message.Message):
-    __slots__ = ["announcement_id"]
+    __slots__ = ["announcement_id", "announcement_list"]
     ANNOUNCEMENT_ID_FIELD_NUMBER: _ClassVar[int]
+    ANNOUNCEMENT_LIST_FIELD_NUMBER: _ClassVar[int]
     announcement_id: int
-    def __init__(self, announcement_id: _Optional[int] = ...) -> None: ...
+    announcement_list: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, announcement_id: _Optional[int] = ..., announcement_list: _Optional[_Iterable[int]] = ...) -> None: ...
 
 class ResReviveCoinInfo(_message.Message):
     __slots__ = ["error", "has_gained"]
@@ -4608,17 +5768,35 @@ class ReqUpdateReadComment(_message.Message):
     read_id: int
     def __init__(self, read_id: _Optional[int] = ...) -> None: ...
 
-class ReqRollingNotice(_message.Message):
-    __slots__ = ["notice"]
+class ResFetchRollingNotice(_message.Message):
+    __slots__ = ["error", "notice"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
     NOTICE_FIELD_NUMBER: _ClassVar[int]
-    notice: _containers.RepeatedCompositeFieldContainer[RollingNotice]
-    def __init__(self, notice: _Optional[_Iterable[_Union[RollingNotice, _Mapping]]] = ...) -> None: ...
+    error: Error
+    notice: RollingNotice
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., notice: _Optional[_Union[RollingNotice, _Mapping]] = ...) -> None: ...
+
+class ResFetchMaintainNotice(_message.Message):
+    __slots__ = ["error", "notice"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    NOTICE_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    notice: MaintainNotice
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., notice: _Optional[_Union[MaintainNotice, _Mapping]] = ...) -> None: ...
+
+class ReqFetchRollingNotice(_message.Message):
+    __slots__ = ["lang"]
+    LANG_FIELD_NUMBER: _ClassVar[int]
+    lang: str
+    def __init__(self, lang: _Optional[str] = ...) -> None: ...
 
 class ResServerTime(_message.Message):
-    __slots__ = ["server_time"]
+    __slots__ = ["server_time", "error"]
     SERVER_TIME_FIELD_NUMBER: _ClassVar[int]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
     server_time: int
-    def __init__(self, server_time: _Optional[int] = ...) -> None: ...
+    error: Error
+    def __init__(self, server_time: _Optional[int] = ..., error: _Optional[_Union[Error, _Mapping]] = ...) -> None: ...
 
 class ReqPlatformBillingProducts(_message.Message):
     __slots__ = ["shelves_id"]
@@ -5383,6 +6561,24 @@ class ResCreateSteamOrder(_message.Message):
     platform_order_id: str
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., order_id: _Optional[str] = ..., platform_order_id: _Optional[str] = ...) -> None: ...
 
+class ResRandomCharacter(_message.Message):
+    __slots__ = ["error", "enabled", "pool"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    ENABLED_FIELD_NUMBER: _ClassVar[int]
+    POOL_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    enabled: bool
+    pool: _containers.RepeatedCompositeFieldContainer[RandomCharacter]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., enabled: bool = ..., pool: _Optional[_Iterable[_Union[RandomCharacter, _Mapping]]] = ...) -> None: ...
+
+class ReqRandomCharacter(_message.Message):
+    __slots__ = ["enabled", "pool"]
+    ENABLED_FIELD_NUMBER: _ClassVar[int]
+    POOL_FIELD_NUMBER: _ClassVar[int]
+    enabled: bool
+    pool: _containers.RepeatedCompositeFieldContainer[RandomCharacter]
+    def __init__(self, enabled: bool = ..., pool: _Optional[_Iterable[_Union[RandomCharacter, _Mapping]]] = ...) -> None: ...
+
 class ReqVerifySteamOrder(_message.Message):
     __slots__ = ["order_id", "account_id"]
     ORDER_ID_FIELD_NUMBER: _ClassVar[int]
@@ -5448,20 +6644,22 @@ class ResCreatePaypalOrder(_message.Message):
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., order_id: _Optional[str] = ..., url: _Optional[str] = ...) -> None: ...
 
 class ReqCreateXsollaOrder(_message.Message):
-    __slots__ = ["goods_id", "client_type", "account_id", "payment_method", "debt_order_id", "client_version_string"]
+    __slots__ = ["goods_id", "client_type", "account_id", "payment_method", "debt_order_id", "client_version_string", "account_ip"]
     GOODS_ID_FIELD_NUMBER: _ClassVar[int]
     CLIENT_TYPE_FIELD_NUMBER: _ClassVar[int]
     ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
     PAYMENT_METHOD_FIELD_NUMBER: _ClassVar[int]
     DEBT_ORDER_ID_FIELD_NUMBER: _ClassVar[int]
     CLIENT_VERSION_STRING_FIELD_NUMBER: _ClassVar[int]
+    ACCOUNT_IP_FIELD_NUMBER: _ClassVar[int]
     goods_id: int
     client_type: int
     account_id: int
     payment_method: int
     debt_order_id: str
     client_version_string: str
-    def __init__(self, goods_id: _Optional[int] = ..., client_type: _Optional[int] = ..., account_id: _Optional[int] = ..., payment_method: _Optional[int] = ..., debt_order_id: _Optional[str] = ..., client_version_string: _Optional[str] = ...) -> None: ...
+    account_ip: str
+    def __init__(self, goods_id: _Optional[int] = ..., client_type: _Optional[int] = ..., account_id: _Optional[int] = ..., payment_method: _Optional[int] = ..., debt_order_id: _Optional[str] = ..., client_version_string: _Optional[str] = ..., account_ip: _Optional[str] = ...) -> None: ...
 
 class ResCreateXsollaOrder(_message.Message):
     __slots__ = ["error", "order_id", "url"]
@@ -5484,14 +6682,16 @@ class ReqDeliverAA32Order(_message.Message):
     def __init__(self, account_id: _Optional[int] = ..., nsa_id: _Optional[str] = ..., nsa_token: _Optional[str] = ...) -> None: ...
 
 class ReqOpenChest(_message.Message):
-    __slots__ = ["chest_id", "count", "use_ticket"]
+    __slots__ = ["chest_id", "count", "use_ticket", "choose_up_activity_id"]
     CHEST_ID_FIELD_NUMBER: _ClassVar[int]
     COUNT_FIELD_NUMBER: _ClassVar[int]
     USE_TICKET_FIELD_NUMBER: _ClassVar[int]
+    CHOOSE_UP_ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
     chest_id: int
     count: int
     use_ticket: bool
-    def __init__(self, chest_id: _Optional[int] = ..., count: _Optional[int] = ..., use_ticket: bool = ...) -> None: ...
+    choose_up_activity_id: int
+    def __init__(self, chest_id: _Optional[int] = ..., count: _Optional[int] = ..., use_ticket: bool = ..., choose_up_activity_id: _Optional[int] = ...) -> None: ...
 
 class ResOpenChest(_message.Message):
     __slots__ = ["error", "results", "total_open_count", "faith_count", "chest_replace_up"]
@@ -5566,7 +6766,7 @@ class ResDoActivitySignIn(_message.Message):
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., rewards: _Optional[_Iterable[_Union[ResDoActivitySignIn.RewardData, _Mapping]]] = ..., sign_in_count: _Optional[int] = ...) -> None: ...
 
 class ResCharacterInfo(_message.Message):
-    __slots__ = ["error", "characters", "skins", "main_character_id", "send_gift_count", "send_gift_limit", "finished_endings", "rewarded_endings", "character_sort", "hidden_characters"]
+    __slots__ = ["error", "characters", "skins", "main_character_id", "send_gift_count", "send_gift_limit", "finished_endings", "rewarded_endings", "character_sort", "hidden_characters", "other_character_sort"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
     CHARACTERS_FIELD_NUMBER: _ClassVar[int]
     SKINS_FIELD_NUMBER: _ClassVar[int]
@@ -5577,6 +6777,7 @@ class ResCharacterInfo(_message.Message):
     REWARDED_ENDINGS_FIELD_NUMBER: _ClassVar[int]
     CHARACTER_SORT_FIELD_NUMBER: _ClassVar[int]
     HIDDEN_CHARACTERS_FIELD_NUMBER: _ClassVar[int]
+    OTHER_CHARACTER_SORT_FIELD_NUMBER: _ClassVar[int]
     error: Error
     characters: _containers.RepeatedCompositeFieldContainer[Character]
     skins: _containers.RepeatedScalarFieldContainer[int]
@@ -5587,13 +6788,18 @@ class ResCharacterInfo(_message.Message):
     rewarded_endings: _containers.RepeatedScalarFieldContainer[int]
     character_sort: _containers.RepeatedScalarFieldContainer[int]
     hidden_characters: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., characters: _Optional[_Iterable[_Union[Character, _Mapping]]] = ..., skins: _Optional[_Iterable[int]] = ..., main_character_id: _Optional[int] = ..., send_gift_count: _Optional[int] = ..., send_gift_limit: _Optional[int] = ..., finished_endings: _Optional[_Iterable[int]] = ..., rewarded_endings: _Optional[_Iterable[int]] = ..., character_sort: _Optional[_Iterable[int]] = ..., hidden_characters: _Optional[_Iterable[int]] = ...) -> None: ...
+    other_character_sort: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., characters: _Optional[_Iterable[_Union[Character, _Mapping]]] = ..., skins: _Optional[_Iterable[int]] = ..., main_character_id: _Optional[int] = ..., send_gift_count: _Optional[int] = ..., send_gift_limit: _Optional[int] = ..., finished_endings: _Optional[_Iterable[int]] = ..., rewarded_endings: _Optional[_Iterable[int]] = ..., character_sort: _Optional[_Iterable[int]] = ..., hidden_characters: _Optional[_Iterable[int]] = ..., other_character_sort: _Optional[_Iterable[int]] = ...) -> None: ...
 
 class ReqUpdateCharacterSort(_message.Message):
-    __slots__ = ["sort"]
+    __slots__ = ["sort", "other_sort", "hidden_characters"]
     SORT_FIELD_NUMBER: _ClassVar[int]
+    OTHER_SORT_FIELD_NUMBER: _ClassVar[int]
+    HIDDEN_CHARACTERS_FIELD_NUMBER: _ClassVar[int]
     sort: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, sort: _Optional[_Iterable[int]] = ...) -> None: ...
+    other_sort: _containers.RepeatedScalarFieldContainer[int]
+    hidden_characters: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, sort: _Optional[_Iterable[int]] = ..., other_sort: _Optional[_Iterable[int]] = ..., hidden_characters: _Optional[_Iterable[int]] = ...) -> None: ...
 
 class ReqChangeMainCharacter(_message.Message):
     __slots__ = ["character_id"]
@@ -5695,14 +6901,16 @@ class ReqChangeCommonView(_message.Message):
     def __init__(self, slot: _Optional[int] = ..., value: _Optional[int] = ...) -> None: ...
 
 class ReqSaveCommonViews(_message.Message):
-    __slots__ = ["views", "save_index", "is_use"]
+    __slots__ = ["views", "save_index", "is_use", "name"]
     VIEWS_FIELD_NUMBER: _ClassVar[int]
     SAVE_INDEX_FIELD_NUMBER: _ClassVar[int]
     IS_USE_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
     views: _containers.RepeatedCompositeFieldContainer[ViewSlot]
     save_index: int
     is_use: int
-    def __init__(self, views: _Optional[_Iterable[_Union[ViewSlot, _Mapping]]] = ..., save_index: _Optional[int] = ..., is_use: _Optional[int] = ...) -> None: ...
+    name: str
+    def __init__(self, views: _Optional[_Iterable[_Union[ViewSlot, _Mapping]]] = ..., save_index: _Optional[int] = ..., is_use: _Optional[int] = ..., name: _Optional[str] = ...) -> None: ...
 
 class ReqCommonViews(_message.Message):
     __slots__ = ["index"]
@@ -5711,22 +6919,26 @@ class ReqCommonViews(_message.Message):
     def __init__(self, index: _Optional[int] = ...) -> None: ...
 
 class ResCommonViews(_message.Message):
-    __slots__ = ["error", "views"]
+    __slots__ = ["error", "views", "name"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
     VIEWS_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
     error: Error
     views: _containers.RepeatedCompositeFieldContainer[ViewSlot]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., views: _Optional[_Iterable[_Union[ViewSlot, _Mapping]]] = ...) -> None: ...
+    name: str
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., views: _Optional[_Iterable[_Union[ViewSlot, _Mapping]]] = ..., name: _Optional[str] = ...) -> None: ...
 
 class ResAllcommonViews(_message.Message):
     __slots__ = ["views", "use", "error"]
     class Views(_message.Message):
-        __slots__ = ["values", "index"]
+        __slots__ = ["values", "index", "name"]
         VALUES_FIELD_NUMBER: _ClassVar[int]
         INDEX_FIELD_NUMBER: _ClassVar[int]
+        NAME_FIELD_NUMBER: _ClassVar[int]
         values: _containers.RepeatedCompositeFieldContainer[ViewSlot]
         index: int
-        def __init__(self, values: _Optional[_Iterable[_Union[ViewSlot, _Mapping]]] = ..., index: _Optional[int] = ...) -> None: ...
+        name: str
+        def __init__(self, values: _Optional[_Iterable[_Union[ViewSlot, _Mapping]]] = ..., index: _Optional[int] = ..., name: _Optional[str] = ...) -> None: ...
     VIEWS_FIELD_NUMBER: _ClassVar[int]
     USE_FIELD_NUMBER: _ClassVar[int]
     ERROR_FIELD_NUMBER: _ClassVar[int]
@@ -5893,7 +7105,7 @@ class ResModNicknameTime(_message.Message):
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., last_mod_time: _Optional[int] = ...) -> None: ...
 
 class ResMisc(_message.Message):
-    __slots__ = ["error", "recharged_list", "faiths"]
+    __slots__ = ["error", "recharged_list", "faiths", "verified_hidden", "verified_value", "disable_room_random_bot_char"]
     class MiscFaithData(_message.Message):
         __slots__ = ["faith_id", "count"]
         FAITH_ID_FIELD_NUMBER: _ClassVar[int]
@@ -5904,10 +7116,16 @@ class ResMisc(_message.Message):
     ERROR_FIELD_NUMBER: _ClassVar[int]
     RECHARGED_LIST_FIELD_NUMBER: _ClassVar[int]
     FAITHS_FIELD_NUMBER: _ClassVar[int]
+    VERIFIED_HIDDEN_FIELD_NUMBER: _ClassVar[int]
+    VERIFIED_VALUE_FIELD_NUMBER: _ClassVar[int]
+    DISABLE_ROOM_RANDOM_BOT_CHAR_FIELD_NUMBER: _ClassVar[int]
     error: Error
     recharged_list: _containers.RepeatedScalarFieldContainer[int]
     faiths: _containers.RepeatedCompositeFieldContainer[ResMisc.MiscFaithData]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., recharged_list: _Optional[_Iterable[int]] = ..., faiths: _Optional[_Iterable[_Union[ResMisc.MiscFaithData, _Mapping]]] = ...) -> None: ...
+    verified_hidden: int
+    verified_value: int
+    disable_room_random_bot_char: int
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., recharged_list: _Optional[_Iterable[int]] = ..., faiths: _Optional[_Iterable[_Union[ResMisc.MiscFaithData, _Mapping]]] = ..., verified_hidden: _Optional[int] = ..., verified_value: _Optional[int] = ..., disable_room_random_bot_char: _Optional[int] = ...) -> None: ...
 
 class ReqModifySignature(_message.Message):
     __slots__ = ["signature"]
@@ -5971,12 +7189,14 @@ class ReqGainVipReward(_message.Message):
     def __init__(self, vip_level: _Optional[int] = ...) -> None: ...
 
 class ReqFetchCustomizedContestList(_message.Message):
-    __slots__ = ["start", "count"]
+    __slots__ = ["start", "count", "lang"]
     START_FIELD_NUMBER: _ClassVar[int]
     COUNT_FIELD_NUMBER: _ClassVar[int]
+    LANG_FIELD_NUMBER: _ClassVar[int]
     start: int
     count: int
-    def __init__(self, start: _Optional[int] = ..., count: _Optional[int] = ...) -> None: ...
+    lang: str
+    def __init__(self, start: _Optional[int] = ..., count: _Optional[int] = ..., lang: _Optional[str] = ...) -> None: ...
 
 class ResFetchCustomizedContestList(_message.Message):
     __slots__ = ["error", "contests", "follow_contests"]
@@ -5987,20 +7207,6 @@ class ResFetchCustomizedContestList(_message.Message):
     contests: _containers.RepeatedCompositeFieldContainer[CustomizedContestBase]
     follow_contests: _containers.RepeatedCompositeFieldContainer[CustomizedContestBase]
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., contests: _Optional[_Iterable[_Union[CustomizedContestBase, _Mapping]]] = ..., follow_contests: _Optional[_Iterable[_Union[CustomizedContestBase, _Mapping]]] = ...) -> None: ...
-
-class ReqFetchCustomizedContestExtendInfo(_message.Message):
-    __slots__ = ["uid_list"]
-    UID_LIST_FIELD_NUMBER: _ClassVar[int]
-    uid_list: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, uid_list: _Optional[_Iterable[int]] = ...) -> None: ...
-
-class ResFetchCustomizedContestExtendInfo(_message.Message):
-    __slots__ = ["error", "extend_list"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    EXTEND_LIST_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    extend_list: _containers.RepeatedCompositeFieldContainer[CustomizedContestExtend]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., extend_list: _Optional[_Iterable[_Union[CustomizedContestExtend, _Mapping]]] = ...) -> None: ...
 
 class ReqFetchCustomizedContestAuthInfo(_message.Message):
     __slots__ = ["unique_id"]
@@ -6017,22 +7223,28 @@ class ResFetchCustomizedContestAuthInfo(_message.Message):
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., observer_level: _Optional[int] = ...) -> None: ...
 
 class ReqEnterCustomizedContest(_message.Message):
-    __slots__ = ["unique_id"]
+    __slots__ = ["unique_id", "lang"]
     UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
+    LANG_FIELD_NUMBER: _ClassVar[int]
     unique_id: int
-    def __init__(self, unique_id: _Optional[int] = ...) -> None: ...
+    lang: str
+    def __init__(self, unique_id: _Optional[int] = ..., lang: _Optional[str] = ...) -> None: ...
 
 class ResEnterCustomizedContest(_message.Message):
-    __slots__ = ["error", "detail_info", "player_report", "is_followed"]
+    __slots__ = ["error", "detail_info", "player_report", "is_followed", "state", "is_admin"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
     DETAIL_INFO_FIELD_NUMBER: _ClassVar[int]
     PLAYER_REPORT_FIELD_NUMBER: _ClassVar[int]
     IS_FOLLOWED_FIELD_NUMBER: _ClassVar[int]
+    STATE_FIELD_NUMBER: _ClassVar[int]
+    IS_ADMIN_FIELD_NUMBER: _ClassVar[int]
     error: Error
     detail_info: CustomizedContestDetail
     player_report: CustomizedContestPlayerReport
     is_followed: bool
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., detail_info: _Optional[_Union[CustomizedContestDetail, _Mapping]] = ..., player_report: _Optional[_Union[CustomizedContestPlayerReport, _Mapping]] = ..., is_followed: bool = ...) -> None: ...
+    state: int
+    is_admin: bool
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., detail_info: _Optional[_Union[CustomizedContestDetail, _Mapping]] = ..., player_report: _Optional[_Union[CustomizedContestPlayerReport, _Mapping]] = ..., is_followed: bool = ..., state: _Optional[int] = ..., is_admin: bool = ...) -> None: ...
 
 class ReqFetchCustomizedContestOnlineInfo(_message.Message):
     __slots__ = ["unique_id"]
@@ -6049,10 +7261,12 @@ class ResFetchCustomizedContestOnlineInfo(_message.Message):
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., online_player: _Optional[int] = ...) -> None: ...
 
 class ReqFetchCustomizedContestByContestId(_message.Message):
-    __slots__ = ["contest_id"]
+    __slots__ = ["contest_id", "lang"]
     CONTEST_ID_FIELD_NUMBER: _ClassVar[int]
+    LANG_FIELD_NUMBER: _ClassVar[int]
     contest_id: int
-    def __init__(self, contest_id: _Optional[int] = ...) -> None: ...
+    lang: str
+    def __init__(self, contest_id: _Optional[int] = ..., lang: _Optional[str] = ...) -> None: ...
 
 class ResFetchCustomizedContestByContestId(_message.Message):
     __slots__ = ["error", "contest_info"]
@@ -6062,6 +7276,22 @@ class ResFetchCustomizedContestByContestId(_message.Message):
     contest_info: CustomizedContestAbstract
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., contest_info: _Optional[_Union[CustomizedContestAbstract, _Mapping]] = ...) -> None: ...
 
+class ReqSignupCustomizedContest(_message.Message):
+    __slots__ = ["unique_id", "client_version_string"]
+    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
+    CLIENT_VERSION_STRING_FIELD_NUMBER: _ClassVar[int]
+    unique_id: int
+    client_version_string: str
+    def __init__(self, unique_id: _Optional[int] = ..., client_version_string: _Optional[str] = ...) -> None: ...
+
+class ResSignupCustomizedContest(_message.Message):
+    __slots__ = ["error", "state"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    STATE_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    state: int
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., state: _Optional[int] = ...) -> None: ...
+
 class ReqStartCustomizedContest(_message.Message):
     __slots__ = ["unique_id", "client_version_string"]
     UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
@@ -6070,6 +7300,12 @@ class ReqStartCustomizedContest(_message.Message):
     client_version_string: str
     def __init__(self, unique_id: _Optional[int] = ..., client_version_string: _Optional[str] = ...) -> None: ...
 
+class ReqStopCustomizedContest(_message.Message):
+    __slots__ = ["unique_id"]
+    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
+    unique_id: int
+    def __init__(self, unique_id: _Optional[int] = ...) -> None: ...
+
 class ReqJoinCustomizedContestChatRoom(_message.Message):
     __slots__ = ["unique_id"]
     UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
@@ -6077,18 +7313,20 @@ class ReqJoinCustomizedContestChatRoom(_message.Message):
     def __init__(self, unique_id: _Optional[int] = ...) -> None: ...
 
 class ResJoinCustomizedContestChatRoom(_message.Message):
-    __slots__ = ["error", "chat_history"]
+    __slots__ = ["error", "token"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
-    CHAT_HISTORY_FIELD_NUMBER: _ClassVar[int]
+    TOKEN_FIELD_NUMBER: _ClassVar[int]
     error: Error
-    chat_history: _containers.RepeatedScalarFieldContainer[bytes]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., chat_history: _Optional[_Iterable[bytes]] = ...) -> None: ...
+    token: str
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., token: _Optional[str] = ...) -> None: ...
 
 class ReqSayChatMessage(_message.Message):
-    __slots__ = ["content"]
+    __slots__ = ["content", "unique_id"]
     CONTENT_FIELD_NUMBER: _ClassVar[int]
+    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
     content: str
-    def __init__(self, content: _Optional[str] = ...) -> None: ...
+    unique_id: int
+    def __init__(self, content: _Optional[str] = ..., unique_id: _Optional[int] = ...) -> None: ...
 
 class ReqFetchCustomizedContestGameLiveList(_message.Message):
     __slots__ = ["unique_id"]
@@ -6105,12 +7343,14 @@ class ResFetchCustomizedContestGameLiveList(_message.Message):
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., live_list: _Optional[_Iterable[_Union[GameLiveHead, _Mapping]]] = ...) -> None: ...
 
 class ReqFetchCustomizedContestGameRecords(_message.Message):
-    __slots__ = ["unique_id", "last_index"]
+    __slots__ = ["unique_id", "last_index", "season_id"]
     UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
     LAST_INDEX_FIELD_NUMBER: _ClassVar[int]
+    SEASON_ID_FIELD_NUMBER: _ClassVar[int]
     unique_id: int
     last_index: int
-    def __init__(self, unique_id: _Optional[int] = ..., last_index: _Optional[int] = ...) -> None: ...
+    season_id: int
+    def __init__(self, unique_id: _Optional[int] = ..., last_index: _Optional[int] = ..., season_id: _Optional[int] = ...) -> None: ...
 
 class ResFetchCustomizedContestGameRecords(_message.Message):
     __slots__ = ["error", "next_index", "record_list"]
@@ -6137,7 +7377,7 @@ class ResActivityList(_message.Message):
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., activities: _Optional[_Iterable[_Union[Activity, _Mapping]]] = ...) -> None: ...
 
 class ResAccountActivityData(_message.Message):
-    __slots__ = ["error", "exchange_records", "task_progress_list", "accumulated_point_list", "rank_data_list", "flip_task_progress_list", "sign_in_data", "richman_data", "period_task_progress_list", "random_task_progress_list", "chest_up_data", "sns_data", "mine_data", "rpg_data", "arena_data", "feed_data", "segment_task_progress_list", "vote_records", "spot_data", "friend_gift_data", "upgrade_data", "gacha_data", "simulation_data", "combining_data"]
+    __slots__ = ["error", "exchange_records", "task_progress_list", "accumulated_point_list", "rank_data_list", "flip_task_progress_list", "sign_in_data", "richman_data", "period_task_progress_list", "random_task_progress_list", "chest_up_data", "sns_data", "mine_data", "rpg_data", "arena_data", "feed_data", "segment_task_progress_list", "vote_records", "spot_data", "friend_gift_data", "upgrade_data", "gacha_data", "simulation_data", "combining_data", "village_data", "festival_data", "island_data", "story_data", "choose_up_data", "progress_reward_data"]
     class ActivitySignInData(_message.Message):
         __slots__ = ["activity_id", "sign_in_count", "last_sign_in_time"]
         ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
@@ -6213,6 +7453,12 @@ class ResAccountActivityData(_message.Message):
     GACHA_DATA_FIELD_NUMBER: _ClassVar[int]
     SIMULATION_DATA_FIELD_NUMBER: _ClassVar[int]
     COMBINING_DATA_FIELD_NUMBER: _ClassVar[int]
+    VILLAGE_DATA_FIELD_NUMBER: _ClassVar[int]
+    FESTIVAL_DATA_FIELD_NUMBER: _ClassVar[int]
+    ISLAND_DATA_FIELD_NUMBER: _ClassVar[int]
+    STORY_DATA_FIELD_NUMBER: _ClassVar[int]
+    CHOOSE_UP_DATA_FIELD_NUMBER: _ClassVar[int]
+    PROGRESS_REWARD_DATA_FIELD_NUMBER: _ClassVar[int]
     error: Error
     exchange_records: _containers.RepeatedCompositeFieldContainer[ExchangeRecord]
     task_progress_list: _containers.RepeatedCompositeFieldContainer[TaskProgress]
@@ -6237,7 +7483,13 @@ class ResAccountActivityData(_message.Message):
     gacha_data: _containers.RepeatedCompositeFieldContainer[ActivityGachaUpdateData]
     simulation_data: _containers.RepeatedCompositeFieldContainer[ActivitySimulationData]
     combining_data: _containers.RepeatedCompositeFieldContainer[ActivityCombiningLQData]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., exchange_records: _Optional[_Iterable[_Union[ExchangeRecord, _Mapping]]] = ..., task_progress_list: _Optional[_Iterable[_Union[TaskProgress, _Mapping]]] = ..., accumulated_point_list: _Optional[_Iterable[_Union[ActivityAccumulatedPointData, _Mapping]]] = ..., rank_data_list: _Optional[_Iterable[_Union[ActivityRankPointData, _Mapping]]] = ..., flip_task_progress_list: _Optional[_Iterable[_Union[TaskProgress, _Mapping]]] = ..., sign_in_data: _Optional[_Iterable[_Union[ResAccountActivityData.ActivitySignInData, _Mapping]]] = ..., richman_data: _Optional[_Iterable[_Union[ResAccountActivityData.ActivityRichmanData, _Mapping]]] = ..., period_task_progress_list: _Optional[_Iterable[_Union[TaskProgress, _Mapping]]] = ..., random_task_progress_list: _Optional[_Iterable[_Union[TaskProgress, _Mapping]]] = ..., chest_up_data: _Optional[_Iterable[_Union[ResAccountActivityData.ChestUpData, _Mapping]]] = ..., sns_data: _Optional[_Union[ResAccountActivityData.ActivitySNSData, _Mapping]] = ..., mine_data: _Optional[_Iterable[_Union[MineActivityData, _Mapping]]] = ..., rpg_data: _Optional[_Iterable[_Union[RPGActivity, _Mapping]]] = ..., arena_data: _Optional[_Iterable[_Union[ActivityArenaData, _Mapping]]] = ..., feed_data: _Optional[_Iterable[_Union[FeedActivityData, _Mapping]]] = ..., segment_task_progress_list: _Optional[_Iterable[_Union[SegmentTaskProgress, _Mapping]]] = ..., vote_records: _Optional[_Iterable[_Union[VoteData, _Mapping]]] = ..., spot_data: _Optional[_Iterable[_Union[ActivitySpotData, _Mapping]]] = ..., friend_gift_data: _Optional[_Iterable[_Union[ActivityFriendGiftData, _Mapping]]] = ..., upgrade_data: _Optional[_Iterable[_Union[ActivityUpgradeData, _Mapping]]] = ..., gacha_data: _Optional[_Iterable[_Union[ActivityGachaUpdateData, _Mapping]]] = ..., simulation_data: _Optional[_Iterable[_Union[ActivitySimulationData, _Mapping]]] = ..., combining_data: _Optional[_Iterable[_Union[ActivityCombiningLQData, _Mapping]]] = ...) -> None: ...
+    village_data: _containers.RepeatedCompositeFieldContainer[ActivityVillageData]
+    festival_data: _containers.RepeatedCompositeFieldContainer[ActivityFestivalData]
+    island_data: _containers.RepeatedCompositeFieldContainer[ActivityIslandData]
+    story_data: _containers.RepeatedCompositeFieldContainer[ActivityStoryData]
+    choose_up_data: _containers.RepeatedCompositeFieldContainer[ActivityChooseUpData]
+    progress_reward_data: _containers.RepeatedCompositeFieldContainer[ActivityProgressRewardData]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., exchange_records: _Optional[_Iterable[_Union[ExchangeRecord, _Mapping]]] = ..., task_progress_list: _Optional[_Iterable[_Union[TaskProgress, _Mapping]]] = ..., accumulated_point_list: _Optional[_Iterable[_Union[ActivityAccumulatedPointData, _Mapping]]] = ..., rank_data_list: _Optional[_Iterable[_Union[ActivityRankPointData, _Mapping]]] = ..., flip_task_progress_list: _Optional[_Iterable[_Union[TaskProgress, _Mapping]]] = ..., sign_in_data: _Optional[_Iterable[_Union[ResAccountActivityData.ActivitySignInData, _Mapping]]] = ..., richman_data: _Optional[_Iterable[_Union[ResAccountActivityData.ActivityRichmanData, _Mapping]]] = ..., period_task_progress_list: _Optional[_Iterable[_Union[TaskProgress, _Mapping]]] = ..., random_task_progress_list: _Optional[_Iterable[_Union[TaskProgress, _Mapping]]] = ..., chest_up_data: _Optional[_Iterable[_Union[ResAccountActivityData.ChestUpData, _Mapping]]] = ..., sns_data: _Optional[_Union[ResAccountActivityData.ActivitySNSData, _Mapping]] = ..., mine_data: _Optional[_Iterable[_Union[MineActivityData, _Mapping]]] = ..., rpg_data: _Optional[_Iterable[_Union[RPGActivity, _Mapping]]] = ..., arena_data: _Optional[_Iterable[_Union[ActivityArenaData, _Mapping]]] = ..., feed_data: _Optional[_Iterable[_Union[FeedActivityData, _Mapping]]] = ..., segment_task_progress_list: _Optional[_Iterable[_Union[SegmentTaskProgress, _Mapping]]] = ..., vote_records: _Optional[_Iterable[_Union[VoteData, _Mapping]]] = ..., spot_data: _Optional[_Iterable[_Union[ActivitySpotData, _Mapping]]] = ..., friend_gift_data: _Optional[_Iterable[_Union[ActivityFriendGiftData, _Mapping]]] = ..., upgrade_data: _Optional[_Iterable[_Union[ActivityUpgradeData, _Mapping]]] = ..., gacha_data: _Optional[_Iterable[_Union[ActivityGachaUpdateData, _Mapping]]] = ..., simulation_data: _Optional[_Iterable[_Union[ActivitySimulationData, _Mapping]]] = ..., combining_data: _Optional[_Iterable[_Union[ActivityCombiningLQData, _Mapping]]] = ..., village_data: _Optional[_Iterable[_Union[ActivityVillageData, _Mapping]]] = ..., festival_data: _Optional[_Iterable[_Union[ActivityFestivalData, _Mapping]]] = ..., island_data: _Optional[_Iterable[_Union[ActivityIslandData, _Mapping]]] = ..., story_data: _Optional[_Iterable[_Union[ActivityStoryData, _Mapping]]] = ..., choose_up_data: _Optional[_Iterable[_Union[ActivityChooseUpData, _Mapping]]] = ..., progress_reward_data: _Optional[_Iterable[_Union[ActivityProgressRewardData, _Mapping]]] = ...) -> None: ...
 
 class SNSBlog(_message.Message):
     __slots__ = ["id", "read_time"]
@@ -6276,6 +7528,12 @@ class ReqCompleteActivityTask(_message.Message):
     TASK_ID_FIELD_NUMBER: _ClassVar[int]
     task_id: int
     def __init__(self, task_id: _Optional[int] = ...) -> None: ...
+
+class ReqCompleteActivityTaskBatch(_message.Message):
+    __slots__ = ["task_list"]
+    TASK_LIST_FIELD_NUMBER: _ClassVar[int]
+    task_list: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, task_list: _Optional[_Iterable[int]] = ...) -> None: ...
 
 class ReqCompletePeriodActivityTaskBatch(_message.Message):
     __slots__ = ["task_list"]
@@ -6843,20 +8101,6 @@ class ReqCheckPrivacy(_message.Message):
     versions: _containers.RepeatedCompositeFieldContainer[ReqCheckPrivacy.Versions]
     def __init__(self, device_type: _Optional[str] = ..., versions: _Optional[_Iterable[_Union[ReqCheckPrivacy.Versions, _Mapping]]] = ...) -> None: ...
 
-class ReqResponseCaptcha(_message.Message):
-    __slots__ = ["check_id", "check_time", "result", "client_version_string", "type"]
-    CHECK_ID_FIELD_NUMBER: _ClassVar[int]
-    CHECK_TIME_FIELD_NUMBER: _ClassVar[int]
-    RESULT_FIELD_NUMBER: _ClassVar[int]
-    CLIENT_VERSION_STRING_FIELD_NUMBER: _ClassVar[int]
-    TYPE_FIELD_NUMBER: _ClassVar[int]
-    check_id: int
-    check_time: int
-    result: str
-    client_version_string: str
-    type: int
-    def __init__(self, check_id: _Optional[int] = ..., check_time: _Optional[int] = ..., result: _Optional[str] = ..., client_version_string: _Optional[str] = ..., type: _Optional[int] = ...) -> None: ...
-
 class ReqFetchRPGBattleHistory(_message.Message):
     __slots__ = ["activity_id"]
     ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
@@ -7156,22 +8400,31 @@ class ReqFetchVoteActivity(_message.Message):
     def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
 
 class ResFetchVoteActivity(_message.Message):
-    __slots__ = ["error", "vote_rank", "update_time"]
+    __slots__ = ["error", "update_time", "data"]
+    class VoteRankData(_message.Message):
+        __slots__ = ["id", "share"]
+        ID_FIELD_NUMBER: _ClassVar[int]
+        SHARE_FIELD_NUMBER: _ClassVar[int]
+        id: int
+        share: int
+        def __init__(self, id: _Optional[int] = ..., share: _Optional[int] = ...) -> None: ...
     ERROR_FIELD_NUMBER: _ClassVar[int]
-    VOTE_RANK_FIELD_NUMBER: _ClassVar[int]
     UPDATE_TIME_FIELD_NUMBER: _ClassVar[int]
+    DATA_FIELD_NUMBER: _ClassVar[int]
     error: Error
-    vote_rank: _containers.RepeatedScalarFieldContainer[int]
     update_time: int
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., vote_rank: _Optional[_Iterable[int]] = ..., update_time: _Optional[int] = ...) -> None: ...
+    data: _containers.RepeatedCompositeFieldContainer[ResFetchVoteActivity.VoteRankData]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., update_time: _Optional[int] = ..., data: _Optional[_Iterable[_Union[ResFetchVoteActivity.VoteRankData, _Mapping]]] = ...) -> None: ...
 
 class ReqVoteActivity(_message.Message):
-    __slots__ = ["vote", "activity_id"]
+    __slots__ = ["vote", "activity_id", "count"]
     VOTE_FIELD_NUMBER: _ClassVar[int]
     ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
     vote: int
     activity_id: int
-    def __init__(self, vote: _Optional[int] = ..., activity_id: _Optional[int] = ...) -> None: ...
+    count: int
+    def __init__(self, vote: _Optional[int] = ..., activity_id: _Optional[int] = ..., count: _Optional[int] = ...) -> None: ...
 
 class ResVoteActivity(_message.Message):
     __slots__ = ["error", "vote_records"]
@@ -7496,7 +8749,7 @@ class ResFinishCombiningOrder(_message.Message):
     def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., reward_items: _Optional[_Iterable[_Union[ExecuteReward, _Mapping]]] = ...) -> None: ...
 
 class ResFetchInfo(_message.Message):
-    __slots__ = ["error", "server_time", "server_setting", "client_value", "friend_list", "friend_apply_list", "recent_friend", "mail_info", "receive_coin_info", "title_list", "bag_info", "shop_info", "shop_interval", "activity_data", "activity_interval", "activity_buff", "vip_reward", "month_ticket_info", "achievement", "comment_setting", "account_settings", "mod_nickname_time", "misc", "announcement", "rolling_notice", "activity_list", "character_info", "all_common_views", "collected_game_record_list"]
+    __slots__ = ["error", "server_time", "server_setting", "client_value", "friend_list", "friend_apply_list", "recent_friend", "mail_info", "receive_coin_info", "title_list", "bag_info", "shop_info", "shop_interval", "activity_data", "activity_interval", "activity_buff", "vip_reward", "month_ticket_info", "achievement", "comment_setting", "account_settings", "mod_nickname_time", "misc", "announcement", "activity_list", "character_info", "all_common_views", "collected_game_record_list", "maintain_notice", "random_character", "maintenance_info", "seer_info", "annual_report_info"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
     SERVER_TIME_FIELD_NUMBER: _ClassVar[int]
     SERVER_SETTING_FIELD_NUMBER: _ClassVar[int]
@@ -7521,11 +8774,15 @@ class ResFetchInfo(_message.Message):
     MOD_NICKNAME_TIME_FIELD_NUMBER: _ClassVar[int]
     MISC_FIELD_NUMBER: _ClassVar[int]
     ANNOUNCEMENT_FIELD_NUMBER: _ClassVar[int]
-    ROLLING_NOTICE_FIELD_NUMBER: _ClassVar[int]
     ACTIVITY_LIST_FIELD_NUMBER: _ClassVar[int]
     CHARACTER_INFO_FIELD_NUMBER: _ClassVar[int]
     ALL_COMMON_VIEWS_FIELD_NUMBER: _ClassVar[int]
     COLLECTED_GAME_RECORD_LIST_FIELD_NUMBER: _ClassVar[int]
+    MAINTAIN_NOTICE_FIELD_NUMBER: _ClassVar[int]
+    RANDOM_CHARACTER_FIELD_NUMBER: _ClassVar[int]
+    MAINTENANCE_INFO_FIELD_NUMBER: _ClassVar[int]
+    SEER_INFO_FIELD_NUMBER: _ClassVar[int]
+    ANNUAL_REPORT_INFO_FIELD_NUMBER: _ClassVar[int]
     error: Error
     server_time: ResServerTime
     server_setting: ResServerSettings
@@ -7550,12 +8807,2594 @@ class ResFetchInfo(_message.Message):
     mod_nickname_time: ResModNicknameTime
     misc: ResMisc
     announcement: ResAnnouncement
-    rolling_notice: ReqRollingNotice
     activity_list: ResActivityList
     character_info: ResCharacterInfo
     all_common_views: ResAllcommonViews
     collected_game_record_list: ResCollectedGameRecordList
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., server_time: _Optional[_Union[ResServerTime, _Mapping]] = ..., server_setting: _Optional[_Union[ResServerSettings, _Mapping]] = ..., client_value: _Optional[_Union[ResClientValue, _Mapping]] = ..., friend_list: _Optional[_Union[ResFriendList, _Mapping]] = ..., friend_apply_list: _Optional[_Union[ResFriendApplyList, _Mapping]] = ..., recent_friend: _Optional[_Union[ResFetchrecentFriend, _Mapping]] = ..., mail_info: _Optional[_Union[ResMailInfo, _Mapping]] = ..., receive_coin_info: _Optional[_Union[ResReviveCoinInfo, _Mapping]] = ..., title_list: _Optional[_Union[ResTitleList, _Mapping]] = ..., bag_info: _Optional[_Union[ResBagInfo, _Mapping]] = ..., shop_info: _Optional[_Union[ResShopInfo, _Mapping]] = ..., shop_interval: _Optional[_Union[ResFetchShopInterval, _Mapping]] = ..., activity_data: _Optional[_Union[ResAccountActivityData, _Mapping]] = ..., activity_interval: _Optional[_Union[ResFetchActivityInterval, _Mapping]] = ..., activity_buff: _Optional[_Union[ResActivityBuff, _Mapping]] = ..., vip_reward: _Optional[_Union[ResVipReward, _Mapping]] = ..., month_ticket_info: _Optional[_Union[ResMonthTicketInfo, _Mapping]] = ..., achievement: _Optional[_Union[ResAchievement, _Mapping]] = ..., comment_setting: _Optional[_Union[ResCommentSetting, _Mapping]] = ..., account_settings: _Optional[_Union[ResAccountSettings, _Mapping]] = ..., mod_nickname_time: _Optional[_Union[ResModNicknameTime, _Mapping]] = ..., misc: _Optional[_Union[ResMisc, _Mapping]] = ..., announcement: _Optional[_Union[ResAnnouncement, _Mapping]] = ..., rolling_notice: _Optional[_Union[ReqRollingNotice, _Mapping]] = ..., activity_list: _Optional[_Union[ResActivityList, _Mapping]] = ..., character_info: _Optional[_Union[ResCharacterInfo, _Mapping]] = ..., all_common_views: _Optional[_Union[ResAllcommonViews, _Mapping]] = ..., collected_game_record_list: _Optional[_Union[ResCollectedGameRecordList, _Mapping]] = ...) -> None: ...
+    maintain_notice: ResFetchMaintainNotice
+    random_character: ResRandomCharacter
+    maintenance_info: ResFetchServerMaintenanceInfo
+    seer_info: ResFetchSeerInfo
+    annual_report_info: ResFetchAnnualReportInfo
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., server_time: _Optional[_Union[ResServerTime, _Mapping]] = ..., server_setting: _Optional[_Union[ResServerSettings, _Mapping]] = ..., client_value: _Optional[_Union[ResClientValue, _Mapping]] = ..., friend_list: _Optional[_Union[ResFriendList, _Mapping]] = ..., friend_apply_list: _Optional[_Union[ResFriendApplyList, _Mapping]] = ..., recent_friend: _Optional[_Union[ResFetchrecentFriend, _Mapping]] = ..., mail_info: _Optional[_Union[ResMailInfo, _Mapping]] = ..., receive_coin_info: _Optional[_Union[ResReviveCoinInfo, _Mapping]] = ..., title_list: _Optional[_Union[ResTitleList, _Mapping]] = ..., bag_info: _Optional[_Union[ResBagInfo, _Mapping]] = ..., shop_info: _Optional[_Union[ResShopInfo, _Mapping]] = ..., shop_interval: _Optional[_Union[ResFetchShopInterval, _Mapping]] = ..., activity_data: _Optional[_Union[ResAccountActivityData, _Mapping]] = ..., activity_interval: _Optional[_Union[ResFetchActivityInterval, _Mapping]] = ..., activity_buff: _Optional[_Union[ResActivityBuff, _Mapping]] = ..., vip_reward: _Optional[_Union[ResVipReward, _Mapping]] = ..., month_ticket_info: _Optional[_Union[ResMonthTicketInfo, _Mapping]] = ..., achievement: _Optional[_Union[ResAchievement, _Mapping]] = ..., comment_setting: _Optional[_Union[ResCommentSetting, _Mapping]] = ..., account_settings: _Optional[_Union[ResAccountSettings, _Mapping]] = ..., mod_nickname_time: _Optional[_Union[ResModNicknameTime, _Mapping]] = ..., misc: _Optional[_Union[ResMisc, _Mapping]] = ..., announcement: _Optional[_Union[ResAnnouncement, _Mapping]] = ..., activity_list: _Optional[_Union[ResActivityList, _Mapping]] = ..., character_info: _Optional[_Union[ResCharacterInfo, _Mapping]] = ..., all_common_views: _Optional[_Union[ResAllcommonViews, _Mapping]] = ..., collected_game_record_list: _Optional[_Union[ResCollectedGameRecordList, _Mapping]] = ..., maintain_notice: _Optional[_Union[ResFetchMaintainNotice, _Mapping]] = ..., random_character: _Optional[_Union[ResRandomCharacter, _Mapping]] = ..., maintenance_info: _Optional[_Union[ResFetchServerMaintenanceInfo, _Mapping]] = ..., seer_info: _Optional[_Union[ResFetchSeerInfo, _Mapping]] = ..., annual_report_info: _Optional[_Union[ResFetchAnnualReportInfo, _Mapping]] = ...) -> None: ...
+
+class ResFetchSeerInfo(_message.Message):
+    __slots__ = ["error", "remain_count", "date_limit", "expire_time"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    REMAIN_COUNT_FIELD_NUMBER: _ClassVar[int]
+    DATE_LIMIT_FIELD_NUMBER: _ClassVar[int]
+    EXPIRE_TIME_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    remain_count: int
+    date_limit: int
+    expire_time: int
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., remain_count: _Optional[int] = ..., date_limit: _Optional[int] = ..., expire_time: _Optional[int] = ...) -> None: ...
+
+class ResFetchServerMaintenanceInfo(_message.Message):
+    __slots__ = ["function_maintenance"]
+    class ServerFunctionMaintenanceInfo(_message.Message):
+        __slots__ = ["name", "open"]
+        NAME_FIELD_NUMBER: _ClassVar[int]
+        OPEN_FIELD_NUMBER: _ClassVar[int]
+        name: str
+        open: bool
+        def __init__(self, name: _Optional[str] = ..., open: bool = ...) -> None: ...
+    FUNCTION_MAINTENANCE_FIELD_NUMBER: _ClassVar[int]
+    function_maintenance: _containers.RepeatedCompositeFieldContainer[ResFetchServerMaintenanceInfo.ServerFunctionMaintenanceInfo]
+    def __init__(self, function_maintenance: _Optional[_Iterable[_Union[ResFetchServerMaintenanceInfo.ServerFunctionMaintenanceInfo, _Mapping]]] = ...) -> None: ...
+
+class ReqUpgradeVillageBuilding(_message.Message):
+    __slots__ = ["building_id", "activity_id"]
+    BUILDING_ID_FIELD_NUMBER: _ClassVar[int]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    building_id: int
+    activity_id: int
+    def __init__(self, building_id: _Optional[int] = ..., activity_id: _Optional[int] = ...) -> None: ...
+
+class ReqReceiveVillageBuildingReward(_message.Message):
+    __slots__ = ["activity_id", "building_id", "rewards"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    BUILDING_ID_FIELD_NUMBER: _ClassVar[int]
+    REWARDS_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    building_id: int
+    rewards: _containers.RepeatedCompositeFieldContainer[RewardSlot]
+    def __init__(self, activity_id: _Optional[int] = ..., building_id: _Optional[int] = ..., rewards: _Optional[_Iterable[_Union[RewardSlot, _Mapping]]] = ...) -> None: ...
+
+class ResReceiveVillageBuildingReward(_message.Message):
+    __slots__ = ["error", "reward_items"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    REWARD_ITEMS_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    reward_items: _containers.RepeatedCompositeFieldContainer[ExecuteReward]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., reward_items: _Optional[_Iterable[_Union[ExecuteReward, _Mapping]]] = ...) -> None: ...
+
+class ReqStartVillageTrip(_message.Message):
+    __slots__ = ["dest", "activity_id"]
+    DEST_FIELD_NUMBER: _ClassVar[int]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    dest: int
+    activity_id: int
+    def __init__(self, dest: _Optional[int] = ..., activity_id: _Optional[int] = ...) -> None: ...
+
+class ReqReceiveVillageTripReward(_message.Message):
+    __slots__ = ["activity_id", "dest_id", "rewards"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    DEST_ID_FIELD_NUMBER: _ClassVar[int]
+    REWARDS_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    dest_id: int
+    rewards: _containers.RepeatedCompositeFieldContainer[RewardSlot]
+    def __init__(self, activity_id: _Optional[int] = ..., dest_id: _Optional[int] = ..., rewards: _Optional[_Iterable[_Union[RewardSlot, _Mapping]]] = ...) -> None: ...
+
+class ResReceiveVillageTripReward(_message.Message):
+    __slots__ = ["error", "reward_items"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    REWARD_ITEMS_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    reward_items: _containers.RepeatedCompositeFieldContainer[ExecuteReward]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., reward_items: _Optional[_Iterable[_Union[ExecuteReward, _Mapping]]] = ...) -> None: ...
+
+class ReqCompleteVillageTask(_message.Message):
+    __slots__ = ["task_id", "activity_id"]
+    TASK_ID_FIELD_NUMBER: _ClassVar[int]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    task_id: int
+    activity_id: int
+    def __init__(self, task_id: _Optional[int] = ..., activity_id: _Optional[int] = ...) -> None: ...
+
+class ResCompleteVillageTask(_message.Message):
+    __slots__ = ["error", "reward_items"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    REWARD_ITEMS_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    reward_items: _containers.RepeatedCompositeFieldContainer[ExecuteReward]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., reward_items: _Optional[_Iterable[_Union[ExecuteReward, _Mapping]]] = ...) -> None: ...
+
+class ReqGetFriendVillageData(_message.Message):
+    __slots__ = ["account_list", "activity_id"]
+    ACCOUNT_LIST_FIELD_NUMBER: _ClassVar[int]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    account_list: _containers.RepeatedScalarFieldContainer[int]
+    activity_id: int
+    def __init__(self, account_list: _Optional[_Iterable[int]] = ..., activity_id: _Optional[int] = ...) -> None: ...
+
+class ResGetFriendVillageData(_message.Message):
+    __slots__ = ["error", "list"]
+    class FriendVillageData(_message.Message):
+        __slots__ = ["account_id", "level"]
+        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
+        LEVEL_FIELD_NUMBER: _ClassVar[int]
+        account_id: int
+        level: int
+        def __init__(self, account_id: _Optional[int] = ..., level: _Optional[int] = ...) -> None: ...
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    LIST_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    list: _containers.RepeatedCompositeFieldContainer[ResGetFriendVillageData.FriendVillageData]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., list: _Optional[_Iterable[_Union[ResGetFriendVillageData.FriendVillageData, _Mapping]]] = ...) -> None: ...
+
+class ReqSetVillageWorker(_message.Message):
+    __slots__ = ["building_id", "worker_pos", "activity_id"]
+    BUILDING_ID_FIELD_NUMBER: _ClassVar[int]
+    WORKER_POS_FIELD_NUMBER: _ClassVar[int]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    building_id: int
+    worker_pos: int
+    activity_id: int
+    def __init__(self, building_id: _Optional[int] = ..., worker_pos: _Optional[int] = ..., activity_id: _Optional[int] = ...) -> None: ...
+
+class ResSetVillageWorker(_message.Message):
+    __slots__ = ["error", "building", "update_time"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    BUILDING_FIELD_NUMBER: _ClassVar[int]
+    UPDATE_TIME_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    building: VillageBuildingData
+    update_time: int
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., building: _Optional[_Union[VillageBuildingData, _Mapping]] = ..., update_time: _Optional[int] = ...) -> None: ...
+
+class ReqNextRoundVillage(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ResNextRoundVillage(_message.Message):
+    __slots__ = ["error", "activity_data"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    ACTIVITY_DATA_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    activity_data: ActivityVillageData
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., activity_data: _Optional[_Union[ActivityVillageData, _Mapping]] = ...) -> None: ...
+
+class ReqResolveFestivalActivityProposal(_message.Message):
+    __slots__ = ["activity_id", "id", "select"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    SELECT_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    id: int
+    select: int
+    def __init__(self, activity_id: _Optional[int] = ..., id: _Optional[int] = ..., select: _Optional[int] = ...) -> None: ...
+
+class ResResolveFestivalActivityProposal(_message.Message):
+    __slots__ = ["error", "effected_buff", "result", "reward_items", "level"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    EFFECTED_BUFF_FIELD_NUMBER: _ClassVar[int]
+    RESULT_FIELD_NUMBER: _ClassVar[int]
+    REWARD_ITEMS_FIELD_NUMBER: _ClassVar[int]
+    LEVEL_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    effected_buff: _containers.RepeatedScalarFieldContainer[int]
+    result: int
+    reward_items: _containers.RepeatedCompositeFieldContainer[ExecuteResult]
+    level: int
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., effected_buff: _Optional[_Iterable[int]] = ..., result: _Optional[int] = ..., reward_items: _Optional[_Iterable[_Union[ExecuteResult, _Mapping]]] = ..., level: _Optional[int] = ...) -> None: ...
+
+class ReqResolveFestivalActivityEvent(_message.Message):
+    __slots__ = ["activity_id", "id", "select"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    SELECT_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    id: int
+    select: int
+    def __init__(self, activity_id: _Optional[int] = ..., id: _Optional[int] = ..., select: _Optional[int] = ...) -> None: ...
+
+class ResResolveFestivalActivityEvent(_message.Message):
+    __slots__ = ["error", "effected_buff", "reward_items", "ending_id", "level"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    EFFECTED_BUFF_FIELD_NUMBER: _ClassVar[int]
+    REWARD_ITEMS_FIELD_NUMBER: _ClassVar[int]
+    ENDING_ID_FIELD_NUMBER: _ClassVar[int]
+    LEVEL_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    effected_buff: _containers.RepeatedScalarFieldContainer[int]
+    reward_items: _containers.RepeatedCompositeFieldContainer[ExecuteResult]
+    ending_id: int
+    level: int
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., effected_buff: _Optional[_Iterable[int]] = ..., reward_items: _Optional[_Iterable[_Union[ExecuteResult, _Mapping]]] = ..., ending_id: _Optional[int] = ..., level: _Optional[int] = ...) -> None: ...
+
+class ReqBuyFestivalProposal(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ResBuyFestivalProposal(_message.Message):
+    __slots__ = ["error", "new_proposal"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    NEW_PROPOSAL_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    new_proposal: FestivalProposalData
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., new_proposal: _Optional[_Union[FestivalProposalData, _Mapping]] = ...) -> None: ...
+
+class ReqIslandActivityMove(_message.Message):
+    __slots__ = ["activity_id", "zone_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    ZONE_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    zone_id: int
+    def __init__(self, activity_id: _Optional[int] = ..., zone_id: _Optional[int] = ...) -> None: ...
+
+class ReqIslandActivityBuy(_message.Message):
+    __slots__ = ["activity_id", "items"]
+    class BuyItems(_message.Message):
+        __slots__ = ["goods_id", "pos", "rotate", "bag_id", "price"]
+        GOODS_ID_FIELD_NUMBER: _ClassVar[int]
+        POS_FIELD_NUMBER: _ClassVar[int]
+        ROTATE_FIELD_NUMBER: _ClassVar[int]
+        BAG_ID_FIELD_NUMBER: _ClassVar[int]
+        PRICE_FIELD_NUMBER: _ClassVar[int]
+        goods_id: int
+        pos: _containers.RepeatedScalarFieldContainer[int]
+        rotate: int
+        bag_id: int
+        price: int
+        def __init__(self, goods_id: _Optional[int] = ..., pos: _Optional[_Iterable[int]] = ..., rotate: _Optional[int] = ..., bag_id: _Optional[int] = ..., price: _Optional[int] = ...) -> None: ...
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    ITEMS_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    items: _containers.RepeatedCompositeFieldContainer[ReqIslandActivityBuy.BuyItems]
+    def __init__(self, activity_id: _Optional[int] = ..., items: _Optional[_Iterable[_Union[ReqIslandActivityBuy.BuyItems, _Mapping]]] = ...) -> None: ...
+
+class ReqIslandActivitySell(_message.Message):
+    __slots__ = ["activity_id", "items"]
+    class SellItem(_message.Message):
+        __slots__ = ["bag_id", "id", "price"]
+        BAG_ID_FIELD_NUMBER: _ClassVar[int]
+        ID_FIELD_NUMBER: _ClassVar[int]
+        PRICE_FIELD_NUMBER: _ClassVar[int]
+        bag_id: int
+        id: int
+        price: int
+        def __init__(self, bag_id: _Optional[int] = ..., id: _Optional[int] = ..., price: _Optional[int] = ...) -> None: ...
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    ITEMS_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    items: _containers.RepeatedCompositeFieldContainer[ReqIslandActivitySell.SellItem]
+    def __init__(self, activity_id: _Optional[int] = ..., items: _Optional[_Iterable[_Union[ReqIslandActivitySell.SellItem, _Mapping]]] = ...) -> None: ...
+
+class ReqIslandActivityTidyBag(_message.Message):
+    __slots__ = ["activity_id", "bag_data"]
+    class BagData(_message.Message):
+        __slots__ = ["bag_id", "items", "drops"]
+        class ITemData(_message.Message):
+            __slots__ = ["id", "pos", "rotate"]
+            ID_FIELD_NUMBER: _ClassVar[int]
+            POS_FIELD_NUMBER: _ClassVar[int]
+            ROTATE_FIELD_NUMBER: _ClassVar[int]
+            id: int
+            pos: _containers.RepeatedScalarFieldContainer[int]
+            rotate: int
+            def __init__(self, id: _Optional[int] = ..., pos: _Optional[_Iterable[int]] = ..., rotate: _Optional[int] = ...) -> None: ...
+        BAG_ID_FIELD_NUMBER: _ClassVar[int]
+        ITEMS_FIELD_NUMBER: _ClassVar[int]
+        DROPS_FIELD_NUMBER: _ClassVar[int]
+        bag_id: int
+        items: _containers.RepeatedCompositeFieldContainer[ReqIslandActivityTidyBag.BagData.ITemData]
+        drops: _containers.RepeatedScalarFieldContainer[int]
+        def __init__(self, bag_id: _Optional[int] = ..., items: _Optional[_Iterable[_Union[ReqIslandActivityTidyBag.BagData.ITemData, _Mapping]]] = ..., drops: _Optional[_Iterable[int]] = ...) -> None: ...
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    BAG_DATA_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    bag_data: _containers.RepeatedCompositeFieldContainer[ReqIslandActivityTidyBag.BagData]
+    def __init__(self, activity_id: _Optional[int] = ..., bag_data: _Optional[_Iterable[_Union[ReqIslandActivityTidyBag.BagData, _Mapping]]] = ...) -> None: ...
+
+class ReqIslandActivityUnlockBagGrid(_message.Message):
+    __slots__ = ["activity_id", "bag_id", "pos"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    BAG_ID_FIELD_NUMBER: _ClassVar[int]
+    POS_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    bag_id: int
+    pos: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, activity_id: _Optional[int] = ..., bag_id: _Optional[int] = ..., pos: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class ContestSetting(_message.Message):
+    __slots__ = ["level_limit", "game_limit", "system_broadcast"]
+    class LevelLimit(_message.Message):
+        __slots__ = ["type", "value"]
+        TYPE_FIELD_NUMBER: _ClassVar[int]
+        VALUE_FIELD_NUMBER: _ClassVar[int]
+        type: int
+        value: int
+        def __init__(self, type: _Optional[int] = ..., value: _Optional[int] = ...) -> None: ...
+    LEVEL_LIMIT_FIELD_NUMBER: _ClassVar[int]
+    GAME_LIMIT_FIELD_NUMBER: _ClassVar[int]
+    SYSTEM_BROADCAST_FIELD_NUMBER: _ClassVar[int]
+    level_limit: _containers.RepeatedCompositeFieldContainer[ContestSetting.LevelLimit]
+    game_limit: int
+    system_broadcast: int
+    def __init__(self, level_limit: _Optional[_Iterable[_Union[ContestSetting.LevelLimit, _Mapping]]] = ..., game_limit: _Optional[int] = ..., system_broadcast: _Optional[int] = ...) -> None: ...
+
+class ReqCreateCustomizedContest(_message.Message):
+    __slots__ = ["name", "open_show", "game_rule_setting", "start_time", "end_time", "auto_match", "rank_rule", "contest_setting"]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    OPEN_SHOW_FIELD_NUMBER: _ClassVar[int]
+    GAME_RULE_SETTING_FIELD_NUMBER: _ClassVar[int]
+    START_TIME_FIELD_NUMBER: _ClassVar[int]
+    END_TIME_FIELD_NUMBER: _ClassVar[int]
+    AUTO_MATCH_FIELD_NUMBER: _ClassVar[int]
+    RANK_RULE_FIELD_NUMBER: _ClassVar[int]
+    CONTEST_SETTING_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    open_show: int
+    game_rule_setting: GameMode
+    start_time: int
+    end_time: int
+    auto_match: int
+    rank_rule: int
+    contest_setting: ContestSetting
+    def __init__(self, name: _Optional[str] = ..., open_show: _Optional[int] = ..., game_rule_setting: _Optional[_Union[GameMode, _Mapping]] = ..., start_time: _Optional[int] = ..., end_time: _Optional[int] = ..., auto_match: _Optional[int] = ..., rank_rule: _Optional[int] = ..., contest_setting: _Optional[_Union[ContestSetting, _Mapping]] = ...) -> None: ...
+
+class ResCreateCustomizedContest(_message.Message):
+    __slots__ = ["error", "unique_id"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    unique_id: int
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., unique_id: _Optional[int] = ...) -> None: ...
+
+class ReqFetchmanagerCustomizedContestList(_message.Message):
+    __slots__ = ["lang"]
+    LANG_FIELD_NUMBER: _ClassVar[int]
+    lang: str
+    def __init__(self, lang: _Optional[str] = ...) -> None: ...
+
+class ResFetchManagerCustomizedContestList(_message.Message):
+    __slots__ = ["error", "contests"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    CONTESTS_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    contests: _containers.RepeatedCompositeFieldContainer[CustomizedContestBase]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., contests: _Optional[_Iterable[_Union[CustomizedContestBase, _Mapping]]] = ...) -> None: ...
+
+class ReqFetchManagerCustomizedContest(_message.Message):
+    __slots__ = ["unique_id"]
+    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
+    unique_id: int
+    def __init__(self, unique_id: _Optional[int] = ...) -> None: ...
+
+class ResFetchManagerCustomizedContest(_message.Message):
+    __slots__ = ["error", "name", "open_show", "game_rule_setting", "start_time", "end_time", "auto_match", "rank_rule", "check_state", "checking_name", "contest_setting"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    OPEN_SHOW_FIELD_NUMBER: _ClassVar[int]
+    GAME_RULE_SETTING_FIELD_NUMBER: _ClassVar[int]
+    START_TIME_FIELD_NUMBER: _ClassVar[int]
+    END_TIME_FIELD_NUMBER: _ClassVar[int]
+    AUTO_MATCH_FIELD_NUMBER: _ClassVar[int]
+    RANK_RULE_FIELD_NUMBER: _ClassVar[int]
+    CHECK_STATE_FIELD_NUMBER: _ClassVar[int]
+    CHECKING_NAME_FIELD_NUMBER: _ClassVar[int]
+    CONTEST_SETTING_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    name: str
+    open_show: int
+    game_rule_setting: GameMode
+    start_time: int
+    end_time: int
+    auto_match: int
+    rank_rule: int
+    check_state: int
+    checking_name: str
+    contest_setting: ContestSetting
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., name: _Optional[str] = ..., open_show: _Optional[int] = ..., game_rule_setting: _Optional[_Union[GameMode, _Mapping]] = ..., start_time: _Optional[int] = ..., end_time: _Optional[int] = ..., auto_match: _Optional[int] = ..., rank_rule: _Optional[int] = ..., check_state: _Optional[int] = ..., checking_name: _Optional[str] = ..., contest_setting: _Optional[_Union[ContestSetting, _Mapping]] = ...) -> None: ...
+
+class ReqUpdateManagerCustomizedContest(_message.Message):
+    __slots__ = ["name", "open_show", "game_rule_setting", "start_time", "end_time", "unique_id", "auto_match", "rank_rule", "contest_setting"]
+    NAME_FIELD_NUMBER: _ClassVar[int]
+    OPEN_SHOW_FIELD_NUMBER: _ClassVar[int]
+    GAME_RULE_SETTING_FIELD_NUMBER: _ClassVar[int]
+    START_TIME_FIELD_NUMBER: _ClassVar[int]
+    END_TIME_FIELD_NUMBER: _ClassVar[int]
+    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
+    AUTO_MATCH_FIELD_NUMBER: _ClassVar[int]
+    RANK_RULE_FIELD_NUMBER: _ClassVar[int]
+    CONTEST_SETTING_FIELD_NUMBER: _ClassVar[int]
+    name: str
+    open_show: int
+    game_rule_setting: GameMode
+    start_time: int
+    end_time: int
+    unique_id: int
+    auto_match: int
+    rank_rule: int
+    contest_setting: ContestSetting
+    def __init__(self, name: _Optional[str] = ..., open_show: _Optional[int] = ..., game_rule_setting: _Optional[_Union[GameMode, _Mapping]] = ..., start_time: _Optional[int] = ..., end_time: _Optional[int] = ..., unique_id: _Optional[int] = ..., auto_match: _Optional[int] = ..., rank_rule: _Optional[int] = ..., contest_setting: _Optional[_Union[ContestSetting, _Mapping]] = ...) -> None: ...
+
+class ReqFetchContestPlayerRank(_message.Message):
+    __slots__ = ["unique_id", "limit", "offset"]
+    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
+    LIMIT_FIELD_NUMBER: _ClassVar[int]
+    OFFSET_FIELD_NUMBER: _ClassVar[int]
+    unique_id: int
+    limit: int
+    offset: int
+    def __init__(self, unique_id: _Optional[int] = ..., limit: _Optional[int] = ..., offset: _Optional[int] = ...) -> None: ...
+
+class ResFetchContestPlayerRank(_message.Message):
+    __slots__ = ["error", "total", "rank", "player_data"]
+    class ContestPlayerAccountData(_message.Message):
+        __slots__ = ["total_game_count", "recent_games", "highest_series_points"]
+        class ContestGameResult(_message.Message):
+            __slots__ = ["rank", "total_point"]
+            RANK_FIELD_NUMBER: _ClassVar[int]
+            TOTAL_POINT_FIELD_NUMBER: _ClassVar[int]
+            rank: int
+            total_point: int
+            def __init__(self, rank: _Optional[int] = ..., total_point: _Optional[int] = ...) -> None: ...
+        class ContestSeriesGameResult(_message.Message):
+            __slots__ = ["key", "results"]
+            KEY_FIELD_NUMBER: _ClassVar[int]
+            RESULTS_FIELD_NUMBER: _ClassVar[int]
+            key: int
+            results: _containers.RepeatedCompositeFieldContainer[ResFetchContestPlayerRank.ContestPlayerAccountData.ContestGameResult]
+            def __init__(self, key: _Optional[int] = ..., results: _Optional[_Iterable[_Union[ResFetchContestPlayerRank.ContestPlayerAccountData.ContestGameResult, _Mapping]]] = ...) -> None: ...
+        TOTAL_GAME_COUNT_FIELD_NUMBER: _ClassVar[int]
+        RECENT_GAMES_FIELD_NUMBER: _ClassVar[int]
+        HIGHEST_SERIES_POINTS_FIELD_NUMBER: _ClassVar[int]
+        total_game_count: int
+        recent_games: _containers.RepeatedCompositeFieldContainer[ResFetchContestPlayerRank.ContestPlayerAccountData.ContestGameResult]
+        highest_series_points: _containers.RepeatedCompositeFieldContainer[ResFetchContestPlayerRank.ContestPlayerAccountData.ContestSeriesGameResult]
+        def __init__(self, total_game_count: _Optional[int] = ..., recent_games: _Optional[_Iterable[_Union[ResFetchContestPlayerRank.ContestPlayerAccountData.ContestGameResult, _Mapping]]] = ..., highest_series_points: _Optional[_Iterable[_Union[ResFetchContestPlayerRank.ContestPlayerAccountData.ContestSeriesGameResult, _Mapping]]] = ...) -> None: ...
+    class SeasonRank(_message.Message):
+        __slots__ = ["account_id", "nickname", "data"]
+        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
+        NICKNAME_FIELD_NUMBER: _ClassVar[int]
+        DATA_FIELD_NUMBER: _ClassVar[int]
+        account_id: int
+        nickname: str
+        data: ResFetchContestPlayerRank.ContestPlayerAccountData
+        def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ..., data: _Optional[_Union[ResFetchContestPlayerRank.ContestPlayerAccountData, _Mapping]] = ...) -> None: ...
+    class PlayerData(_message.Message):
+        __slots__ = ["rank", "data"]
+        RANK_FIELD_NUMBER: _ClassVar[int]
+        DATA_FIELD_NUMBER: _ClassVar[int]
+        rank: int
+        data: ResFetchContestPlayerRank.ContestPlayerAccountData
+        def __init__(self, rank: _Optional[int] = ..., data: _Optional[_Union[ResFetchContestPlayerRank.ContestPlayerAccountData, _Mapping]] = ...) -> None: ...
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    TOTAL_FIELD_NUMBER: _ClassVar[int]
+    RANK_FIELD_NUMBER: _ClassVar[int]
+    PLAYER_DATA_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    total: int
+    rank: _containers.RepeatedCompositeFieldContainer[ResFetchContestPlayerRank.SeasonRank]
+    player_data: ResFetchContestPlayerRank.PlayerData
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., total: _Optional[int] = ..., rank: _Optional[_Iterable[_Union[ResFetchContestPlayerRank.SeasonRank, _Mapping]]] = ..., player_data: _Optional[_Union[ResFetchContestPlayerRank.PlayerData, _Mapping]] = ...) -> None: ...
+
+class ReqFetchReadyPlayerList(_message.Message):
+    __slots__ = ["unique_id"]
+    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
+    unique_id: int
+    def __init__(self, unique_id: _Optional[int] = ...) -> None: ...
+
+class ResFetchReadyPlayerList(_message.Message):
+    __slots__ = ["error", "list"]
+    class Player(_message.Message):
+        __slots__ = ["account_id", "nickname"]
+        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
+        NICKNAME_FIELD_NUMBER: _ClassVar[int]
+        account_id: int
+        nickname: str
+        def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ...) -> None: ...
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    LIST_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    list: _containers.RepeatedCompositeFieldContainer[ResFetchReadyPlayerList.Player]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., list: _Optional[_Iterable[_Union[ResFetchReadyPlayerList.Player, _Mapping]]] = ...) -> None: ...
+
+class ReqCreateGamePlan(_message.Message):
+    __slots__ = ["unique_id", "account_list", "game_start_time", "shuffle_seats", "ai_level"]
+    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
+    ACCOUNT_LIST_FIELD_NUMBER: _ClassVar[int]
+    GAME_START_TIME_FIELD_NUMBER: _ClassVar[int]
+    SHUFFLE_SEATS_FIELD_NUMBER: _ClassVar[int]
+    AI_LEVEL_FIELD_NUMBER: _ClassVar[int]
+    unique_id: int
+    account_list: _containers.RepeatedScalarFieldContainer[int]
+    game_start_time: int
+    shuffle_seats: int
+    ai_level: int
+    def __init__(self, unique_id: _Optional[int] = ..., account_list: _Optional[_Iterable[int]] = ..., game_start_time: _Optional[int] = ..., shuffle_seats: _Optional[int] = ..., ai_level: _Optional[int] = ...) -> None: ...
+
+class ResGenerateContestManagerLoginCode(_message.Message):
+    __slots__ = ["error", "code"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    CODE_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    code: str
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., code: _Optional[str] = ...) -> None: ...
+
+class ReqAmuletActivityFetchInfo(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ResAmuletActivityFetchInfo(_message.Message):
+    __slots__ = ["error", "data"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    DATA_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    data: ActivityAmuletData
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., data: _Optional[_Union[ActivityAmuletData, _Mapping]] = ...) -> None: ...
+
+class ReqAmuletActivityFetchBrief(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ResAmuletActivityFetchBrief(_message.Message):
+    __slots__ = ["error", "upgrade", "illustrated_book", "game_records", "statistic"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    UPGRADE_FIELD_NUMBER: _ClassVar[int]
+    ILLUSTRATED_BOOK_FIELD_NUMBER: _ClassVar[int]
+    GAME_RECORDS_FIELD_NUMBER: _ClassVar[int]
+    STATISTIC_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    upgrade: ActivityAmuletUpgradeData
+    illustrated_book: ActivityAmuletIllustratedBookData
+    game_records: _containers.RepeatedCompositeFieldContainer[ActivityAmuletGameRecordData]
+    statistic: ActivityAmuletStatisticData
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., upgrade: _Optional[_Union[ActivityAmuletUpgradeData, _Mapping]] = ..., illustrated_book: _Optional[_Union[ActivityAmuletIllustratedBookData, _Mapping]] = ..., game_records: _Optional[_Iterable[_Union[ActivityAmuletGameRecordData, _Mapping]]] = ..., statistic: _Optional[_Union[ActivityAmuletStatisticData, _Mapping]] = ...) -> None: ...
+
+class ReqFetchAmuletActivityData(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ResFetchAmuletActivityData(_message.Message):
+    __slots__ = ["error", "data"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    DATA_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    data: ActivityAmuletData
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., data: _Optional[_Union[ActivityAmuletData, _Mapping]] = ...) -> None: ...
+
+class ResAmuletEventResponse(_message.Message):
+    __slots__ = ["error", "events"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    EVENTS_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    events: _containers.RepeatedCompositeFieldContainer[AmuletEventData]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., events: _Optional[_Iterable[_Union[AmuletEventData, _Mapping]]] = ...) -> None: ...
+
+class ReqAmuletActivityStartGame(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ReqAmuletActivityOperate(_message.Message):
+    __slots__ = ["activity_id", "type", "tile_list"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    TILE_LIST_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    type: int
+    tile_list: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, activity_id: _Optional[int] = ..., type: _Optional[int] = ..., tile_list: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class ReqAmuletActivityUpgrade(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ReqAmuletActivitySelectPack(_message.Message):
+    __slots__ = ["activity_id", "id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    id: int
+    def __init__(self, activity_id: _Optional[int] = ..., id: _Optional[int] = ...) -> None: ...
+
+class ReqAmuletActivityBuy(_message.Message):
+    __slots__ = ["activity_id", "id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    id: int
+    def __init__(self, activity_id: _Optional[int] = ..., id: _Optional[int] = ...) -> None: ...
+
+class ReqAmuletActivitySellEffect(_message.Message):
+    __slots__ = ["activity_id", "id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    id: int
+    def __init__(self, activity_id: _Optional[int] = ..., id: _Optional[int] = ...) -> None: ...
+
+class ReqAmuletActivityEffectSort(_message.Message):
+    __slots__ = ["activity_id", "sorted_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    SORTED_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    sorted_id: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, activity_id: _Optional[int] = ..., sorted_id: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class ReqAmuletActivityGiveup(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ReqAmuletActivityRefreshShop(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ReqAmuletActivitySelectFreeEffect(_message.Message):
+    __slots__ = ["activity_id", "selected_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    SELECTED_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    selected_id: int
+    def __init__(self, activity_id: _Optional[int] = ..., selected_id: _Optional[int] = ...) -> None: ...
+
+class ReqAmuletActivityUpgradeShopBuff(_message.Message):
+    __slots__ = ["activity_id", "id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    id: int
+    def __init__(self, activity_id: _Optional[int] = ..., id: _Optional[int] = ...) -> None: ...
+
+class ReqAmuletActivityEndShopping(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ReqAmuletActivitySetSkillLevel(_message.Message):
+    __slots__ = ["activity_id", "skill"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    SKILL_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    skill: _containers.RepeatedCompositeFieldContainer[AmuletSkillData]
+    def __init__(self, activity_id: _Optional[int] = ..., skill: _Optional[_Iterable[_Union[AmuletSkillData, _Mapping]]] = ...) -> None: ...
+
+class ResAmuletActivityMaintainInfo(_message.Message):
+    __slots__ = ["error", "mode"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    MODE_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    mode: str
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., mode: _Optional[str] = ...) -> None: ...
+
+class ReqAmuletActivitySelectRewardPack(_message.Message):
+    __slots__ = ["activity_id", "id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    id: int
+    def __init__(self, activity_id: _Optional[int] = ..., id: _Optional[int] = ...) -> None: ...
+
+class ReqAmuletActivitySelectBookEffect(_message.Message):
+    __slots__ = ["activity_id", "effect_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    EFFECT_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    effect_id: int
+    def __init__(self, activity_id: _Optional[int] = ..., effect_id: _Optional[int] = ...) -> None: ...
+
+class ReqStoryActivityUnlock(_message.Message):
+    __slots__ = ["activity_id", "story_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    STORY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    story_id: int
+    def __init__(self, activity_id: _Optional[int] = ..., story_id: _Optional[int] = ...) -> None: ...
+
+class ReqStoryActivityUnlockEnding(_message.Message):
+    __slots__ = ["activity_id", "story_id", "ending_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    STORY_ID_FIELD_NUMBER: _ClassVar[int]
+    ENDING_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    story_id: int
+    ending_id: int
+    def __init__(self, activity_id: _Optional[int] = ..., story_id: _Optional[int] = ..., ending_id: _Optional[int] = ...) -> None: ...
+
+class ReqStoryActivityReceiveEndingReward(_message.Message):
+    __slots__ = ["activity_id", "story_id", "ending_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    STORY_ID_FIELD_NUMBER: _ClassVar[int]
+    ENDING_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    story_id: int
+    ending_id: int
+    def __init__(self, activity_id: _Optional[int] = ..., story_id: _Optional[int] = ..., ending_id: _Optional[int] = ...) -> None: ...
+
+class ResStoryReward(_message.Message):
+    __slots__ = ["error", "reward_items"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    REWARD_ITEMS_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    reward_items: _containers.RepeatedCompositeFieldContainer[ExecuteReward]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., reward_items: _Optional[_Iterable[_Union[ExecuteReward, _Mapping]]] = ...) -> None: ...
+
+class ReqStoryActivityReceiveFinishReward(_message.Message):
+    __slots__ = ["activity_id", "story_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    STORY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    story_id: int
+    def __init__(self, activity_id: _Optional[int] = ..., story_id: _Optional[int] = ...) -> None: ...
+
+class ReqStoryActivityReceiveAllFinishReward(_message.Message):
+    __slots__ = ["activity_id", "story_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    STORY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    story_id: int
+    def __init__(self, activity_id: _Optional[int] = ..., story_id: _Optional[int] = ...) -> None: ...
+
+class ReqStoryActivityUnlockEndingAndReceive(_message.Message):
+    __slots__ = ["activity_id", "story_id", "ending_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    STORY_ID_FIELD_NUMBER: _ClassVar[int]
+    ENDING_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    story_id: int
+    ending_id: int
+    def __init__(self, activity_id: _Optional[int] = ..., story_id: _Optional[int] = ..., ending_id: _Optional[int] = ...) -> None: ...
+
+class ResStoryActivityUnlockEndingAndReceive(_message.Message):
+    __slots__ = ["error", "ending_reward", "finish_reward", "all_finish_reward"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    ENDING_REWARD_FIELD_NUMBER: _ClassVar[int]
+    FINISH_REWARD_FIELD_NUMBER: _ClassVar[int]
+    ALL_FINISH_REWARD_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    ending_reward: _containers.RepeatedCompositeFieldContainer[ExecuteReward]
+    finish_reward: _containers.RepeatedCompositeFieldContainer[ExecuteReward]
+    all_finish_reward: _containers.RepeatedCompositeFieldContainer[ExecuteReward]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., ending_reward: _Optional[_Iterable[_Union[ExecuteReward, _Mapping]]] = ..., finish_reward: _Optional[_Iterable[_Union[ExecuteReward, _Mapping]]] = ..., all_finish_reward: _Optional[_Iterable[_Union[ExecuteReward, _Mapping]]] = ...) -> None: ...
+
+class ReqFetchActivityRank(_message.Message):
+    __slots__ = ["activity_id", "account_list"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    ACCOUNT_LIST_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    account_list: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, activity_id: _Optional[int] = ..., account_list: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class ResFetchActivityRank(_message.Message):
+    __slots__ = ["error", "items", "self"]
+    class ActivityRankItem(_message.Message):
+        __slots__ = ["account_id", "score", "data", "rank"]
+        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
+        SCORE_FIELD_NUMBER: _ClassVar[int]
+        DATA_FIELD_NUMBER: _ClassVar[int]
+        RANK_FIELD_NUMBER: _ClassVar[int]
+        account_id: int
+        score: int
+        data: str
+        rank: int
+        def __init__(self, account_id: _Optional[int] = ..., score: _Optional[int] = ..., data: _Optional[str] = ..., rank: _Optional[int] = ...) -> None: ...
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    ITEMS_FIELD_NUMBER: _ClassVar[int]
+    SELF_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    items: _containers.RepeatedCompositeFieldContainer[ResFetchActivityRank.ActivityRankItem]
+    self: ResFetchActivityRank.ActivityRankItem
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., items: _Optional[_Iterable[_Union[ResFetchActivityRank.ActivityRankItem, _Mapping]]] = ..., self: _Optional[_Union[ResFetchActivityRank.ActivityRankItem, _Mapping]] = ...) -> None: ...
+
+class ReqFetchQuestionnaireList(_message.Message):
+    __slots__ = ["lang", "channel"]
+    LANG_FIELD_NUMBER: _ClassVar[int]
+    CHANNEL_FIELD_NUMBER: _ClassVar[int]
+    lang: str
+    channel: str
+    def __init__(self, lang: _Optional[str] = ..., channel: _Optional[str] = ...) -> None: ...
+
+class ResFetchQuestionnaireList(_message.Message):
+    __slots__ = ["error", "list", "finished_list"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    LIST_FIELD_NUMBER: _ClassVar[int]
+    FINISHED_LIST_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    list: _containers.RepeatedCompositeFieldContainer[QuestionnaireBrief]
+    finished_list: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., list: _Optional[_Iterable[_Union[QuestionnaireBrief, _Mapping]]] = ..., finished_list: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class ReqFetchQuestionnaireDetail(_message.Message):
+    __slots__ = ["id", "lang", "channel"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    LANG_FIELD_NUMBER: _ClassVar[int]
+    CHANNEL_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    lang: str
+    channel: str
+    def __init__(self, id: _Optional[int] = ..., lang: _Optional[str] = ..., channel: _Optional[str] = ...) -> None: ...
+
+class ResFetchQuestionnaireDetail(_message.Message):
+    __slots__ = ["error", "detail"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    DETAIL_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    detail: QuestionnaireDetail
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., detail: _Optional[_Union[QuestionnaireDetail, _Mapping]] = ...) -> None: ...
+
+class ReqSetVerifiedHidden(_message.Message):
+    __slots__ = ["verified_hidden"]
+    VERIFIED_HIDDEN_FIELD_NUMBER: _ClassVar[int]
+    verified_hidden: int
+    def __init__(self, verified_hidden: _Optional[int] = ...) -> None: ...
+
+class ReqSubmitQuestionnaire(_message.Message):
+    __slots__ = ["questionnaire_id", "questionnaire_version_id", "answers", "open_time", "finish_time", "client"]
+    class QuestionnaireAnswer(_message.Message):
+        __slots__ = ["question_id", "values"]
+        class QuestionnaireAnswerValue(_message.Message):
+            __slots__ = ["value", "custom_input"]
+            VALUE_FIELD_NUMBER: _ClassVar[int]
+            CUSTOM_INPUT_FIELD_NUMBER: _ClassVar[int]
+            value: str
+            custom_input: str
+            def __init__(self, value: _Optional[str] = ..., custom_input: _Optional[str] = ...) -> None: ...
+        QUESTION_ID_FIELD_NUMBER: _ClassVar[int]
+        VALUES_FIELD_NUMBER: _ClassVar[int]
+        question_id: int
+        values: _containers.RepeatedCompositeFieldContainer[ReqSubmitQuestionnaire.QuestionnaireAnswer.QuestionnaireAnswerValue]
+        def __init__(self, question_id: _Optional[int] = ..., values: _Optional[_Iterable[_Union[ReqSubmitQuestionnaire.QuestionnaireAnswer.QuestionnaireAnswerValue, _Mapping]]] = ...) -> None: ...
+    QUESTIONNAIRE_ID_FIELD_NUMBER: _ClassVar[int]
+    QUESTIONNAIRE_VERSION_ID_FIELD_NUMBER: _ClassVar[int]
+    ANSWERS_FIELD_NUMBER: _ClassVar[int]
+    OPEN_TIME_FIELD_NUMBER: _ClassVar[int]
+    FINISH_TIME_FIELD_NUMBER: _ClassVar[int]
+    CLIENT_FIELD_NUMBER: _ClassVar[int]
+    questionnaire_id: int
+    questionnaire_version_id: int
+    answers: _containers.RepeatedCompositeFieldContainer[ReqSubmitQuestionnaire.QuestionnaireAnswer]
+    open_time: int
+    finish_time: int
+    client: str
+    def __init__(self, questionnaire_id: _Optional[int] = ..., questionnaire_version_id: _Optional[int] = ..., answers: _Optional[_Iterable[_Union[ReqSubmitQuestionnaire.QuestionnaireAnswer, _Mapping]]] = ..., open_time: _Optional[int] = ..., finish_time: _Optional[int] = ..., client: _Optional[str] = ...) -> None: ...
+
+class ReqSetFriendRoomRandomBotChar(_message.Message):
+    __slots__ = ["disable_random_char"]
+    DISABLE_RANDOM_CHAR_FIELD_NUMBER: _ClassVar[int]
+    disable_random_char: int
+    def __init__(self, disable_random_char: _Optional[int] = ...) -> None: ...
+
+class ReqFetchAccountGameHuRecords(_message.Message):
+    __slots__ = ["uuid", "category", "type"]
+    UUID_FIELD_NUMBER: _ClassVar[int]
+    CATEGORY_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    uuid: str
+    category: int
+    type: int
+    def __init__(self, uuid: _Optional[str] = ..., category: _Optional[int] = ..., type: _Optional[int] = ...) -> None: ...
+
+class ResFetchAccountGameHuRecords(_message.Message):
+    __slots__ = ["error", "records"]
+    class GameHuRecords(_message.Message):
+        __slots__ = ["chang", "ju", "ben", "title_id", "hands", "ming", "hupai", "hu_fans"]
+        CHANG_FIELD_NUMBER: _ClassVar[int]
+        JU_FIELD_NUMBER: _ClassVar[int]
+        BEN_FIELD_NUMBER: _ClassVar[int]
+        TITLE_ID_FIELD_NUMBER: _ClassVar[int]
+        HANDS_FIELD_NUMBER: _ClassVar[int]
+        MING_FIELD_NUMBER: _ClassVar[int]
+        HUPAI_FIELD_NUMBER: _ClassVar[int]
+        HU_FANS_FIELD_NUMBER: _ClassVar[int]
+        chang: int
+        ju: int
+        ben: int
+        title_id: int
+        hands: _containers.RepeatedScalarFieldContainer[str]
+        ming: _containers.RepeatedScalarFieldContainer[str]
+        hupai: str
+        hu_fans: _containers.RepeatedScalarFieldContainer[int]
+        def __init__(self, chang: _Optional[int] = ..., ju: _Optional[int] = ..., ben: _Optional[int] = ..., title_id: _Optional[int] = ..., hands: _Optional[_Iterable[str]] = ..., ming: _Optional[_Iterable[str]] = ..., hupai: _Optional[str] = ..., hu_fans: _Optional[_Iterable[int]] = ...) -> None: ...
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    RECORDS_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    records: _containers.RepeatedCompositeFieldContainer[ResFetchAccountGameHuRecords.GameHuRecords]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., records: _Optional[_Iterable[_Union[ResFetchAccountGameHuRecords.GameHuRecords, _Mapping]]] = ...) -> None: ...
+
+class ReqFetchAccountInfoExtra(_message.Message):
+    __slots__ = ["account_id", "category", "type"]
+    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
+    CATEGORY_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    account_id: int
+    category: int
+    type: int
+    def __init__(self, account_id: _Optional[int] = ..., category: _Optional[int] = ..., type: _Optional[int] = ...) -> None: ...
+
+class ResFetchAccountInfoExtra(_message.Message):
+    __slots__ = ["error", "recent_games", "hu_type_details", "game_rank_details"]
+    class AccountInfoGameRecord(_message.Message):
+        __slots__ = ["uuid", "start_time", "end_time", "tag", "sub_tag", "rank", "final_point", "results"]
+        class AccountGameResult(_message.Message):
+            __slots__ = ["rank", "account_id", "nickname", "verified", "grading_score", "final_point", "seat", "level", "level3"]
+            RANK_FIELD_NUMBER: _ClassVar[int]
+            ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
+            NICKNAME_FIELD_NUMBER: _ClassVar[int]
+            VERIFIED_FIELD_NUMBER: _ClassVar[int]
+            GRADING_SCORE_FIELD_NUMBER: _ClassVar[int]
+            FINAL_POINT_FIELD_NUMBER: _ClassVar[int]
+            SEAT_FIELD_NUMBER: _ClassVar[int]
+            LEVEL_FIELD_NUMBER: _ClassVar[int]
+            LEVEL3_FIELD_NUMBER: _ClassVar[int]
+            rank: int
+            account_id: int
+            nickname: str
+            verified: int
+            grading_score: int
+            final_point: int
+            seat: int
+            level: AccountLevel
+            level3: AccountLevel
+            def __init__(self, rank: _Optional[int] = ..., account_id: _Optional[int] = ..., nickname: _Optional[str] = ..., verified: _Optional[int] = ..., grading_score: _Optional[int] = ..., final_point: _Optional[int] = ..., seat: _Optional[int] = ..., level: _Optional[_Union[AccountLevel, _Mapping]] = ..., level3: _Optional[_Union[AccountLevel, _Mapping]] = ...) -> None: ...
+        UUID_FIELD_NUMBER: _ClassVar[int]
+        START_TIME_FIELD_NUMBER: _ClassVar[int]
+        END_TIME_FIELD_NUMBER: _ClassVar[int]
+        TAG_FIELD_NUMBER: _ClassVar[int]
+        SUB_TAG_FIELD_NUMBER: _ClassVar[int]
+        RANK_FIELD_NUMBER: _ClassVar[int]
+        FINAL_POINT_FIELD_NUMBER: _ClassVar[int]
+        RESULTS_FIELD_NUMBER: _ClassVar[int]
+        uuid: str
+        start_time: int
+        end_time: int
+        tag: int
+        sub_tag: int
+        rank: int
+        final_point: int
+        results: _containers.RepeatedCompositeFieldContainer[ResFetchAccountInfoExtra.AccountInfoGameRecord.AccountGameResult]
+        def __init__(self, uuid: _Optional[str] = ..., start_time: _Optional[int] = ..., end_time: _Optional[int] = ..., tag: _Optional[int] = ..., sub_tag: _Optional[int] = ..., rank: _Optional[int] = ..., final_point: _Optional[int] = ..., results: _Optional[_Iterable[_Union[ResFetchAccountInfoExtra.AccountInfoGameRecord.AccountGameResult, _Mapping]]] = ...) -> None: ...
+    class GameHuTypeDetail(_message.Message):
+        __slots__ = ["type", "count"]
+        TYPE_FIELD_NUMBER: _ClassVar[int]
+        COUNT_FIELD_NUMBER: _ClassVar[int]
+        type: int
+        count: int
+        def __init__(self, type: _Optional[int] = ..., count: _Optional[int] = ...) -> None: ...
+    class AccountGameRankDetail(_message.Message):
+        __slots__ = ["rank", "count"]
+        RANK_FIELD_NUMBER: _ClassVar[int]
+        COUNT_FIELD_NUMBER: _ClassVar[int]
+        rank: int
+        count: int
+        def __init__(self, rank: _Optional[int] = ..., count: _Optional[int] = ...) -> None: ...
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    RECENT_GAMES_FIELD_NUMBER: _ClassVar[int]
+    HU_TYPE_DETAILS_FIELD_NUMBER: _ClassVar[int]
+    GAME_RANK_DETAILS_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    recent_games: _containers.RepeatedCompositeFieldContainer[ResFetchAccountInfoExtra.AccountInfoGameRecord]
+    hu_type_details: _containers.RepeatedCompositeFieldContainer[ResFetchAccountInfoExtra.GameHuTypeDetail]
+    game_rank_details: _containers.RepeatedCompositeFieldContainer[ResFetchAccountInfoExtra.AccountGameRankDetail]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., recent_games: _Optional[_Iterable[_Union[ResFetchAccountInfoExtra.AccountInfoGameRecord, _Mapping]]] = ..., hu_type_details: _Optional[_Iterable[_Union[ResFetchAccountInfoExtra.GameHuTypeDetail, _Mapping]]] = ..., game_rank_details: _Optional[_Iterable[_Union[ResFetchAccountInfoExtra.AccountGameRankDetail, _Mapping]]] = ...) -> None: ...
+
+class ReqSetAccountFavoriteHu(_message.Message):
+    __slots__ = ["mode", "category", "type", "uuid", "chang", "ju", "ben"]
+    MODE_FIELD_NUMBER: _ClassVar[int]
+    CATEGORY_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    UUID_FIELD_NUMBER: _ClassVar[int]
+    CHANG_FIELD_NUMBER: _ClassVar[int]
+    JU_FIELD_NUMBER: _ClassVar[int]
+    BEN_FIELD_NUMBER: _ClassVar[int]
+    mode: int
+    category: int
+    type: int
+    uuid: str
+    chang: int
+    ju: int
+    ben: int
+    def __init__(self, mode: _Optional[int] = ..., category: _Optional[int] = ..., type: _Optional[int] = ..., uuid: _Optional[str] = ..., chang: _Optional[int] = ..., ju: _Optional[int] = ..., ben: _Optional[int] = ...) -> None: ...
+
+class ReqFetchSeerReport(_message.Message):
+    __slots__ = ["uuid"]
+    UUID_FIELD_NUMBER: _ClassVar[int]
+    uuid: str
+    def __init__(self, uuid: _Optional[str] = ...) -> None: ...
+
+class ResFetchSeerReport(_message.Message):
+    __slots__ = ["error", "report"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    REPORT_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    report: SeerReport
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., report: _Optional[_Union[SeerReport, _Mapping]] = ...) -> None: ...
+
+class ReqCreateSeerReport(_message.Message):
+    __slots__ = ["uuid"]
+    UUID_FIELD_NUMBER: _ClassVar[int]
+    uuid: str
+    def __init__(self, uuid: _Optional[str] = ...) -> None: ...
+
+class ResCreateSeerReport(_message.Message):
+    __slots__ = ["error", "seer_report"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    SEER_REPORT_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    seer_report: SeerBrief
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., seer_report: _Optional[_Union[SeerBrief, _Mapping]] = ...) -> None: ...
+
+class ResFetchSeerReportList(_message.Message):
+    __slots__ = ["error", "seer_report_list"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    SEER_REPORT_LIST_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    seer_report_list: _containers.RepeatedCompositeFieldContainer[SeerBrief]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., seer_report_list: _Optional[_Iterable[_Union[SeerBrief, _Mapping]]] = ...) -> None: ...
+
+class ReqSelectChestChooseUp(_message.Message):
+    __slots__ = ["activity_id", "selection", "chest_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    SELECTION_FIELD_NUMBER: _ClassVar[int]
+    CHEST_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    selection: int
+    chest_id: int
+    def __init__(self, activity_id: _Optional[int] = ..., selection: _Optional[int] = ..., chest_id: _Optional[int] = ...) -> None: ...
+
+class ReqGenerateAnnualReportToken(_message.Message):
+    __slots__ = ["lang"]
+    LANG_FIELD_NUMBER: _ClassVar[int]
+    lang: str
+    def __init__(self, lang: _Optional[str] = ...) -> None: ...
+
+class ResGenerateAnnualReportToken(_message.Message):
+    __slots__ = ["error", "token", "url"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    TOKEN_FIELD_NUMBER: _ClassVar[int]
+    URL_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    token: str
+    url: str
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., token: _Optional[str] = ..., url: _Optional[str] = ...) -> None: ...
+
+class ResFetchAnnualReportInfo(_message.Message):
+    __slots__ = ["error", "start_time", "end_time"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    START_TIME_FIELD_NUMBER: _ClassVar[int]
+    END_TIME_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    start_time: int
+    end_time: int
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., start_time: _Optional[int] = ..., end_time: _Optional[int] = ...) -> None: ...
+
+class ReqRemarkFriend(_message.Message):
+    __slots__ = ["account_id", "remark"]
+    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
+    REMARK_FIELD_NUMBER: _ClassVar[int]
+    account_id: int
+    remark: str
+    def __init__(self, account_id: _Optional[int] = ..., remark: _Optional[str] = ...) -> None: ...
+
+class ReqSimV2ActivityFetchInfo(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ResSimV2ActivityFetchInfo(_message.Message):
+    __slots__ = ["error", "data"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    DATA_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    data: SimulationV2Data
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., data: _Optional[_Union[SimulationV2Data, _Mapping]] = ...) -> None: ...
+
+class ReqSimV2ActivityStartSeason(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ResSimV2ActivityStartSeason(_message.Message):
+    __slots__ = ["error", "season"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    SEASON_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    season: SimulationV2SeasonData
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., season: _Optional[_Union[SimulationV2SeasonData, _Mapping]] = ...) -> None: ...
+
+class ReqSimV2ActivityTrain(_message.Message):
+    __slots__ = ["activity_id", "ability", "skip"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    ABILITY_FIELD_NUMBER: _ClassVar[int]
+    SKIP_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    ability: int
+    skip: int
+    def __init__(self, activity_id: _Optional[int] = ..., ability: _Optional[int] = ..., skip: _Optional[int] = ...) -> None: ...
+
+class ResSimV2ActivityTrain(_message.Message):
+    __slots__ = ["error", "event", "ability", "round", "effect_list", "train_result", "is_end", "record"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    EVENT_FIELD_NUMBER: _ClassVar[int]
+    ABILITY_FIELD_NUMBER: _ClassVar[int]
+    ROUND_FIELD_NUMBER: _ClassVar[int]
+    EFFECT_LIST_FIELD_NUMBER: _ClassVar[int]
+    TRAIN_RESULT_FIELD_NUMBER: _ClassVar[int]
+    IS_END_FIELD_NUMBER: _ClassVar[int]
+    RECORD_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    event: SimulationV2Event
+    ability: SimulationV2Ability
+    round: int
+    effect_list: _containers.RepeatedCompositeFieldContainer[SimulationV2Effect]
+    train_result: int
+    is_end: bool
+    record: SimulationV2Record
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., event: _Optional[_Union[SimulationV2Event, _Mapping]] = ..., ability: _Optional[_Union[SimulationV2Ability, _Mapping]] = ..., round: _Optional[int] = ..., effect_list: _Optional[_Iterable[_Union[SimulationV2Effect, _Mapping]]] = ..., train_result: _Optional[int] = ..., is_end: bool = ..., record: _Optional[_Union[SimulationV2Record, _Mapping]] = ...) -> None: ...
+
+class ReqSimV2ActivitySelectEvent(_message.Message):
+    __slots__ = ["activity_id", "selection_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    SELECTION_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    selection_id: int
+    def __init__(self, activity_id: _Optional[int] = ..., selection_id: _Optional[int] = ...) -> None: ...
+
+class ResSimV2ActivitySelectEvent(_message.Message):
+    __slots__ = ["error", "event", "ability", "match", "effect_list", "round", "is_end", "result_id", "record", "effected_buff_list"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    EVENT_FIELD_NUMBER: _ClassVar[int]
+    ABILITY_FIELD_NUMBER: _ClassVar[int]
+    MATCH_FIELD_NUMBER: _ClassVar[int]
+    EFFECT_LIST_FIELD_NUMBER: _ClassVar[int]
+    ROUND_FIELD_NUMBER: _ClassVar[int]
+    IS_END_FIELD_NUMBER: _ClassVar[int]
+    RESULT_ID_FIELD_NUMBER: _ClassVar[int]
+    RECORD_FIELD_NUMBER: _ClassVar[int]
+    EFFECTED_BUFF_LIST_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    event: SimulationV2Event
+    ability: SimulationV2Ability
+    match: SimulationV2Match
+    effect_list: _containers.RepeatedCompositeFieldContainer[SimulationV2Effect]
+    round: int
+    is_end: bool
+    result_id: int
+    record: SimulationV2Record
+    effected_buff_list: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., event: _Optional[_Union[SimulationV2Event, _Mapping]] = ..., ability: _Optional[_Union[SimulationV2Ability, _Mapping]] = ..., match: _Optional[_Union[SimulationV2Match, _Mapping]] = ..., effect_list: _Optional[_Iterable[_Union[SimulationV2Effect, _Mapping]]] = ..., round: _Optional[int] = ..., is_end: bool = ..., result_id: _Optional[int] = ..., record: _Optional[_Union[SimulationV2Record, _Mapping]] = ..., effected_buff_list: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class ReqSimV2ActivityStartMatch(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ResSimV2ActivityStartMatch(_message.Message):
+    __slots__ = ["error", "event", "match", "effect_list", "is_match_end"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    EVENT_FIELD_NUMBER: _ClassVar[int]
+    MATCH_FIELD_NUMBER: _ClassVar[int]
+    EFFECT_LIST_FIELD_NUMBER: _ClassVar[int]
+    IS_MATCH_END_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    event: SimulationV2Event
+    match: SimulationV2Match
+    effect_list: _containers.RepeatedCompositeFieldContainer[SimulationV2Effect]
+    is_match_end: bool
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., event: _Optional[_Union[SimulationV2Event, _Mapping]] = ..., match: _Optional[_Union[SimulationV2Match, _Mapping]] = ..., effect_list: _Optional[_Iterable[_Union[SimulationV2Effect, _Mapping]]] = ..., is_match_end: bool = ...) -> None: ...
+
+class ReqSimV2ActivityEndMatch(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ResSimV2ActivityEndMatch(_message.Message):
+    __slots__ = ["error", "round", "is_end", "record", "total_score", "match_history", "rewards", "effect_list", "ability"]
+    class SimulationV2MatchReward(_message.Message):
+        __slots__ = ["type", "params"]
+        TYPE_FIELD_NUMBER: _ClassVar[int]
+        PARAMS_FIELD_NUMBER: _ClassVar[int]
+        type: int
+        params: _containers.RepeatedScalarFieldContainer[int]
+        def __init__(self, type: _Optional[int] = ..., params: _Optional[_Iterable[int]] = ...) -> None: ...
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    ROUND_FIELD_NUMBER: _ClassVar[int]
+    IS_END_FIELD_NUMBER: _ClassVar[int]
+    RECORD_FIELD_NUMBER: _ClassVar[int]
+    TOTAL_SCORE_FIELD_NUMBER: _ClassVar[int]
+    MATCH_HISTORY_FIELD_NUMBER: _ClassVar[int]
+    REWARDS_FIELD_NUMBER: _ClassVar[int]
+    EFFECT_LIST_FIELD_NUMBER: _ClassVar[int]
+    ABILITY_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    round: int
+    is_end: bool
+    record: SimulationV2Record
+    total_score: int
+    match_history: _containers.RepeatedCompositeFieldContainer[SimulationV2MatchRecord]
+    rewards: _containers.RepeatedCompositeFieldContainer[ResSimV2ActivityEndMatch.SimulationV2MatchReward]
+    effect_list: _containers.RepeatedCompositeFieldContainer[SimulationV2Effect]
+    ability: SimulationV2Ability
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., round: _Optional[int] = ..., is_end: bool = ..., record: _Optional[_Union[SimulationV2Record, _Mapping]] = ..., total_score: _Optional[int] = ..., match_history: _Optional[_Iterable[_Union[SimulationV2MatchRecord, _Mapping]]] = ..., rewards: _Optional[_Iterable[_Union[ResSimV2ActivityEndMatch.SimulationV2MatchReward, _Mapping]]] = ..., effect_list: _Optional[_Iterable[_Union[SimulationV2Effect, _Mapping]]] = ..., ability: _Optional[_Union[SimulationV2Ability, _Mapping]] = ...) -> None: ...
+
+class ReqSimV2ActivityGiveUp(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ReqSimV2ActivitySetUpgrade(_message.Message):
+    __slots__ = ["activity_id", "upgrade"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    UPGRADE_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    upgrade: SimulationV2Ability
+    def __init__(self, activity_id: _Optional[int] = ..., upgrade: _Optional[_Union[SimulationV2Ability, _Mapping]] = ...) -> None: ...
+
+class ReqProgressRewardActivityReceive(_message.Message):
+    __slots__ = ["activity_id", "progresses"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    PROGRESSES_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    progresses: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, activity_id: _Optional[int] = ..., progresses: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class ResProgressRewardActivityReceive(_message.Message):
+    __slots__ = ["error", "reward_items"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    REWARD_ITEMS_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    reward_items: _containers.RepeatedCompositeFieldContainer[ExecuteReward]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., reward_items: _Optional[_Iterable[_Union[ExecuteReward, _Mapping]]] = ...) -> None: ...
+
+class ReqFetchProgressRewardActivityInfo(_message.Message):
+    __slots__ = ["activity_id"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    def __init__(self, activity_id: _Optional[int] = ...) -> None: ...
+
+class ResFetchProgressRewardActivityInfo(_message.Message):
+    __slots__ = ["error", "progress"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    PROGRESS_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    progress: int
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., progress: _Optional[int] = ...) -> None: ...
+
+class AmuletBadgeData(_message.Message):
+    __slots__ = ["id", "uid", "store", "random"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    UID_FIELD_NUMBER: _ClassVar[int]
+    STORE_FIELD_NUMBER: _ClassVar[int]
+    RANDOM_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    uid: int
+    store: _containers.RepeatedScalarFieldContainer[str]
+    random: int
+    def __init__(self, id: _Optional[int] = ..., uid: _Optional[int] = ..., store: _Optional[_Iterable[str]] = ..., random: _Optional[int] = ...) -> None: ...
+
+class AmuletEffectData(_message.Message):
+    __slots__ = ["id", "uid", "store", "badge", "volume", "tags"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    UID_FIELD_NUMBER: _ClassVar[int]
+    STORE_FIELD_NUMBER: _ClassVar[int]
+    BADGE_FIELD_NUMBER: _ClassVar[int]
+    VOLUME_FIELD_NUMBER: _ClassVar[int]
+    TAGS_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    uid: int
+    store: _containers.RepeatedScalarFieldContainer[str]
+    badge: AmuletBadgeData
+    volume: int
+    tags: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, id: _Optional[int] = ..., uid: _Optional[int] = ..., store: _Optional[_Iterable[str]] = ..., badge: _Optional[_Union[AmuletBadgeData, _Mapping]] = ..., volume: _Optional[int] = ..., tags: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class AmuletTile(_message.Message):
+    __slots__ = ["id", "tile"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    TILE_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    tile: str
+    def __init__(self, id: _Optional[int] = ..., tile: _Optional[str] = ...) -> None: ...
+
+class AmuletBuffData(_message.Message):
+    __slots__ = ["id", "store"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    STORE_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    store: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, id: _Optional[int] = ..., store: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class AmuletGameShopGoods(_message.Message):
+    __slots__ = ["id", "sold", "goods_id", "price"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    SOLD_FIELD_NUMBER: _ClassVar[int]
+    GOODS_ID_FIELD_NUMBER: _ClassVar[int]
+    PRICE_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    sold: bool
+    goods_id: int
+    price: int
+    def __init__(self, id: _Optional[int] = ..., sold: bool = ..., goods_id: _Optional[int] = ..., price: _Optional[int] = ...) -> None: ...
+
+class AmuletActivityTingInfo(_message.Message):
+    __slots__ = ["tile", "fan", "ting_tile"]
+    TILE_FIELD_NUMBER: _ClassVar[int]
+    FAN_FIELD_NUMBER: _ClassVar[int]
+    TING_TILE_FIELD_NUMBER: _ClassVar[int]
+    tile: str
+    fan: str
+    ting_tile: str
+    def __init__(self, tile: _Optional[str] = ..., fan: _Optional[str] = ..., ting_tile: _Optional[str] = ...) -> None: ...
+
+class AmuletShowDesktopTileData(_message.Message):
+    __slots__ = ["id", "pos"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    POS_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    pos: int
+    def __init__(self, id: _Optional[int] = ..., pos: _Optional[int] = ...) -> None: ...
+
+class AmuletMingInfo(_message.Message):
+    __slots__ = ["type", "tile_list"]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    TILE_LIST_FIELD_NUMBER: _ClassVar[int]
+    type: int
+    tile_list: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, type: _Optional[int] = ..., tile_list: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class AmuletGameOperation(_message.Message):
+    __slots__ = ["type", "gang", "value"]
+    class GangTiles(_message.Message):
+        __slots__ = ["tiles"]
+        TILES_FIELD_NUMBER: _ClassVar[int]
+        tiles: _containers.RepeatedScalarFieldContainer[int]
+        def __init__(self, tiles: _Optional[_Iterable[int]] = ...) -> None: ...
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    GANG_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    type: int
+    gang: _containers.RepeatedCompositeFieldContainer[AmuletGameOperation.GangTiles]
+    value: int
+    def __init__(self, type: _Optional[int] = ..., gang: _Optional[_Iterable[_Union[AmuletGameOperation.GangTiles, _Mapping]]] = ..., value: _Optional[int] = ...) -> None: ...
+
+class AmuletTileScore(_message.Message):
+    __slots__ = ["tile", "score"]
+    TILE_FIELD_NUMBER: _ClassVar[int]
+    SCORE_FIELD_NUMBER: _ClassVar[int]
+    tile: str
+    score: str
+    def __init__(self, tile: _Optional[str] = ..., score: _Optional[str] = ...) -> None: ...
+
+class ActivityAmuletHuRecord(_message.Message):
+    __slots__ = ["point", "pai", "fan", "base", "effect_builds"]
+    POINT_FIELD_NUMBER: _ClassVar[int]
+    PAI_FIELD_NUMBER: _ClassVar[int]
+    FAN_FIELD_NUMBER: _ClassVar[int]
+    BASE_FIELD_NUMBER: _ClassVar[int]
+    EFFECT_BUILDS_FIELD_NUMBER: _ClassVar[int]
+    point: str
+    pai: str
+    fan: str
+    base: str
+    effect_builds: _containers.RepeatedCompositeFieldContainer[ActivityAmuletEffectRecordData]
+    def __init__(self, point: _Optional[str] = ..., pai: _Optional[str] = ..., fan: _Optional[str] = ..., base: _Optional[str] = ..., effect_builds: _Optional[_Iterable[_Union[ActivityAmuletEffectRecordData, _Mapping]]] = ...) -> None: ...
+
+class AmuletEffectCounterData(_message.Message):
+    __slots__ = ["effect_id", "pack_candidate_count", "gain_count"]
+    EFFECT_ID_FIELD_NUMBER: _ClassVar[int]
+    PACK_CANDIDATE_COUNT_FIELD_NUMBER: _ClassVar[int]
+    GAIN_COUNT_FIELD_NUMBER: _ClassVar[int]
+    effect_id: int
+    pack_candidate_count: int
+    gain_count: int
+    def __init__(self, effect_id: _Optional[int] = ..., pack_candidate_count: _Optional[int] = ..., gain_count: _Optional[int] = ...) -> None: ...
+
+class AmuletGameRecordData(_message.Message):
+    __slots__ = ["yiman_count", "level_hu_count", "game_hu_count", "effect_gain", "coin_consume", "coin_gain", "highest_hu", "highest_level_score", "highest_fan", "pack_count", "round_count", "effect_counter", "hu_tiles_id"]
+    YIMAN_COUNT_FIELD_NUMBER: _ClassVar[int]
+    LEVEL_HU_COUNT_FIELD_NUMBER: _ClassVar[int]
+    GAME_HU_COUNT_FIELD_NUMBER: _ClassVar[int]
+    EFFECT_GAIN_FIELD_NUMBER: _ClassVar[int]
+    COIN_CONSUME_FIELD_NUMBER: _ClassVar[int]
+    COIN_GAIN_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_HU_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_LEVEL_SCORE_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_FAN_FIELD_NUMBER: _ClassVar[int]
+    PACK_COUNT_FIELD_NUMBER: _ClassVar[int]
+    ROUND_COUNT_FIELD_NUMBER: _ClassVar[int]
+    EFFECT_COUNTER_FIELD_NUMBER: _ClassVar[int]
+    HU_TILES_ID_FIELD_NUMBER: _ClassVar[int]
+    yiman_count: int
+    level_hu_count: int
+    game_hu_count: int
+    effect_gain: int
+    coin_consume: str
+    coin_gain: str
+    highest_hu: ActivityAmuletHuRecord
+    highest_level_score: str
+    highest_fan: str
+    pack_count: int
+    round_count: int
+    effect_counter: _containers.RepeatedCompositeFieldContainer[AmuletEffectCounterData]
+    hu_tiles_id: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, yiman_count: _Optional[int] = ..., level_hu_count: _Optional[int] = ..., game_hu_count: _Optional[int] = ..., effect_gain: _Optional[int] = ..., coin_consume: _Optional[str] = ..., coin_gain: _Optional[str] = ..., highest_hu: _Optional[_Union[ActivityAmuletHuRecord, _Mapping]] = ..., highest_level_score: _Optional[str] = ..., highest_fan: _Optional[str] = ..., pack_count: _Optional[int] = ..., round_count: _Optional[int] = ..., effect_counter: _Optional[_Iterable[_Union[AmuletEffectCounterData, _Mapping]]] = ..., hu_tiles_id: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class AmuletSkillData(_message.Message):
+    __slots__ = ["id", "level"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    LEVEL_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    level: int
+    def __init__(self, id: _Optional[int] = ..., level: _Optional[int] = ...) -> None: ...
+
+class ActivityAmuletUpgradeData(_message.Message):
+    __slots__ = ["skill"]
+    SKILL_FIELD_NUMBER: _ClassVar[int]
+    skill: _containers.RepeatedCompositeFieldContainer[AmuletSkillData]
+    def __init__(self, skill: _Optional[_Iterable[_Union[AmuletSkillData, _Mapping]]] = ...) -> None: ...
+
+class AmuletGameRoundData(_message.Message):
+    __slots__ = ["pool", "tile_replace", "tian_dora", "dora", "hands", "used_desktop", "ming", "locked_tile", "change_tile_count", "total_change_tile_count", "next_operation", "ting_list", "point", "target_point", "locked_tile_count", "mountain", "used", "desktop", "show_desktop", "after_gang", "desktop_remain", "show_desktop_tiles"]
+    POOL_FIELD_NUMBER: _ClassVar[int]
+    TILE_REPLACE_FIELD_NUMBER: _ClassVar[int]
+    TIAN_DORA_FIELD_NUMBER: _ClassVar[int]
+    DORA_FIELD_NUMBER: _ClassVar[int]
+    HANDS_FIELD_NUMBER: _ClassVar[int]
+    USED_DESKTOP_FIELD_NUMBER: _ClassVar[int]
+    MING_FIELD_NUMBER: _ClassVar[int]
+    LOCKED_TILE_FIELD_NUMBER: _ClassVar[int]
+    CHANGE_TILE_COUNT_FIELD_NUMBER: _ClassVar[int]
+    TOTAL_CHANGE_TILE_COUNT_FIELD_NUMBER: _ClassVar[int]
+    NEXT_OPERATION_FIELD_NUMBER: _ClassVar[int]
+    TING_LIST_FIELD_NUMBER: _ClassVar[int]
+    POINT_FIELD_NUMBER: _ClassVar[int]
+    TARGET_POINT_FIELD_NUMBER: _ClassVar[int]
+    LOCKED_TILE_COUNT_FIELD_NUMBER: _ClassVar[int]
+    MOUNTAIN_FIELD_NUMBER: _ClassVar[int]
+    USED_FIELD_NUMBER: _ClassVar[int]
+    DESKTOP_FIELD_NUMBER: _ClassVar[int]
+    SHOW_DESKTOP_FIELD_NUMBER: _ClassVar[int]
+    AFTER_GANG_FIELD_NUMBER: _ClassVar[int]
+    DESKTOP_REMAIN_FIELD_NUMBER: _ClassVar[int]
+    SHOW_DESKTOP_TILES_FIELD_NUMBER: _ClassVar[int]
+    pool: _containers.RepeatedCompositeFieldContainer[AmuletTile]
+    tile_replace: _containers.RepeatedCompositeFieldContainer[AmuletTile]
+    tian_dora: _containers.RepeatedScalarFieldContainer[str]
+    dora: _containers.RepeatedScalarFieldContainer[int]
+    hands: _containers.RepeatedScalarFieldContainer[int]
+    used_desktop: _containers.RepeatedScalarFieldContainer[int]
+    ming: _containers.RepeatedCompositeFieldContainer[AmuletMingInfo]
+    locked_tile: _containers.RepeatedScalarFieldContainer[int]
+    change_tile_count: int
+    total_change_tile_count: int
+    next_operation: _containers.RepeatedCompositeFieldContainer[AmuletGameOperation]
+    ting_list: _containers.RepeatedCompositeFieldContainer[AmuletActivityTingInfo]
+    point: str
+    target_point: str
+    locked_tile_count: int
+    mountain: _containers.RepeatedScalarFieldContainer[int]
+    used: _containers.RepeatedScalarFieldContainer[int]
+    desktop: _containers.RepeatedScalarFieldContainer[int]
+    show_desktop: _containers.RepeatedScalarFieldContainer[int]
+    after_gang: int
+    desktop_remain: int
+    show_desktop_tiles: _containers.RepeatedCompositeFieldContainer[AmuletShowDesktopTileData]
+    def __init__(self, pool: _Optional[_Iterable[_Union[AmuletTile, _Mapping]]] = ..., tile_replace: _Optional[_Iterable[_Union[AmuletTile, _Mapping]]] = ..., tian_dora: _Optional[_Iterable[str]] = ..., dora: _Optional[_Iterable[int]] = ..., hands: _Optional[_Iterable[int]] = ..., used_desktop: _Optional[_Iterable[int]] = ..., ming: _Optional[_Iterable[_Union[AmuletMingInfo, _Mapping]]] = ..., locked_tile: _Optional[_Iterable[int]] = ..., change_tile_count: _Optional[int] = ..., total_change_tile_count: _Optional[int] = ..., next_operation: _Optional[_Iterable[_Union[AmuletGameOperation, _Mapping]]] = ..., ting_list: _Optional[_Iterable[_Union[AmuletActivityTingInfo, _Mapping]]] = ..., point: _Optional[str] = ..., target_point: _Optional[str] = ..., locked_tile_count: _Optional[int] = ..., mountain: _Optional[_Iterable[int]] = ..., used: _Optional[_Iterable[int]] = ..., desktop: _Optional[_Iterable[int]] = ..., show_desktop: _Optional[_Iterable[int]] = ..., after_gang: _Optional[int] = ..., desktop_remain: _Optional[int] = ..., show_desktop_tiles: _Optional[_Iterable[_Union[AmuletShowDesktopTileData, _Mapping]]] = ...) -> None: ...
+
+class AmuletEffectCandidate(_message.Message):
+    __slots__ = ["id", "badge_id"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    BADGE_ID_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    badge_id: int
+    def __init__(self, id: _Optional[int] = ..., badge_id: _Optional[int] = ...) -> None: ...
+
+class AmuletGameEffectData(_message.Message):
+    __slots__ = ["effect_list", "buff_list", "skill_buff_list", "shop_buff_list", "free_reward_candidates", "level_reward_candidates", "level_reward_packs", "current_level_reward_pack", "max_effect_volume"]
+    EFFECT_LIST_FIELD_NUMBER: _ClassVar[int]
+    BUFF_LIST_FIELD_NUMBER: _ClassVar[int]
+    SKILL_BUFF_LIST_FIELD_NUMBER: _ClassVar[int]
+    SHOP_BUFF_LIST_FIELD_NUMBER: _ClassVar[int]
+    FREE_REWARD_CANDIDATES_FIELD_NUMBER: _ClassVar[int]
+    LEVEL_REWARD_CANDIDATES_FIELD_NUMBER: _ClassVar[int]
+    LEVEL_REWARD_PACKS_FIELD_NUMBER: _ClassVar[int]
+    CURRENT_LEVEL_REWARD_PACK_FIELD_NUMBER: _ClassVar[int]
+    MAX_EFFECT_VOLUME_FIELD_NUMBER: _ClassVar[int]
+    effect_list: _containers.RepeatedCompositeFieldContainer[AmuletEffectData]
+    buff_list: _containers.RepeatedCompositeFieldContainer[AmuletBuffData]
+    skill_buff_list: _containers.RepeatedCompositeFieldContainer[AmuletBuffData]
+    shop_buff_list: _containers.RepeatedCompositeFieldContainer[AmuletBuffData]
+    free_reward_candidates: _containers.RepeatedCompositeFieldContainer[AmuletEffectCandidate]
+    level_reward_candidates: _containers.RepeatedCompositeFieldContainer[AmuletEffectCandidate]
+    level_reward_packs: _containers.RepeatedScalarFieldContainer[int]
+    current_level_reward_pack: int
+    max_effect_volume: int
+    def __init__(self, effect_list: _Optional[_Iterable[_Union[AmuletEffectData, _Mapping]]] = ..., buff_list: _Optional[_Iterable[_Union[AmuletBuffData, _Mapping]]] = ..., skill_buff_list: _Optional[_Iterable[_Union[AmuletBuffData, _Mapping]]] = ..., shop_buff_list: _Optional[_Iterable[_Union[AmuletBuffData, _Mapping]]] = ..., free_reward_candidates: _Optional[_Iterable[_Union[AmuletEffectCandidate, _Mapping]]] = ..., level_reward_candidates: _Optional[_Iterable[_Union[AmuletEffectCandidate, _Mapping]]] = ..., level_reward_packs: _Optional[_Iterable[int]] = ..., current_level_reward_pack: _Optional[int] = ..., max_effect_volume: _Optional[int] = ...) -> None: ...
+
+class AmuletShopData(_message.Message):
+    __slots__ = ["goods", "candidate_effect_list", "shop_refresh_count", "refresh_price"]
+    GOODS_FIELD_NUMBER: _ClassVar[int]
+    CANDIDATE_EFFECT_LIST_FIELD_NUMBER: _ClassVar[int]
+    SHOP_REFRESH_COUNT_FIELD_NUMBER: _ClassVar[int]
+    REFRESH_PRICE_FIELD_NUMBER: _ClassVar[int]
+    goods: _containers.RepeatedCompositeFieldContainer[AmuletGameShopGoods]
+    candidate_effect_list: _containers.RepeatedCompositeFieldContainer[AmuletEffectCandidate]
+    shop_refresh_count: int
+    refresh_price: int
+    def __init__(self, goods: _Optional[_Iterable[_Union[AmuletGameShopGoods, _Mapping]]] = ..., candidate_effect_list: _Optional[_Iterable[_Union[AmuletEffectCandidate, _Mapping]]] = ..., shop_refresh_count: _Optional[int] = ..., refresh_price: _Optional[int] = ...) -> None: ...
+
+class AmuletGameData(_message.Message):
+    __slots__ = ["round", "effect", "game", "stage", "shop", "record", "ended"]
+    ROUND_FIELD_NUMBER: _ClassVar[int]
+    EFFECT_FIELD_NUMBER: _ClassVar[int]
+    GAME_FIELD_NUMBER: _ClassVar[int]
+    STAGE_FIELD_NUMBER: _ClassVar[int]
+    SHOP_FIELD_NUMBER: _ClassVar[int]
+    RECORD_FIELD_NUMBER: _ClassVar[int]
+    ENDED_FIELD_NUMBER: _ClassVar[int]
+    round: AmuletGameRoundData
+    effect: AmuletGameEffectData
+    game: AmuletGameInfoData
+    stage: int
+    shop: AmuletShopData
+    record: AmuletGameRecordData
+    ended: bool
+    def __init__(self, round: _Optional[_Union[AmuletGameRoundData, _Mapping]] = ..., effect: _Optional[_Union[AmuletGameEffectData, _Mapping]] = ..., game: _Optional[_Union[AmuletGameInfoData, _Mapping]] = ..., stage: _Optional[int] = ..., shop: _Optional[_Union[AmuletShopData, _Mapping]] = ..., record: _Optional[_Union[AmuletGameRecordData, _Mapping]] = ..., ended: bool = ...) -> None: ...
+
+class AmuletGameInfoData(_message.Message):
+    __slots__ = ["level", "coin", "max_effect_volume", "next_boss_buff", "boss_buff", "tile_score_map", "book_effect_id"]
+    LEVEL_FIELD_NUMBER: _ClassVar[int]
+    COIN_FIELD_NUMBER: _ClassVar[int]
+    MAX_EFFECT_VOLUME_FIELD_NUMBER: _ClassVar[int]
+    NEXT_BOSS_BUFF_FIELD_NUMBER: _ClassVar[int]
+    BOSS_BUFF_FIELD_NUMBER: _ClassVar[int]
+    TILE_SCORE_MAP_FIELD_NUMBER: _ClassVar[int]
+    BOOK_EFFECT_ID_FIELD_NUMBER: _ClassVar[int]
+    level: int
+    coin: str
+    max_effect_volume: int
+    next_boss_buff: _containers.RepeatedScalarFieldContainer[int]
+    boss_buff: _containers.RepeatedScalarFieldContainer[int]
+    tile_score_map: _containers.RepeatedCompositeFieldContainer[AmuletTileScore]
+    book_effect_id: int
+    def __init__(self, level: _Optional[int] = ..., coin: _Optional[str] = ..., max_effect_volume: _Optional[int] = ..., next_boss_buff: _Optional[_Iterable[int]] = ..., boss_buff: _Optional[_Iterable[int]] = ..., tile_score_map: _Optional[_Iterable[_Union[AmuletTileScore, _Mapping]]] = ..., book_effect_id: _Optional[int] = ...) -> None: ...
+
+class ActivityAmuletIllustratedBookData(_message.Message):
+    __slots__ = ["effect_collection", "badge_collection"]
+    EFFECT_COLLECTION_FIELD_NUMBER: _ClassVar[int]
+    BADGE_COLLECTION_FIELD_NUMBER: _ClassVar[int]
+    effect_collection: _containers.RepeatedScalarFieldContainer[int]
+    badge_collection: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, effect_collection: _Optional[_Iterable[int]] = ..., badge_collection: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class ActivityAmuletEffectRecordData(_message.Message):
+    __slots__ = ["id", "badge_id", "volume"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    BADGE_ID_FIELD_NUMBER: _ClassVar[int]
+    VOLUME_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    badge_id: int
+    volume: int
+    def __init__(self, id: _Optional[int] = ..., badge_id: _Optional[int] = ..., volume: _Optional[int] = ...) -> None: ...
+
+class ActivityAmuletGameRecordData(_message.Message):
+    __slots__ = ["effect_builds", "level", "highest_level_score", "highest_fan", "highest_score", "coin_consumed", "pack_count", "time", "highest_hu"]
+    EFFECT_BUILDS_FIELD_NUMBER: _ClassVar[int]
+    LEVEL_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_LEVEL_SCORE_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_FAN_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_SCORE_FIELD_NUMBER: _ClassVar[int]
+    COIN_CONSUMED_FIELD_NUMBER: _ClassVar[int]
+    PACK_COUNT_FIELD_NUMBER: _ClassVar[int]
+    TIME_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_HU_FIELD_NUMBER: _ClassVar[int]
+    effect_builds: _containers.RepeatedCompositeFieldContainer[ActivityAmuletEffectRecordData]
+    level: int
+    highest_level_score: str
+    highest_fan: str
+    highest_score: str
+    coin_consumed: str
+    pack_count: int
+    time: int
+    highest_hu: ActivityAmuletHuRecord
+    def __init__(self, effect_builds: _Optional[_Iterable[_Union[ActivityAmuletEffectRecordData, _Mapping]]] = ..., level: _Optional[int] = ..., highest_level_score: _Optional[str] = ..., highest_fan: _Optional[str] = ..., highest_score: _Optional[str] = ..., coin_consumed: _Optional[str] = ..., pack_count: _Optional[int] = ..., time: _Optional[int] = ..., highest_hu: _Optional[_Union[ActivityAmuletHuRecord, _Mapping]] = ...) -> None: ...
+
+class ActivityAmuletStatisticData(_message.Message):
+    __slots__ = ["highest_level", "highest_hu", "highest_level_score", "highest_fan", "highest_score", "pass_game_count", "round_count", "open_pack_count", "highest_coin_consumed"]
+    HIGHEST_LEVEL_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_HU_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_LEVEL_SCORE_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_FAN_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_SCORE_FIELD_NUMBER: _ClassVar[int]
+    PASS_GAME_COUNT_FIELD_NUMBER: _ClassVar[int]
+    ROUND_COUNT_FIELD_NUMBER: _ClassVar[int]
+    OPEN_PACK_COUNT_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_COIN_CONSUMED_FIELD_NUMBER: _ClassVar[int]
+    highest_level: int
+    highest_hu: ActivityAmuletHuRecord
+    highest_level_score: str
+    highest_fan: str
+    highest_score: str
+    pass_game_count: int
+    round_count: int
+    open_pack_count: int
+    highest_coin_consumed: str
+    def __init__(self, highest_level: _Optional[int] = ..., highest_hu: _Optional[_Union[ActivityAmuletHuRecord, _Mapping]] = ..., highest_level_score: _Optional[str] = ..., highest_fan: _Optional[str] = ..., highest_score: _Optional[str] = ..., pass_game_count: _Optional[int] = ..., round_count: _Optional[int] = ..., open_pack_count: _Optional[int] = ..., highest_coin_consumed: _Optional[str] = ...) -> None: ...
+
+class ActivityAmuletData(_message.Message):
+    __slots__ = ["activity_id", "game", "version", "upgrade", "illustrated_book", "book_effect_id", "game_records", "statistic"]
+    ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+    GAME_FIELD_NUMBER: _ClassVar[int]
+    VERSION_FIELD_NUMBER: _ClassVar[int]
+    UPGRADE_FIELD_NUMBER: _ClassVar[int]
+    ILLUSTRATED_BOOK_FIELD_NUMBER: _ClassVar[int]
+    BOOK_EFFECT_ID_FIELD_NUMBER: _ClassVar[int]
+    GAME_RECORDS_FIELD_NUMBER: _ClassVar[int]
+    STATISTIC_FIELD_NUMBER: _ClassVar[int]
+    activity_id: int
+    game: AmuletGameData
+    version: int
+    upgrade: ActivityAmuletUpgradeData
+    illustrated_book: ActivityAmuletIllustratedBookData
+    book_effect_id: int
+    game_records: _containers.RepeatedCompositeFieldContainer[ActivityAmuletGameRecordData]
+    statistic: ActivityAmuletStatisticData
+    def __init__(self, activity_id: _Optional[int] = ..., game: _Optional[_Union[AmuletGameData, _Mapping]] = ..., version: _Optional[int] = ..., upgrade: _Optional[_Union[ActivityAmuletUpgradeData, _Mapping]] = ..., illustrated_book: _Optional[_Union[ActivityAmuletIllustratedBookData, _Mapping]] = ..., book_effect_id: _Optional[int] = ..., game_records: _Optional[_Iterable[_Union[ActivityAmuletGameRecordData, _Mapping]]] = ..., statistic: _Optional[_Union[ActivityAmuletStatisticData, _Mapping]] = ...) -> None: ...
+
+class AmuletFan(_message.Message):
+    __slots__ = ["id", "val", "count", "yiman"]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    VAL_FIELD_NUMBER: _ClassVar[int]
+    COUNT_FIELD_NUMBER: _ClassVar[int]
+    YIMAN_FIELD_NUMBER: _ClassVar[int]
+    id: int
+    val: str
+    count: int
+    yiman: bool
+    def __init__(self, id: _Optional[int] = ..., val: _Optional[str] = ..., count: _Optional[int] = ..., yiman: bool = ...) -> None: ...
+
+class AmuletHookResult(_message.Message):
+    __slots__ = ["add_effect", "remove_effect", "add_buff", "remove_buff", "add_tian_dora", "add_dora", "coin_modify", "tile_replace", "add_show_tile", "modify_tile_score", "modify_desktop_count", "modify_show_desktop_count", "modify_lock_tile_count", "modify_change_hands_count", "modify_change_hands_tile_count", "force_moqie", "replace_hu", "modify_target_point", "upgrade_level", "modify_dora", "modify_dora_max_count", "modify_shop_goods_count", "modify_shop_rare_weight", "modify_shop_goods_price", "modify_shop_pack_effect", "modify_effect_max_count", "modify_goods", "remove_goods", "modify_base", "modify_fan", "modify_fan_info", "transform_effect", "add_badge", "remove_badge", "modify_effect_price", "copy_effect", "effect_growth", "modify_tile_score_aura", "modify_hule_count", "can_gang", "modify_change_hands_list", "modify_change_desktop", "self_effect_id", "modify_change_coin", "set_tile_score", "upgrade_effect", "modify_tile_base_score"]
+    class AddEffectResult(_message.Message):
+        __slots__ = ["uid", "id", "merge_type", "merged_list", "merged_result", "badge", "store", "volume"]
+        UID_FIELD_NUMBER: _ClassVar[int]
+        ID_FIELD_NUMBER: _ClassVar[int]
+        MERGE_TYPE_FIELD_NUMBER: _ClassVar[int]
+        MERGED_LIST_FIELD_NUMBER: _ClassVar[int]
+        MERGED_RESULT_FIELD_NUMBER: _ClassVar[int]
+        BADGE_FIELD_NUMBER: _ClassVar[int]
+        STORE_FIELD_NUMBER: _ClassVar[int]
+        VOLUME_FIELD_NUMBER: _ClassVar[int]
+        uid: int
+        id: int
+        merge_type: int
+        merged_list: _containers.RepeatedScalarFieldContainer[int]
+        merged_result: int
+        badge: AmuletBadgeData
+        store: _containers.RepeatedScalarFieldContainer[str]
+        volume: int
+        def __init__(self, uid: _Optional[int] = ..., id: _Optional[int] = ..., merge_type: _Optional[int] = ..., merged_list: _Optional[_Iterable[int]] = ..., merged_result: _Optional[int] = ..., badge: _Optional[_Union[AmuletBadgeData, _Mapping]] = ..., store: _Optional[_Iterable[str]] = ..., volume: _Optional[int] = ...) -> None: ...
+    class AddDoraResult(_message.Message):
+        __slots__ = ["count", "list"]
+        COUNT_FIELD_NUMBER: _ClassVar[int]
+        LIST_FIELD_NUMBER: _ClassVar[int]
+        count: int
+        list: _containers.RepeatedScalarFieldContainer[int]
+        def __init__(self, count: _Optional[int] = ..., list: _Optional[_Iterable[int]] = ...) -> None: ...
+    class ValueResult(_message.Message):
+        __slots__ = ["origin", "modify", "final"]
+        ORIGIN_FIELD_NUMBER: _ClassVar[int]
+        MODIFY_FIELD_NUMBER: _ClassVar[int]
+        FINAL_FIELD_NUMBER: _ClassVar[int]
+        origin: str
+        modify: str
+        final: str
+        def __init__(self, origin: _Optional[str] = ..., modify: _Optional[str] = ..., final: _Optional[str] = ...) -> None: ...
+    class ModifyDoraResult(_message.Message):
+        __slots__ = ["tile", "is_dora", "is_red_dora", "is_tian_dora", "dora_count"]
+        TILE_FIELD_NUMBER: _ClassVar[int]
+        IS_DORA_FIELD_NUMBER: _ClassVar[int]
+        IS_RED_DORA_FIELD_NUMBER: _ClassVar[int]
+        IS_TIAN_DORA_FIELD_NUMBER: _ClassVar[int]
+        DORA_COUNT_FIELD_NUMBER: _ClassVar[int]
+        tile: str
+        is_dora: bool
+        is_red_dora: bool
+        is_tian_dora: bool
+        dora_count: int
+        def __init__(self, tile: _Optional[str] = ..., is_dora: bool = ..., is_red_dora: bool = ..., is_tian_dora: bool = ..., dora_count: _Optional[int] = ...) -> None: ...
+    class TransformResult(_message.Message):
+        __slots__ = ["uid", "effect_id", "add_result"]
+        UID_FIELD_NUMBER: _ClassVar[int]
+        EFFECT_ID_FIELD_NUMBER: _ClassVar[int]
+        ADD_RESULT_FIELD_NUMBER: _ClassVar[int]
+        uid: int
+        effect_id: int
+        add_result: AmuletHookResult.AddEffectResult
+        def __init__(self, uid: _Optional[int] = ..., effect_id: _Optional[int] = ..., add_result: _Optional[_Union[AmuletHookResult.AddEffectResult, _Mapping]] = ...) -> None: ...
+    class AddBadge(_message.Message):
+        __slots__ = ["uid", "badge_id", "badge_uid"]
+        UID_FIELD_NUMBER: _ClassVar[int]
+        BADGE_ID_FIELD_NUMBER: _ClassVar[int]
+        BADGE_UID_FIELD_NUMBER: _ClassVar[int]
+        uid: int
+        badge_id: int
+        badge_uid: int
+        def __init__(self, uid: _Optional[int] = ..., badge_id: _Optional[int] = ..., badge_uid: _Optional[int] = ...) -> None: ...
+    class CopyEffect(_message.Message):
+        __slots__ = ["uid", "from_uid"]
+        UID_FIELD_NUMBER: _ClassVar[int]
+        FROM_UID_FIELD_NUMBER: _ClassVar[int]
+        uid: int
+        from_uid: int
+        def __init__(self, uid: _Optional[int] = ..., from_uid: _Optional[int] = ...) -> None: ...
+    class AmuletChangeDesktopResult(_message.Message):
+        __slots__ = ["show_desktop_tiles", "locked_tile_count", "desktop_remain", "locked_tile"]
+        SHOW_DESKTOP_TILES_FIELD_NUMBER: _ClassVar[int]
+        LOCKED_TILE_COUNT_FIELD_NUMBER: _ClassVar[int]
+        DESKTOP_REMAIN_FIELD_NUMBER: _ClassVar[int]
+        LOCKED_TILE_FIELD_NUMBER: _ClassVar[int]
+        show_desktop_tiles: _containers.RepeatedCompositeFieldContainer[AmuletShowDesktopTileData]
+        locked_tile_count: int
+        desktop_remain: int
+        locked_tile: _containers.RepeatedScalarFieldContainer[int]
+        def __init__(self, show_desktop_tiles: _Optional[_Iterable[_Union[AmuletShowDesktopTileData, _Mapping]]] = ..., locked_tile_count: _Optional[int] = ..., desktop_remain: _Optional[int] = ..., locked_tile: _Optional[_Iterable[int]] = ...) -> None: ...
+    class UpgradeEffectResult(_message.Message):
+        __slots__ = ["uid", "id", "badge", "store", "volume"]
+        UID_FIELD_NUMBER: _ClassVar[int]
+        ID_FIELD_NUMBER: _ClassVar[int]
+        BADGE_FIELD_NUMBER: _ClassVar[int]
+        STORE_FIELD_NUMBER: _ClassVar[int]
+        VOLUME_FIELD_NUMBER: _ClassVar[int]
+        uid: int
+        id: int
+        badge: AmuletBadgeData
+        store: _containers.RepeatedScalarFieldContainer[str]
+        volume: int
+        def __init__(self, uid: _Optional[int] = ..., id: _Optional[int] = ..., badge: _Optional[_Union[AmuletBadgeData, _Mapping]] = ..., store: _Optional[_Iterable[str]] = ..., volume: _Optional[int] = ...) -> None: ...
+    ADD_EFFECT_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_EFFECT_FIELD_NUMBER: _ClassVar[int]
+    ADD_BUFF_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_BUFF_FIELD_NUMBER: _ClassVar[int]
+    ADD_TIAN_DORA_FIELD_NUMBER: _ClassVar[int]
+    ADD_DORA_FIELD_NUMBER: _ClassVar[int]
+    COIN_MODIFY_FIELD_NUMBER: _ClassVar[int]
+    TILE_REPLACE_FIELD_NUMBER: _ClassVar[int]
+    ADD_SHOW_TILE_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_TILE_SCORE_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_DESKTOP_COUNT_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_SHOW_DESKTOP_COUNT_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_LOCK_TILE_COUNT_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_CHANGE_HANDS_COUNT_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_CHANGE_HANDS_TILE_COUNT_FIELD_NUMBER: _ClassVar[int]
+    FORCE_MOQIE_FIELD_NUMBER: _ClassVar[int]
+    REPLACE_HU_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_TARGET_POINT_FIELD_NUMBER: _ClassVar[int]
+    UPGRADE_LEVEL_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_DORA_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_DORA_MAX_COUNT_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_SHOP_GOODS_COUNT_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_SHOP_RARE_WEIGHT_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_SHOP_GOODS_PRICE_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_SHOP_PACK_EFFECT_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_EFFECT_MAX_COUNT_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_GOODS_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_GOODS_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_BASE_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_FAN_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_FAN_INFO_FIELD_NUMBER: _ClassVar[int]
+    TRANSFORM_EFFECT_FIELD_NUMBER: _ClassVar[int]
+    ADD_BADGE_FIELD_NUMBER: _ClassVar[int]
+    REMOVE_BADGE_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_EFFECT_PRICE_FIELD_NUMBER: _ClassVar[int]
+    COPY_EFFECT_FIELD_NUMBER: _ClassVar[int]
+    EFFECT_GROWTH_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_TILE_SCORE_AURA_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_HULE_COUNT_FIELD_NUMBER: _ClassVar[int]
+    CAN_GANG_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_CHANGE_HANDS_LIST_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_CHANGE_DESKTOP_FIELD_NUMBER: _ClassVar[int]
+    SELF_EFFECT_ID_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_CHANGE_COIN_FIELD_NUMBER: _ClassVar[int]
+    SET_TILE_SCORE_FIELD_NUMBER: _ClassVar[int]
+    UPGRADE_EFFECT_FIELD_NUMBER: _ClassVar[int]
+    MODIFY_TILE_BASE_SCORE_FIELD_NUMBER: _ClassVar[int]
+    add_effect: _containers.RepeatedCompositeFieldContainer[AmuletHookResult.AddEffectResult]
+    remove_effect: _containers.RepeatedScalarFieldContainer[int]
+    add_buff: _containers.RepeatedScalarFieldContainer[int]
+    remove_buff: _containers.RepeatedScalarFieldContainer[int]
+    add_tian_dora: _containers.RepeatedScalarFieldContainer[str]
+    add_dora: AmuletHookResult.AddDoraResult
+    coin_modify: AmuletHookResult.ValueResult
+    tile_replace: _containers.RepeatedCompositeFieldContainer[AmuletTile]
+    add_show_tile: _containers.RepeatedScalarFieldContainer[int]
+    modify_tile_score: _containers.RepeatedCompositeFieldContainer[AmuletTileScore]
+    modify_desktop_count: int
+    modify_show_desktop_count: int
+    modify_lock_tile_count: int
+    modify_change_hands_count: int
+    modify_change_hands_tile_count: int
+    force_moqie: bool
+    replace_hu: bool
+    modify_target_point: str
+    upgrade_level: bool
+    modify_dora: _containers.RepeatedCompositeFieldContainer[AmuletHookResult.ModifyDoraResult]
+    modify_dora_max_count: int
+    modify_shop_goods_count: int
+    modify_shop_rare_weight: bool
+    modify_shop_goods_price: bool
+    modify_shop_pack_effect: _containers.RepeatedScalarFieldContainer[int]
+    modify_effect_max_count: int
+    modify_goods: _containers.RepeatedCompositeFieldContainer[AmuletGameShopGoods]
+    remove_goods: _containers.RepeatedScalarFieldContainer[int]
+    modify_base: AmuletHookResult.ValueResult
+    modify_fan: AmuletHookResult.ValueResult
+    modify_fan_info: _containers.RepeatedCompositeFieldContainer[AmuletFan]
+    transform_effect: _containers.RepeatedCompositeFieldContainer[AmuletHookResult.TransformResult]
+    add_badge: _containers.RepeatedCompositeFieldContainer[AmuletHookResult.AddBadge]
+    remove_badge: _containers.RepeatedScalarFieldContainer[int]
+    modify_effect_price: str
+    copy_effect: _containers.RepeatedCompositeFieldContainer[AmuletHookResult.CopyEffect]
+    effect_growth: bool
+    modify_tile_score_aura: str
+    modify_hule_count: int
+    can_gang: bool
+    modify_change_hands_list: _containers.RepeatedScalarFieldContainer[int]
+    modify_change_desktop: AmuletHookResult.AmuletChangeDesktopResult
+    self_effect_id: int
+    modify_change_coin: str
+    set_tile_score: _containers.RepeatedCompositeFieldContainer[AmuletTileScore]
+    upgrade_effect: _containers.RepeatedCompositeFieldContainer[AmuletHookResult.UpgradeEffectResult]
+    modify_tile_base_score: _containers.RepeatedCompositeFieldContainer[AmuletTileScore]
+    def __init__(self, add_effect: _Optional[_Iterable[_Union[AmuletHookResult.AddEffectResult, _Mapping]]] = ..., remove_effect: _Optional[_Iterable[int]] = ..., add_buff: _Optional[_Iterable[int]] = ..., remove_buff: _Optional[_Iterable[int]] = ..., add_tian_dora: _Optional[_Iterable[str]] = ..., add_dora: _Optional[_Union[AmuletHookResult.AddDoraResult, _Mapping]] = ..., coin_modify: _Optional[_Union[AmuletHookResult.ValueResult, _Mapping]] = ..., tile_replace: _Optional[_Iterable[_Union[AmuletTile, _Mapping]]] = ..., add_show_tile: _Optional[_Iterable[int]] = ..., modify_tile_score: _Optional[_Iterable[_Union[AmuletTileScore, _Mapping]]] = ..., modify_desktop_count: _Optional[int] = ..., modify_show_desktop_count: _Optional[int] = ..., modify_lock_tile_count: _Optional[int] = ..., modify_change_hands_count: _Optional[int] = ..., modify_change_hands_tile_count: _Optional[int] = ..., force_moqie: bool = ..., replace_hu: bool = ..., modify_target_point: _Optional[str] = ..., upgrade_level: bool = ..., modify_dora: _Optional[_Iterable[_Union[AmuletHookResult.ModifyDoraResult, _Mapping]]] = ..., modify_dora_max_count: _Optional[int] = ..., modify_shop_goods_count: _Optional[int] = ..., modify_shop_rare_weight: bool = ..., modify_shop_goods_price: bool = ..., modify_shop_pack_effect: _Optional[_Iterable[int]] = ..., modify_effect_max_count: _Optional[int] = ..., modify_goods: _Optional[_Iterable[_Union[AmuletGameShopGoods, _Mapping]]] = ..., remove_goods: _Optional[_Iterable[int]] = ..., modify_base: _Optional[_Union[AmuletHookResult.ValueResult, _Mapping]] = ..., modify_fan: _Optional[_Union[AmuletHookResult.ValueResult, _Mapping]] = ..., modify_fan_info: _Optional[_Iterable[_Union[AmuletFan, _Mapping]]] = ..., transform_effect: _Optional[_Iterable[_Union[AmuletHookResult.TransformResult, _Mapping]]] = ..., add_badge: _Optional[_Iterable[_Union[AmuletHookResult.AddBadge, _Mapping]]] = ..., remove_badge: _Optional[_Iterable[int]] = ..., modify_effect_price: _Optional[str] = ..., copy_effect: _Optional[_Iterable[_Union[AmuletHookResult.CopyEffect, _Mapping]]] = ..., effect_growth: bool = ..., modify_tile_score_aura: _Optional[str] = ..., modify_hule_count: _Optional[int] = ..., can_gang: bool = ..., modify_change_hands_list: _Optional[_Iterable[int]] = ..., modify_change_desktop: _Optional[_Union[AmuletHookResult.AmuletChangeDesktopResult, _Mapping]] = ..., self_effect_id: _Optional[int] = ..., modify_change_coin: _Optional[str] = ..., set_tile_score: _Optional[_Iterable[_Union[AmuletTileScore, _Mapping]]] = ..., upgrade_effect: _Optional[_Iterable[_Union[AmuletHookResult.UpgradeEffectResult, _Mapping]]] = ..., modify_tile_base_score: _Optional[_Iterable[_Union[AmuletTileScore, _Mapping]]] = ...) -> None: ...
+
+class AmuletEffectedHookData(_message.Message):
+    __slots__ = ["uid", "id", "result", "type"]
+    UID_FIELD_NUMBER: _ClassVar[int]
+    ID_FIELD_NUMBER: _ClassVar[int]
+    RESULT_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    uid: int
+    id: int
+    result: AmuletHookResult
+    type: int
+    def __init__(self, uid: _Optional[int] = ..., id: _Optional[int] = ..., result: _Optional[_Union[AmuletHookResult, _Mapping]] = ..., type: _Optional[int] = ...) -> None: ...
+
+class AmuletEffectCandidatesArrayDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: _containers.RepeatedCompositeFieldContainer[AmuletEffectCandidate]
+    def __init__(self, dirty: bool = ..., value: _Optional[_Iterable[_Union[AmuletEffectCandidate, _Mapping]]] = ...) -> None: ...
+
+class AmuletTileArrayDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: _containers.RepeatedCompositeFieldContainer[AmuletTile]
+    def __init__(self, dirty: bool = ..., value: _Optional[_Iterable[_Union[AmuletTile, _Mapping]]] = ...) -> None: ...
+
+class StringDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: str
+    def __init__(self, dirty: bool = ..., value: _Optional[str] = ...) -> None: ...
+
+class StringArrayDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, dirty: bool = ..., value: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class UInt32ArrayDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, dirty: bool = ..., value: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class AmuletMingInfoArrayDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: _containers.RepeatedCompositeFieldContainer[AmuletMingInfo]
+    def __init__(self, dirty: bool = ..., value: _Optional[_Iterable[_Union[AmuletMingInfo, _Mapping]]] = ...) -> None: ...
+
+class UInt32Dirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: int
+    def __init__(self, dirty: bool = ..., value: _Optional[int] = ...) -> None: ...
+
+class AmuletGameOperationArrayDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: _containers.RepeatedCompositeFieldContainer[AmuletGameOperation]
+    def __init__(self, dirty: bool = ..., value: _Optional[_Iterable[_Union[AmuletGameOperation, _Mapping]]] = ...) -> None: ...
+
+class AmuletTingInfoArrayDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: _containers.RepeatedCompositeFieldContainer[AmuletActivityTingInfo]
+    def __init__(self, dirty: bool = ..., value: _Optional[_Iterable[_Union[AmuletActivityTingInfo, _Mapping]]] = ...) -> None: ...
+
+class AmuletShowDesktopTileDataArrayDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: _containers.RepeatedCompositeFieldContainer[AmuletShowDesktopTileData]
+    def __init__(self, dirty: bool = ..., value: _Optional[_Iterable[_Union[AmuletShowDesktopTileData, _Mapping]]] = ...) -> None: ...
+
+class AmuletRoundDataChanges(_message.Message):
+    __slots__ = ["pool", "tile_replace", "tian_dora", "dora", "hands", "used_desktop", "used", "ming", "locked_tile", "change_tile_count", "total_change_tile_count", "next_operation", "ting_list", "point", "target_point", "desktop_remain", "show_desktop_tiles", "locked_tile_count"]
+    POOL_FIELD_NUMBER: _ClassVar[int]
+    TILE_REPLACE_FIELD_NUMBER: _ClassVar[int]
+    TIAN_DORA_FIELD_NUMBER: _ClassVar[int]
+    DORA_FIELD_NUMBER: _ClassVar[int]
+    HANDS_FIELD_NUMBER: _ClassVar[int]
+    USED_DESKTOP_FIELD_NUMBER: _ClassVar[int]
+    USED_FIELD_NUMBER: _ClassVar[int]
+    MING_FIELD_NUMBER: _ClassVar[int]
+    LOCKED_TILE_FIELD_NUMBER: _ClassVar[int]
+    CHANGE_TILE_COUNT_FIELD_NUMBER: _ClassVar[int]
+    TOTAL_CHANGE_TILE_COUNT_FIELD_NUMBER: _ClassVar[int]
+    NEXT_OPERATION_FIELD_NUMBER: _ClassVar[int]
+    TING_LIST_FIELD_NUMBER: _ClassVar[int]
+    POINT_FIELD_NUMBER: _ClassVar[int]
+    TARGET_POINT_FIELD_NUMBER: _ClassVar[int]
+    DESKTOP_REMAIN_FIELD_NUMBER: _ClassVar[int]
+    SHOW_DESKTOP_TILES_FIELD_NUMBER: _ClassVar[int]
+    LOCKED_TILE_COUNT_FIELD_NUMBER: _ClassVar[int]
+    pool: AmuletTileArrayDirty
+    tile_replace: AmuletTileArrayDirty
+    tian_dora: StringArrayDirty
+    dora: UInt32ArrayDirty
+    hands: UInt32ArrayDirty
+    used_desktop: UInt32ArrayDirty
+    used: UInt32ArrayDirty
+    ming: AmuletMingInfoArrayDirty
+    locked_tile: UInt32ArrayDirty
+    change_tile_count: UInt32Dirty
+    total_change_tile_count: UInt32Dirty
+    next_operation: AmuletGameOperationArrayDirty
+    ting_list: AmuletTingInfoArrayDirty
+    point: StringDirty
+    target_point: StringDirty
+    desktop_remain: UInt32Dirty
+    show_desktop_tiles: AmuletShowDesktopTileDataArrayDirty
+    locked_tile_count: UInt32Dirty
+    def __init__(self, pool: _Optional[_Union[AmuletTileArrayDirty, _Mapping]] = ..., tile_replace: _Optional[_Union[AmuletTileArrayDirty, _Mapping]] = ..., tian_dora: _Optional[_Union[StringArrayDirty, _Mapping]] = ..., dora: _Optional[_Union[UInt32ArrayDirty, _Mapping]] = ..., hands: _Optional[_Union[UInt32ArrayDirty, _Mapping]] = ..., used_desktop: _Optional[_Union[UInt32ArrayDirty, _Mapping]] = ..., used: _Optional[_Union[UInt32ArrayDirty, _Mapping]] = ..., ming: _Optional[_Union[AmuletMingInfoArrayDirty, _Mapping]] = ..., locked_tile: _Optional[_Union[UInt32ArrayDirty, _Mapping]] = ..., change_tile_count: _Optional[_Union[UInt32Dirty, _Mapping]] = ..., total_change_tile_count: _Optional[_Union[UInt32Dirty, _Mapping]] = ..., next_operation: _Optional[_Union[AmuletGameOperationArrayDirty, _Mapping]] = ..., ting_list: _Optional[_Union[AmuletTingInfoArrayDirty, _Mapping]] = ..., point: _Optional[_Union[StringDirty, _Mapping]] = ..., target_point: _Optional[_Union[StringDirty, _Mapping]] = ..., desktop_remain: _Optional[_Union[UInt32Dirty, _Mapping]] = ..., show_desktop_tiles: _Optional[_Union[AmuletShowDesktopTileDataArrayDirty, _Mapping]] = ..., locked_tile_count: _Optional[_Union[UInt32Dirty, _Mapping]] = ...) -> None: ...
+
+class AmuletEffectDataArrayDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: _containers.RepeatedCompositeFieldContainer[AmuletEffectData]
+    def __init__(self, dirty: bool = ..., value: _Optional[_Iterable[_Union[AmuletEffectData, _Mapping]]] = ...) -> None: ...
+
+class AmuletBuffDataArrayDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: _containers.RepeatedCompositeFieldContainer[AmuletBuffData]
+    def __init__(self, dirty: bool = ..., value: _Optional[_Iterable[_Union[AmuletBuffData, _Mapping]]] = ...) -> None: ...
+
+class AmuletEffectDataChanges(_message.Message):
+    __slots__ = ["effect_list", "buff_list", "skill_buff_list", "shop_buff_list", "free_reward_candidates", "level_reward_candidates", "current_level_reward_pack"]
+    EFFECT_LIST_FIELD_NUMBER: _ClassVar[int]
+    BUFF_LIST_FIELD_NUMBER: _ClassVar[int]
+    SKILL_BUFF_LIST_FIELD_NUMBER: _ClassVar[int]
+    SHOP_BUFF_LIST_FIELD_NUMBER: _ClassVar[int]
+    FREE_REWARD_CANDIDATES_FIELD_NUMBER: _ClassVar[int]
+    LEVEL_REWARD_CANDIDATES_FIELD_NUMBER: _ClassVar[int]
+    CURRENT_LEVEL_REWARD_PACK_FIELD_NUMBER: _ClassVar[int]
+    effect_list: AmuletEffectDataArrayDirty
+    buff_list: AmuletBuffDataArrayDirty
+    skill_buff_list: AmuletBuffDataArrayDirty
+    shop_buff_list: AmuletBuffDataArrayDirty
+    free_reward_candidates: AmuletEffectCandidatesArrayDirty
+    level_reward_candidates: AmuletEffectCandidatesArrayDirty
+    current_level_reward_pack: UInt32Dirty
+    def __init__(self, effect_list: _Optional[_Union[AmuletEffectDataArrayDirty, _Mapping]] = ..., buff_list: _Optional[_Union[AmuletBuffDataArrayDirty, _Mapping]] = ..., skill_buff_list: _Optional[_Union[AmuletBuffDataArrayDirty, _Mapping]] = ..., shop_buff_list: _Optional[_Union[AmuletBuffDataArrayDirty, _Mapping]] = ..., free_reward_candidates: _Optional[_Union[AmuletEffectCandidatesArrayDirty, _Mapping]] = ..., level_reward_candidates: _Optional[_Union[AmuletEffectCandidatesArrayDirty, _Mapping]] = ..., current_level_reward_pack: _Optional[_Union[UInt32Dirty, _Mapping]] = ...) -> None: ...
+
+class AmuletTileScoreArrayDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: _containers.RepeatedCompositeFieldContainer[AmuletTileScore]
+    def __init__(self, dirty: bool = ..., value: _Optional[_Iterable[_Union[AmuletTileScore, _Mapping]]] = ...) -> None: ...
+
+class AmuletGameInfoDataChanges(_message.Message):
+    __slots__ = ["level", "coin", "max_effect_volume", "next_boss_buff", "boss_buff", "tile_score_map"]
+    LEVEL_FIELD_NUMBER: _ClassVar[int]
+    COIN_FIELD_NUMBER: _ClassVar[int]
+    MAX_EFFECT_VOLUME_FIELD_NUMBER: _ClassVar[int]
+    NEXT_BOSS_BUFF_FIELD_NUMBER: _ClassVar[int]
+    BOSS_BUFF_FIELD_NUMBER: _ClassVar[int]
+    TILE_SCORE_MAP_FIELD_NUMBER: _ClassVar[int]
+    level: UInt32Dirty
+    coin: StringDirty
+    max_effect_volume: UInt32Dirty
+    next_boss_buff: UInt32ArrayDirty
+    boss_buff: UInt32ArrayDirty
+    tile_score_map: AmuletTileScoreArrayDirty
+    def __init__(self, level: _Optional[_Union[UInt32Dirty, _Mapping]] = ..., coin: _Optional[_Union[StringDirty, _Mapping]] = ..., max_effect_volume: _Optional[_Union[UInt32Dirty, _Mapping]] = ..., next_boss_buff: _Optional[_Union[UInt32ArrayDirty, _Mapping]] = ..., boss_buff: _Optional[_Union[UInt32ArrayDirty, _Mapping]] = ..., tile_score_map: _Optional[_Union[AmuletTileScoreArrayDirty, _Mapping]] = ...) -> None: ...
+
+class AmuletShopGoodsArrayDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: _containers.RepeatedCompositeFieldContainer[AmuletGameShopGoods]
+    def __init__(self, dirty: bool = ..., value: _Optional[_Iterable[_Union[AmuletGameShopGoods, _Mapping]]] = ...) -> None: ...
+
+class AmuletShopDataChanges(_message.Message):
+    __slots__ = ["goods", "candidate_effect_list", "shop_refresh_count", "refresh_price"]
+    GOODS_FIELD_NUMBER: _ClassVar[int]
+    CANDIDATE_EFFECT_LIST_FIELD_NUMBER: _ClassVar[int]
+    SHOP_REFRESH_COUNT_FIELD_NUMBER: _ClassVar[int]
+    REFRESH_PRICE_FIELD_NUMBER: _ClassVar[int]
+    goods: AmuletShopGoodsArrayDirty
+    candidate_effect_list: AmuletEffectCandidatesArrayDirty
+    shop_refresh_count: UInt32Dirty
+    refresh_price: UInt32Dirty
+    def __init__(self, goods: _Optional[_Union[AmuletShopGoodsArrayDirty, _Mapping]] = ..., candidate_effect_list: _Optional[_Union[AmuletEffectCandidatesArrayDirty, _Mapping]] = ..., shop_refresh_count: _Optional[_Union[UInt32Dirty, _Mapping]] = ..., refresh_price: _Optional[_Union[UInt32Dirty, _Mapping]] = ...) -> None: ...
+
+class ActivityAmuletHuRecordDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: ActivityAmuletHuRecord
+    def __init__(self, dirty: bool = ..., value: _Optional[_Union[ActivityAmuletHuRecord, _Mapping]] = ...) -> None: ...
+
+class AmuletEffectCounterDataArrayDirty(_message.Message):
+    __slots__ = ["dirty", "value"]
+    DIRTY_FIELD_NUMBER: _ClassVar[int]
+    VALUE_FIELD_NUMBER: _ClassVar[int]
+    dirty: bool
+    value: _containers.RepeatedCompositeFieldContainer[AmuletEffectCounterData]
+    def __init__(self, dirty: bool = ..., value: _Optional[_Iterable[_Union[AmuletEffectCounterData, _Mapping]]] = ...) -> None: ...
+
+class AmuletRecordDataChanges(_message.Message):
+    __slots__ = ["yiman_count", "level_hu_count", "game_hu_count", "effect_gain", "coin_consume", "coin_gain", "highest_hu", "highest_level_score", "highest_fan", "pack_count", "round_count", "effect_counter"]
+    YIMAN_COUNT_FIELD_NUMBER: _ClassVar[int]
+    LEVEL_HU_COUNT_FIELD_NUMBER: _ClassVar[int]
+    GAME_HU_COUNT_FIELD_NUMBER: _ClassVar[int]
+    EFFECT_GAIN_FIELD_NUMBER: _ClassVar[int]
+    COIN_CONSUME_FIELD_NUMBER: _ClassVar[int]
+    COIN_GAIN_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_HU_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_LEVEL_SCORE_FIELD_NUMBER: _ClassVar[int]
+    HIGHEST_FAN_FIELD_NUMBER: _ClassVar[int]
+    PACK_COUNT_FIELD_NUMBER: _ClassVar[int]
+    ROUND_COUNT_FIELD_NUMBER: _ClassVar[int]
+    EFFECT_COUNTER_FIELD_NUMBER: _ClassVar[int]
+    yiman_count: UInt32Dirty
+    level_hu_count: UInt32Dirty
+    game_hu_count: UInt32Dirty
+    effect_gain: UInt32Dirty
+    coin_consume: StringDirty
+    coin_gain: StringDirty
+    highest_hu: ActivityAmuletHuRecordDirty
+    highest_level_score: StringDirty
+    highest_fan: StringDirty
+    pack_count: UInt32Dirty
+    round_count: UInt32Dirty
+    effect_counter: AmuletEffectCounterDataArrayDirty
+    def __init__(self, yiman_count: _Optional[_Union[UInt32Dirty, _Mapping]] = ..., level_hu_count: _Optional[_Union[UInt32Dirty, _Mapping]] = ..., game_hu_count: _Optional[_Union[UInt32Dirty, _Mapping]] = ..., effect_gain: _Optional[_Union[UInt32Dirty, _Mapping]] = ..., coin_consume: _Optional[_Union[StringDirty, _Mapping]] = ..., coin_gain: _Optional[_Union[StringDirty, _Mapping]] = ..., highest_hu: _Optional[_Union[ActivityAmuletHuRecordDirty, _Mapping]] = ..., highest_level_score: _Optional[_Union[StringDirty, _Mapping]] = ..., highest_fan: _Optional[_Union[StringDirty, _Mapping]] = ..., pack_count: _Optional[_Union[UInt32Dirty, _Mapping]] = ..., round_count: _Optional[_Union[UInt32Dirty, _Mapping]] = ..., effect_counter: _Optional[_Union[AmuletEffectCounterDataArrayDirty, _Mapping]] = ...) -> None: ...
+
+class AmuletValueChanges(_message.Message):
+    __slots__ = ["round", "effect", "game", "stage", "shop", "record", "ended"]
+    ROUND_FIELD_NUMBER: _ClassVar[int]
+    EFFECT_FIELD_NUMBER: _ClassVar[int]
+    GAME_FIELD_NUMBER: _ClassVar[int]
+    STAGE_FIELD_NUMBER: _ClassVar[int]
+    SHOP_FIELD_NUMBER: _ClassVar[int]
+    RECORD_FIELD_NUMBER: _ClassVar[int]
+    ENDED_FIELD_NUMBER: _ClassVar[int]
+    round: AmuletRoundDataChanges
+    effect: AmuletEffectDataChanges
+    game: AmuletGameInfoDataChanges
+    stage: int
+    shop: AmuletShopDataChanges
+    record: AmuletRecordDataChanges
+    ended: bool
+    def __init__(self, round: _Optional[_Union[AmuletRoundDataChanges, _Mapping]] = ..., effect: _Optional[_Union[AmuletEffectDataChanges, _Mapping]] = ..., game: _Optional[_Union[AmuletGameInfoDataChanges, _Mapping]] = ..., stage: _Optional[int] = ..., shop: _Optional[_Union[AmuletShopDataChanges, _Mapping]] = ..., record: _Optional[_Union[AmuletRecordDataChanges, _Mapping]] = ..., ended: bool = ...) -> None: ...
+
+class AmuletEventResult(_message.Message):
+    __slots__ = ["deal_result", "hu_result", "game_end_result", "gang_result", "upgrade_result", "new_game_result", "sell_effect_result", "select_pack_result"]
+    class DealResult(_message.Message):
+        __slots__ = ["tile"]
+        TILE_FIELD_NUMBER: _ClassVar[int]
+        tile: int
+        def __init__(self, tile: _Optional[int] = ...) -> None: ...
+    class HuResult(_message.Message):
+        __slots__ = ["hu_final", "hu_base"]
+        class HuInfo(_message.Message):
+            __slots__ = ["tile", "fan_list", "fan", "base", "point"]
+            TILE_FIELD_NUMBER: _ClassVar[int]
+            FAN_LIST_FIELD_NUMBER: _ClassVar[int]
+            FAN_FIELD_NUMBER: _ClassVar[int]
+            BASE_FIELD_NUMBER: _ClassVar[int]
+            POINT_FIELD_NUMBER: _ClassVar[int]
+            tile: int
+            fan_list: _containers.RepeatedCompositeFieldContainer[AmuletFan]
+            fan: str
+            base: str
+            point: str
+            def __init__(self, tile: _Optional[int] = ..., fan_list: _Optional[_Iterable[_Union[AmuletFan, _Mapping]]] = ..., fan: _Optional[str] = ..., base: _Optional[str] = ..., point: _Optional[str] = ...) -> None: ...
+        HU_FINAL_FIELD_NUMBER: _ClassVar[int]
+        HU_BASE_FIELD_NUMBER: _ClassVar[int]
+        hu_final: AmuletEventResult.HuResult.HuInfo
+        hu_base: AmuletEventResult.HuResult.HuInfo
+        def __init__(self, hu_final: _Optional[_Union[AmuletEventResult.HuResult.HuInfo, _Mapping]] = ..., hu_base: _Optional[_Union[AmuletEventResult.HuResult.HuInfo, _Mapping]] = ...) -> None: ...
+    class GameEndResult(_message.Message):
+        __slots__ = ["reason"]
+        REASON_FIELD_NUMBER: _ClassVar[int]
+        reason: int
+        def __init__(self, reason: _Optional[int] = ...) -> None: ...
+    class GangResult(_message.Message):
+        __slots__ = ["new_dora"]
+        NEW_DORA_FIELD_NUMBER: _ClassVar[int]
+        new_dora: _containers.RepeatedScalarFieldContainer[int]
+        def __init__(self, new_dora: _Optional[_Iterable[int]] = ...) -> None: ...
+    class UpgradeResult(_message.Message):
+        __slots__ = ["level_coin", "point_coin"]
+        LEVEL_COIN_FIELD_NUMBER: _ClassVar[int]
+        POINT_COIN_FIELD_NUMBER: _ClassVar[int]
+        level_coin: str
+        point_coin: str
+        def __init__(self, level_coin: _Optional[str] = ..., point_coin: _Optional[str] = ...) -> None: ...
+    class SellEffectResult(_message.Message):
+        __slots__ = ["price"]
+        PRICE_FIELD_NUMBER: _ClassVar[int]
+        price: str
+        def __init__(self, price: _Optional[str] = ...) -> None: ...
+    class SelectPackResult(_message.Message):
+        __slots__ = ["uid", "id", "merge_type", "merged_list", "merged_result", "badge"]
+        UID_FIELD_NUMBER: _ClassVar[int]
+        ID_FIELD_NUMBER: _ClassVar[int]
+        MERGE_TYPE_FIELD_NUMBER: _ClassVar[int]
+        MERGED_LIST_FIELD_NUMBER: _ClassVar[int]
+        MERGED_RESULT_FIELD_NUMBER: _ClassVar[int]
+        BADGE_FIELD_NUMBER: _ClassVar[int]
+        uid: int
+        id: int
+        merge_type: int
+        merged_list: _containers.RepeatedScalarFieldContainer[int]
+        merged_result: int
+        badge: AmuletBadgeData
+        def __init__(self, uid: _Optional[int] = ..., id: _Optional[int] = ..., merge_type: _Optional[int] = ..., merged_list: _Optional[_Iterable[int]] = ..., merged_result: _Optional[int] = ..., badge: _Optional[_Union[AmuletBadgeData, _Mapping]] = ...) -> None: ...
+    DEAL_RESULT_FIELD_NUMBER: _ClassVar[int]
+    HU_RESULT_FIELD_NUMBER: _ClassVar[int]
+    GAME_END_RESULT_FIELD_NUMBER: _ClassVar[int]
+    GANG_RESULT_FIELD_NUMBER: _ClassVar[int]
+    UPGRADE_RESULT_FIELD_NUMBER: _ClassVar[int]
+    NEW_GAME_RESULT_FIELD_NUMBER: _ClassVar[int]
+    SELL_EFFECT_RESULT_FIELD_NUMBER: _ClassVar[int]
+    SELECT_PACK_RESULT_FIELD_NUMBER: _ClassVar[int]
+    deal_result: AmuletEventResult.DealResult
+    hu_result: AmuletEventResult.HuResult
+    game_end_result: AmuletEventResult.GameEndResult
+    gang_result: AmuletEventResult.GangResult
+    upgrade_result: AmuletEventResult.UpgradeResult
+    new_game_result: AmuletGameData
+    sell_effect_result: AmuletEventResult.SellEffectResult
+    select_pack_result: AmuletEventResult.SelectPackResult
+    def __init__(self, deal_result: _Optional[_Union[AmuletEventResult.DealResult, _Mapping]] = ..., hu_result: _Optional[_Union[AmuletEventResult.HuResult, _Mapping]] = ..., game_end_result: _Optional[_Union[AmuletEventResult.GameEndResult, _Mapping]] = ..., gang_result: _Optional[_Union[AmuletEventResult.GangResult, _Mapping]] = ..., upgrade_result: _Optional[_Union[AmuletEventResult.UpgradeResult, _Mapping]] = ..., new_game_result: _Optional[_Union[AmuletGameData, _Mapping]] = ..., sell_effect_result: _Optional[_Union[AmuletEventResult.SellEffectResult, _Mapping]] = ..., select_pack_result: _Optional[_Union[AmuletEventResult.SelectPackResult, _Mapping]] = ...) -> None: ...
+
+class AmuletEventHookData(_message.Message):
+    __slots__ = ["remove_effect"]
+    REMOVE_EFFECT_FIELD_NUMBER: _ClassVar[int]
+    remove_effect: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, remove_effect: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class AmuletEventData(_message.Message):
+    __slots__ = ["type", "effected_hooks", "value_changes", "result", "event_hooks"]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    EFFECTED_HOOKS_FIELD_NUMBER: _ClassVar[int]
+    VALUE_CHANGES_FIELD_NUMBER: _ClassVar[int]
+    RESULT_FIELD_NUMBER: _ClassVar[int]
+    EVENT_HOOKS_FIELD_NUMBER: _ClassVar[int]
+    type: int
+    effected_hooks: _containers.RepeatedCompositeFieldContainer[AmuletEffectedHookData]
+    value_changes: AmuletValueChanges
+    result: AmuletEventResult
+    event_hooks: _containers.RepeatedCompositeFieldContainer[AmuletEventHookData]
+    def __init__(self, type: _Optional[int] = ..., effected_hooks: _Optional[_Iterable[_Union[AmuletEffectedHookData, _Mapping]]] = ..., value_changes: _Optional[_Union[AmuletValueChanges, _Mapping]] = ..., result: _Optional[_Union[AmuletEventResult, _Mapping]] = ..., event_hooks: _Optional[_Iterable[_Union[AmuletEventHookData, _Mapping]]] = ...) -> None: ...
+
+class ReqAuthGame(_message.Message):
+    __slots__ = ["account_id", "token", "game_uuid", "session", "gift", "vs"]
+    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
+    TOKEN_FIELD_NUMBER: _ClassVar[int]
+    GAME_UUID_FIELD_NUMBER: _ClassVar[int]
+    SESSION_FIELD_NUMBER: _ClassVar[int]
+    GIFT_FIELD_NUMBER: _ClassVar[int]
+    VS_FIELD_NUMBER: _ClassVar[int]
+    account_id: int
+    token: str
+    game_uuid: str
+    session: str
+    gift: str
+    vs: int
+    def __init__(self, account_id: _Optional[int] = ..., token: _Optional[str] = ..., game_uuid: _Optional[str] = ..., session: _Optional[str] = ..., gift: _Optional[str] = ..., vs: _Optional[int] = ...) -> None: ...
+
+class ResAuthGame(_message.Message):
+    __slots__ = ["error", "players", "seat_list", "is_game_start", "game_config", "ready_id_list", "robots"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    PLAYERS_FIELD_NUMBER: _ClassVar[int]
+    SEAT_LIST_FIELD_NUMBER: _ClassVar[int]
+    IS_GAME_START_FIELD_NUMBER: _ClassVar[int]
+    GAME_CONFIG_FIELD_NUMBER: _ClassVar[int]
+    READY_ID_LIST_FIELD_NUMBER: _ClassVar[int]
+    ROBOTS_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    players: _containers.RepeatedCompositeFieldContainer[PlayerGameView]
+    seat_list: _containers.RepeatedScalarFieldContainer[int]
+    is_game_start: bool
+    game_config: GameConfig
+    ready_id_list: _containers.RepeatedScalarFieldContainer[int]
+    robots: _containers.RepeatedCompositeFieldContainer[PlayerGameView]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., players: _Optional[_Iterable[_Union[PlayerGameView, _Mapping]]] = ..., seat_list: _Optional[_Iterable[int]] = ..., is_game_start: bool = ..., game_config: _Optional[_Union[GameConfig, _Mapping]] = ..., ready_id_list: _Optional[_Iterable[int]] = ..., robots: _Optional[_Iterable[_Union[PlayerGameView, _Mapping]]] = ...) -> None: ...
+
+class GameRestore(_message.Message):
+    __slots__ = ["snapshot", "actions", "passed_waiting_time", "game_state", "start_time", "last_pause_time_ms"]
+    SNAPSHOT_FIELD_NUMBER: _ClassVar[int]
+    ACTIONS_FIELD_NUMBER: _ClassVar[int]
+    PASSED_WAITING_TIME_FIELD_NUMBER: _ClassVar[int]
+    GAME_STATE_FIELD_NUMBER: _ClassVar[int]
+    START_TIME_FIELD_NUMBER: _ClassVar[int]
+    LAST_PAUSE_TIME_MS_FIELD_NUMBER: _ClassVar[int]
+    snapshot: GameSnapshot
+    actions: _containers.RepeatedCompositeFieldContainer[ActionPrototype]
+    passed_waiting_time: int
+    game_state: int
+    start_time: int
+    last_pause_time_ms: int
+    def __init__(self, snapshot: _Optional[_Union[GameSnapshot, _Mapping]] = ..., actions: _Optional[_Iterable[_Union[ActionPrototype, _Mapping]]] = ..., passed_waiting_time: _Optional[int] = ..., game_state: _Optional[int] = ..., start_time: _Optional[int] = ..., last_pause_time_ms: _Optional[int] = ...) -> None: ...
+
+class ResEnterGame(_message.Message):
+    __slots__ = ["error", "is_end", "step", "game_restore"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    IS_END_FIELD_NUMBER: _ClassVar[int]
+    STEP_FIELD_NUMBER: _ClassVar[int]
+    GAME_RESTORE_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    is_end: bool
+    step: int
+    game_restore: GameRestore
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., is_end: bool = ..., step: _Optional[int] = ..., game_restore: _Optional[_Union[GameRestore, _Mapping]] = ...) -> None: ...
+
+class ReqSyncGame(_message.Message):
+    __slots__ = ["round_id", "step"]
+    ROUND_ID_FIELD_NUMBER: _ClassVar[int]
+    STEP_FIELD_NUMBER: _ClassVar[int]
+    round_id: str
+    step: int
+    def __init__(self, round_id: _Optional[str] = ..., step: _Optional[int] = ...) -> None: ...
+
+class ResSyncGame(_message.Message):
+    __slots__ = ["error", "is_end", "step", "game_restore"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    IS_END_FIELD_NUMBER: _ClassVar[int]
+    STEP_FIELD_NUMBER: _ClassVar[int]
+    GAME_RESTORE_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    is_end: bool
+    step: int
+    game_restore: GameRestore
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., is_end: bool = ..., step: _Optional[int] = ..., game_restore: _Optional[_Union[GameRestore, _Mapping]] = ...) -> None: ...
+
+class ReqSelfOperation(_message.Message):
+    __slots__ = ["type", "index", "tile", "cancel_operation", "moqie", "timeuse", "tile_state", "change_tiles", "tile_states", "gap_type"]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    INDEX_FIELD_NUMBER: _ClassVar[int]
+    TILE_FIELD_NUMBER: _ClassVar[int]
+    CANCEL_OPERATION_FIELD_NUMBER: _ClassVar[int]
+    MOQIE_FIELD_NUMBER: _ClassVar[int]
+    TIMEUSE_FIELD_NUMBER: _ClassVar[int]
+    TILE_STATE_FIELD_NUMBER: _ClassVar[int]
+    CHANGE_TILES_FIELD_NUMBER: _ClassVar[int]
+    TILE_STATES_FIELD_NUMBER: _ClassVar[int]
+    GAP_TYPE_FIELD_NUMBER: _ClassVar[int]
+    type: int
+    index: int
+    tile: str
+    cancel_operation: bool
+    moqie: bool
+    timeuse: int
+    tile_state: int
+    change_tiles: _containers.RepeatedScalarFieldContainer[str]
+    tile_states: _containers.RepeatedScalarFieldContainer[int]
+    gap_type: int
+    def __init__(self, type: _Optional[int] = ..., index: _Optional[int] = ..., tile: _Optional[str] = ..., cancel_operation: bool = ..., moqie: bool = ..., timeuse: _Optional[int] = ..., tile_state: _Optional[int] = ..., change_tiles: _Optional[_Iterable[str]] = ..., tile_states: _Optional[_Iterable[int]] = ..., gap_type: _Optional[int] = ...) -> None: ...
+
+class ReqChiPengGang(_message.Message):
+    __slots__ = ["type", "index", "cancel_operation", "timeuse"]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    INDEX_FIELD_NUMBER: _ClassVar[int]
+    CANCEL_OPERATION_FIELD_NUMBER: _ClassVar[int]
+    TIMEUSE_FIELD_NUMBER: _ClassVar[int]
+    type: int
+    index: int
+    cancel_operation: bool
+    timeuse: int
+    def __init__(self, type: _Optional[int] = ..., index: _Optional[int] = ..., cancel_operation: bool = ..., timeuse: _Optional[int] = ...) -> None: ...
+
+class ReqBroadcastInGame(_message.Message):
+    __slots__ = ["content", "except_self"]
+    CONTENT_FIELD_NUMBER: _ClassVar[int]
+    EXCEPT_SELF_FIELD_NUMBER: _ClassVar[int]
+    content: str
+    except_self: bool
+    def __init__(self, content: _Optional[str] = ..., except_self: bool = ...) -> None: ...
+
+class ReqGMCommandInGaming(_message.Message):
+    __slots__ = ["json_data"]
+    JSON_DATA_FIELD_NUMBER: _ClassVar[int]
+    json_data: str
+    def __init__(self, json_data: _Optional[str] = ...) -> None: ...
+
+class ResGamePlayerState(_message.Message):
+    __slots__ = ["error", "state_list"]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    STATE_LIST_FIELD_NUMBER: _ClassVar[int]
+    error: Error
+    state_list: _containers.RepeatedScalarFieldContainer[GamePlayerState]
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., state_list: _Optional[_Iterable[_Union[GamePlayerState, str]]] = ...) -> None: ...
+
+class ReqVoteGameEnd(_message.Message):
+    __slots__ = ["yes"]
+    YES_FIELD_NUMBER: _ClassVar[int]
+    yes: bool
+    def __init__(self, yes: bool = ...) -> None: ...
+
+class ResGameEndVote(_message.Message):
+    __slots__ = ["success", "vote_cd_end_time", "error"]
+    SUCCESS_FIELD_NUMBER: _ClassVar[int]
+    VOTE_CD_END_TIME_FIELD_NUMBER: _ClassVar[int]
+    ERROR_FIELD_NUMBER: _ClassVar[int]
+    success: bool
+    vote_cd_end_time: int
+    error: Error
+    def __init__(self, success: bool = ..., vote_cd_end_time: _Optional[int] = ..., error: _Optional[_Union[Error, _Mapping]] = ...) -> None: ...
+
+class ReqAuthObserve(_message.Message):
+    __slots__ = ["token"]
+    TOKEN_FIELD_NUMBER: _ClassVar[int]
+    token: str
+    def __init__(self, token: _Optional[str] = ...) -> None: ...
+
+class ResStartObserve(_message.Message):
+    __slots__ = ["head", "passed"]
+    HEAD_FIELD_NUMBER: _ClassVar[int]
+    PASSED_FIELD_NUMBER: _ClassVar[int]
+    head: GameLiveHead
+    passed: GameLiveSegment
+    def __init__(self, head: _Optional[_Union[GameLiveHead, _Mapping]] = ..., passed: _Optional[_Union[GameLiveSegment, _Mapping]] = ...) -> None: ...
+
+class NotifyNewGame(_message.Message):
+    __slots__ = ["game_uuid", "player_list"]
+    GAME_UUID_FIELD_NUMBER: _ClassVar[int]
+    PLAYER_LIST_FIELD_NUMBER: _ClassVar[int]
+    game_uuid: str
+    player_list: _containers.RepeatedScalarFieldContainer[str]
+    def __init__(self, game_uuid: _Optional[str] = ..., player_list: _Optional[_Iterable[str]] = ...) -> None: ...
+
+class NotifyPlayerLoadGameReady(_message.Message):
+    __slots__ = ["ready_id_list"]
+    READY_ID_LIST_FIELD_NUMBER: _ClassVar[int]
+    ready_id_list: _containers.RepeatedScalarFieldContainer[int]
+    def __init__(self, ready_id_list: _Optional[_Iterable[int]] = ...) -> None: ...
+
+class NotifyGameBroadcast(_message.Message):
+    __slots__ = ["seat", "content"]
+    SEAT_FIELD_NUMBER: _ClassVar[int]
+    CONTENT_FIELD_NUMBER: _ClassVar[int]
+    seat: int
+    content: str
+    def __init__(self, seat: _Optional[int] = ..., content: _Optional[str] = ...) -> None: ...
+
+class NotifyGameEndResult(_message.Message):
+    __slots__ = ["result"]
+    RESULT_FIELD_NUMBER: _ClassVar[int]
+    result: GameEndResult
+    def __init__(self, result: _Optional[_Union[GameEndResult, _Mapping]] = ...) -> None: ...
+
+class NotifyGameTerminate(_message.Message):
+    __slots__ = ["reason"]
+    REASON_FIELD_NUMBER: _ClassVar[int]
+    reason: str
+    def __init__(self, reason: _Optional[str] = ...) -> None: ...
+
+class NotifyPlayerConnectionState(_message.Message):
+    __slots__ = ["seat", "state"]
+    SEAT_FIELD_NUMBER: _ClassVar[int]
+    STATE_FIELD_NUMBER: _ClassVar[int]
+    seat: int
+    state: GamePlayerState
+    def __init__(self, seat: _Optional[int] = ..., state: _Optional[_Union[GamePlayerState, str]] = ...) -> None: ...
+
+class NotifyAccountLevelChange(_message.Message):
+    __slots__ = ["origin", "final", "type"]
+    ORIGIN_FIELD_NUMBER: _ClassVar[int]
+    FINAL_FIELD_NUMBER: _ClassVar[int]
+    TYPE_FIELD_NUMBER: _ClassVar[int]
+    origin: AccountLevel
+    final: AccountLevel
+    type: int
+    def __init__(self, origin: _Optional[_Union[AccountLevel, _Mapping]] = ..., final: _Optional[_Union[AccountLevel, _Mapping]] = ..., type: _Optional[int] = ...) -> None: ...
+
+class NotifyGameFinishReward(_message.Message):
+    __slots__ = ["mode_id", "level_change", "match_chest", "main_character", "character_gift", "badges"]
+    class LevelChange(_message.Message):
+        __slots__ = ["origin", "final", "type"]
+        ORIGIN_FIELD_NUMBER: _ClassVar[int]
+        FINAL_FIELD_NUMBER: _ClassVar[int]
+        TYPE_FIELD_NUMBER: _ClassVar[int]
+        origin: AccountLevel
+        final: AccountLevel
+        type: int
+        def __init__(self, origin: _Optional[_Union[AccountLevel, _Mapping]] = ..., final: _Optional[_Union[AccountLevel, _Mapping]] = ..., type: _Optional[int] = ...) -> None: ...
+    class MatchChest(_message.Message):
+        __slots__ = ["chest_id", "origin", "final", "is_graded", "rewards"]
+        CHEST_ID_FIELD_NUMBER: _ClassVar[int]
+        ORIGIN_FIELD_NUMBER: _ClassVar[int]
+        FINAL_FIELD_NUMBER: _ClassVar[int]
+        IS_GRADED_FIELD_NUMBER: _ClassVar[int]
+        REWARDS_FIELD_NUMBER: _ClassVar[int]
+        chest_id: int
+        origin: int
+        final: int
+        is_graded: bool
+        rewards: _containers.RepeatedCompositeFieldContainer[RewardSlot]
+        def __init__(self, chest_id: _Optional[int] = ..., origin: _Optional[int] = ..., final: _Optional[int] = ..., is_graded: bool = ..., rewards: _Optional[_Iterable[_Union[RewardSlot, _Mapping]]] = ...) -> None: ...
+    class MainCharacter(_message.Message):
+        __slots__ = ["level", "exp", "add"]
+        LEVEL_FIELD_NUMBER: _ClassVar[int]
+        EXP_FIELD_NUMBER: _ClassVar[int]
+        ADD_FIELD_NUMBER: _ClassVar[int]
+        level: int
+        exp: int
+        add: int
+        def __init__(self, level: _Optional[int] = ..., exp: _Optional[int] = ..., add: _Optional[int] = ...) -> None: ...
+    class CharacterGift(_message.Message):
+        __slots__ = ["origin", "final", "add", "is_graded"]
+        ORIGIN_FIELD_NUMBER: _ClassVar[int]
+        FINAL_FIELD_NUMBER: _ClassVar[int]
+        ADD_FIELD_NUMBER: _ClassVar[int]
+        IS_GRADED_FIELD_NUMBER: _ClassVar[int]
+        origin: int
+        final: int
+        add: int
+        is_graded: bool
+        def __init__(self, origin: _Optional[int] = ..., final: _Optional[int] = ..., add: _Optional[int] = ..., is_graded: bool = ...) -> None: ...
+    MODE_ID_FIELD_NUMBER: _ClassVar[int]
+    LEVEL_CHANGE_FIELD_NUMBER: _ClassVar[int]
+    MATCH_CHEST_FIELD_NUMBER: _ClassVar[int]
+    MAIN_CHARACTER_FIELD_NUMBER: _ClassVar[int]
+    CHARACTER_GIFT_FIELD_NUMBER: _ClassVar[int]
+    BADGES_FIELD_NUMBER: _ClassVar[int]
+    mode_id: int
+    level_change: NotifyGameFinishReward.LevelChange
+    match_chest: NotifyGameFinishReward.MatchChest
+    main_character: NotifyGameFinishReward.MainCharacter
+    character_gift: NotifyGameFinishReward.CharacterGift
+    badges: _containers.RepeatedCompositeFieldContainer[BadgeAchieveProgress]
+    def __init__(self, mode_id: _Optional[int] = ..., level_change: _Optional[_Union[NotifyGameFinishReward.LevelChange, _Mapping]] = ..., match_chest: _Optional[_Union[NotifyGameFinishReward.MatchChest, _Mapping]] = ..., main_character: _Optional[_Union[NotifyGameFinishReward.MainCharacter, _Mapping]] = ..., character_gift: _Optional[_Union[NotifyGameFinishReward.CharacterGift, _Mapping]] = ..., badges: _Optional[_Iterable[_Union[BadgeAchieveProgress, _Mapping]]] = ...) -> None: ...
+
+class NotifyActivityReward(_message.Message):
+    __slots__ = ["activity_reward"]
+    class ActivityReward(_message.Message):
+        __slots__ = ["activity_id", "rewards"]
+        ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+        REWARDS_FIELD_NUMBER: _ClassVar[int]
+        activity_id: int
+        rewards: _containers.RepeatedCompositeFieldContainer[RewardSlot]
+        def __init__(self, activity_id: _Optional[int] = ..., rewards: _Optional[_Iterable[_Union[RewardSlot, _Mapping]]] = ...) -> None: ...
+    ACTIVITY_REWARD_FIELD_NUMBER: _ClassVar[int]
+    activity_reward: _containers.RepeatedCompositeFieldContainer[NotifyActivityReward.ActivityReward]
+    def __init__(self, activity_reward: _Optional[_Iterable[_Union[NotifyActivityReward.ActivityReward, _Mapping]]] = ...) -> None: ...
+
+class NotifyActivityPoint(_message.Message):
+    __slots__ = ["activity_points"]
+    class ActivityPoint(_message.Message):
+        __slots__ = ["activity_id", "point"]
+        ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
+        POINT_FIELD_NUMBER: _ClassVar[int]
+        activity_id: int
+        point: int
+        def __init__(self, activity_id: _Optional[int] = ..., point: _Optional[int] = ...) -> None: ...
+    ACTIVITY_POINTS_FIELD_NUMBER: _ClassVar[int]
+    activity_points: _containers.RepeatedCompositeFieldContainer[NotifyActivityPoint.ActivityPoint]
+    def __init__(self, activity_points: _Optional[_Iterable[_Union[NotifyActivityPoint.ActivityPoint, _Mapping]]] = ...) -> None: ...
+
+class NotifyLeaderboardPoint(_message.Message):
+    __slots__ = ["leaderboard_points"]
+    class LeaderboardPoint(_message.Message):
+        __slots__ = ["leaderboard_id", "point"]
+        LEADERBOARD_ID_FIELD_NUMBER: _ClassVar[int]
+        POINT_FIELD_NUMBER: _ClassVar[int]
+        leaderboard_id: int
+        point: int
+        def __init__(self, leaderboard_id: _Optional[int] = ..., point: _Optional[int] = ...) -> None: ...
+    LEADERBOARD_POINTS_FIELD_NUMBER: _ClassVar[int]
+    leaderboard_points: _containers.RepeatedCompositeFieldContainer[NotifyLeaderboardPoint.LeaderboardPoint]
+    def __init__(self, leaderboard_points: _Optional[_Iterable[_Union[NotifyLeaderboardPoint.LeaderboardPoint, _Mapping]]] = ...) -> None: ...
+
+class NotifyGamePause(_message.Message):
+    __slots__ = ["paused"]
+    PAUSED_FIELD_NUMBER: _ClassVar[int]
+    paused: bool
+    def __init__(self, paused: bool = ...) -> None: ...
+
+class NotifyEndGameVote(_message.Message):
+    __slots__ = ["results", "start_time", "duration_time"]
+    class VoteResult(_message.Message):
+        __slots__ = ["account_id", "yes"]
+        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
+        YES_FIELD_NUMBER: _ClassVar[int]
+        account_id: int
+        yes: bool
+        def __init__(self, account_id: _Optional[int] = ..., yes: bool = ...) -> None: ...
+    RESULTS_FIELD_NUMBER: _ClassVar[int]
+    START_TIME_FIELD_NUMBER: _ClassVar[int]
+    DURATION_TIME_FIELD_NUMBER: _ClassVar[int]
+    results: _containers.RepeatedCompositeFieldContainer[NotifyEndGameVote.VoteResult]
+    start_time: int
+    duration_time: int
+    def __init__(self, results: _Optional[_Iterable[_Union[NotifyEndGameVote.VoteResult, _Mapping]]] = ..., start_time: _Optional[int] = ..., duration_time: _Optional[int] = ...) -> None: ...
+
+class NotifyObserveData(_message.Message):
+    __slots__ = ["unit"]
+    UNIT_FIELD_NUMBER: _ClassVar[int]
+    unit: GameLiveUnit
+    def __init__(self, unit: _Optional[_Union[GameLiveUnit, _Mapping]] = ...) -> None: ...
 
 class ActionMJStart(_message.Message):
     __slots__ = []
@@ -7624,7 +11463,7 @@ class RecordNewCard(_message.Message):
     def __init__(self, field_spell: _Optional[int] = ...) -> None: ...
 
 class ActionNewRound(_message.Message):
-    __slots__ = ["chang", "ju", "ben", "tiles", "dora", "scores", "operation", "liqibang", "tingpais0", "tingpais1", "al", "md5", "left_tile_count", "doras", "opens", "muyu", "ju_count", "field_spell", "sha256", "yongchang"]
+    __slots__ = ["chang", "ju", "ben", "tiles", "dora", "scores", "operation", "liqibang", "tingpais0", "tingpais1", "al", "md5", "left_tile_count", "doras", "opens", "muyu", "ju_count", "field_spell", "sha256", "yongchang", "saltSha256"]
     CHANG_FIELD_NUMBER: _ClassVar[int]
     JU_FIELD_NUMBER: _ClassVar[int]
     BEN_FIELD_NUMBER: _ClassVar[int]
@@ -7645,6 +11484,7 @@ class ActionNewRound(_message.Message):
     FIELD_SPELL_FIELD_NUMBER: _ClassVar[int]
     SHA256_FIELD_NUMBER: _ClassVar[int]
     YONGCHANG_FIELD_NUMBER: _ClassVar[int]
+    SALTSHA256_FIELD_NUMBER: _ClassVar[int]
     chang: int
     ju: int
     ben: int
@@ -7665,10 +11505,11 @@ class ActionNewRound(_message.Message):
     field_spell: int
     sha256: str
     yongchang: YongchangInfo
-    def __init__(self, chang: _Optional[int] = ..., ju: _Optional[int] = ..., ben: _Optional[int] = ..., tiles: _Optional[_Iterable[str]] = ..., dora: _Optional[str] = ..., scores: _Optional[_Iterable[int]] = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., liqibang: _Optional[int] = ..., tingpais0: _Optional[_Iterable[_Union[TingPaiDiscardInfo, _Mapping]]] = ..., tingpais1: _Optional[_Iterable[_Union[TingPaiInfo, _Mapping]]] = ..., al: bool = ..., md5: _Optional[str] = ..., left_tile_count: _Optional[int] = ..., doras: _Optional[_Iterable[str]] = ..., opens: _Optional[_Iterable[_Union[NewRoundOpenedTiles, _Mapping]]] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., ju_count: _Optional[int] = ..., field_spell: _Optional[int] = ..., sha256: _Optional[str] = ..., yongchang: _Optional[_Union[YongchangInfo, _Mapping]] = ...) -> None: ...
+    saltSha256: str
+    def __init__(self, chang: _Optional[int] = ..., ju: _Optional[int] = ..., ben: _Optional[int] = ..., tiles: _Optional[_Iterable[str]] = ..., dora: _Optional[str] = ..., scores: _Optional[_Iterable[int]] = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., liqibang: _Optional[int] = ..., tingpais0: _Optional[_Iterable[_Union[TingPaiDiscardInfo, _Mapping]]] = ..., tingpais1: _Optional[_Iterable[_Union[TingPaiInfo, _Mapping]]] = ..., al: bool = ..., md5: _Optional[str] = ..., left_tile_count: _Optional[int] = ..., doras: _Optional[_Iterable[str]] = ..., opens: _Optional[_Iterable[_Union[NewRoundOpenedTiles, _Mapping]]] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., ju_count: _Optional[int] = ..., field_spell: _Optional[int] = ..., sha256: _Optional[str] = ..., yongchang: _Optional[_Union[YongchangInfo, _Mapping]] = ..., saltSha256: _Optional[str] = ...) -> None: ...
 
 class RecordNewRound(_message.Message):
-    __slots__ = ["chang", "ju", "ben", "dora", "scores", "liqibang", "tiles0", "tiles1", "tiles2", "tiles3", "tingpai", "operation", "md5", "paishan", "left_tile_count", "doras", "opens", "muyu", "operations", "ju_count", "field_spell", "sha256", "yongchang"]
+    __slots__ = ["chang", "ju", "ben", "dora", "scores", "liqibang", "tiles0", "tiles1", "tiles2", "tiles3", "tingpai", "operation", "md5", "paishan", "left_tile_count", "doras", "opens", "muyu", "operations", "ju_count", "field_spell", "sha256", "yongchang", "saltSha256", "salt"]
     class TingPai(_message.Message):
         __slots__ = ["seat", "tingpais1"]
         SEAT_FIELD_NUMBER: _ClassVar[int]
@@ -7699,6 +11540,8 @@ class RecordNewRound(_message.Message):
     FIELD_SPELL_FIELD_NUMBER: _ClassVar[int]
     SHA256_FIELD_NUMBER: _ClassVar[int]
     YONGCHANG_FIELD_NUMBER: _ClassVar[int]
+    SALTSHA256_FIELD_NUMBER: _ClassVar[int]
+    SALT_FIELD_NUMBER: _ClassVar[int]
     chang: int
     ju: int
     ben: int
@@ -7722,7 +11565,9 @@ class RecordNewRound(_message.Message):
     field_spell: int
     sha256: str
     yongchang: YongchangInfo
-    def __init__(self, chang: _Optional[int] = ..., ju: _Optional[int] = ..., ben: _Optional[int] = ..., dora: _Optional[str] = ..., scores: _Optional[_Iterable[int]] = ..., liqibang: _Optional[int] = ..., tiles0: _Optional[_Iterable[str]] = ..., tiles1: _Optional[_Iterable[str]] = ..., tiles2: _Optional[_Iterable[str]] = ..., tiles3: _Optional[_Iterable[str]] = ..., tingpai: _Optional[_Iterable[_Union[RecordNewRound.TingPai, _Mapping]]] = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., md5: _Optional[str] = ..., paishan: _Optional[str] = ..., left_tile_count: _Optional[int] = ..., doras: _Optional[_Iterable[str]] = ..., opens: _Optional[_Iterable[_Union[NewRoundOpenedTiles, _Mapping]]] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., operations: _Optional[_Iterable[_Union[OptionalOperationList, _Mapping]]] = ..., ju_count: _Optional[int] = ..., field_spell: _Optional[int] = ..., sha256: _Optional[str] = ..., yongchang: _Optional[_Union[YongchangInfo, _Mapping]] = ...) -> None: ...
+    saltSha256: str
+    salt: str
+    def __init__(self, chang: _Optional[int] = ..., ju: _Optional[int] = ..., ben: _Optional[int] = ..., dora: _Optional[str] = ..., scores: _Optional[_Iterable[int]] = ..., liqibang: _Optional[int] = ..., tiles0: _Optional[_Iterable[str]] = ..., tiles1: _Optional[_Iterable[str]] = ..., tiles2: _Optional[_Iterable[str]] = ..., tiles3: _Optional[_Iterable[str]] = ..., tingpai: _Optional[_Iterable[_Union[RecordNewRound.TingPai, _Mapping]]] = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., md5: _Optional[str] = ..., paishan: _Optional[str] = ..., left_tile_count: _Optional[int] = ..., doras: _Optional[_Iterable[str]] = ..., opens: _Optional[_Iterable[_Union[NewRoundOpenedTiles, _Mapping]]] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., operations: _Optional[_Iterable[_Union[OptionalOperationList, _Mapping]]] = ..., ju_count: _Optional[int] = ..., field_spell: _Optional[int] = ..., sha256: _Optional[str] = ..., yongchang: _Optional[_Union[YongchangInfo, _Mapping]] = ..., saltSha256: _Optional[str] = ..., salt: _Optional[str] = ...) -> None: ...
 
 class GameSnapshot(_message.Message):
     __slots__ = ["chang", "ju", "ben", "index_player", "left_tile_count", "hands", "doras", "liqibang", "players", "zhenting"]
@@ -7900,16 +11745,18 @@ class OptionalOperationList(_message.Message):
     def __init__(self, seat: _Optional[int] = ..., operation_list: _Optional[_Iterable[_Union[OptionalOperation, _Mapping]]] = ..., time_add: _Optional[int] = ..., time_fixed: _Optional[int] = ...) -> None: ...
 
 class LiQiSuccess(_message.Message):
-    __slots__ = ["seat", "score", "liqibang", "failed"]
+    __slots__ = ["seat", "score", "liqibang", "failed", "liqi_type_beishuizhizhan"]
     SEAT_FIELD_NUMBER: _ClassVar[int]
     SCORE_FIELD_NUMBER: _ClassVar[int]
     LIQIBANG_FIELD_NUMBER: _ClassVar[int]
     FAILED_FIELD_NUMBER: _ClassVar[int]
+    LIQI_TYPE_BEISHUIZHIZHAN_FIELD_NUMBER: _ClassVar[int]
     seat: int
     score: int
     liqibang: int
     failed: bool
-    def __init__(self, seat: _Optional[int] = ..., score: _Optional[int] = ..., liqibang: _Optional[int] = ..., failed: bool = ...) -> None: ...
+    liqi_type_beishuizhizhan: int
+    def __init__(self, seat: _Optional[int] = ..., score: _Optional[int] = ..., liqibang: _Optional[int] = ..., failed: bool = ..., liqi_type_beishuizhizhan: _Optional[int] = ...) -> None: ...
 
 class FanInfo(_message.Message):
     __slots__ = ["name", "val", "id"]
@@ -7922,7 +11769,7 @@ class FanInfo(_message.Message):
     def __init__(self, name: _Optional[str] = ..., val: _Optional[int] = ..., id: _Optional[int] = ...) -> None: ...
 
 class HuleInfo(_message.Message):
-    __slots__ = ["hand", "ming", "hu_tile", "seat", "zimo", "qinjia", "liqi", "doras", "li_doras", "yiman", "count", "fans", "fu", "title", "point_rong", "point_zimo_qin", "point_zimo_xian", "title_id", "point_sum", "dadian", "baopai", "baopai_seats", "lines", "tianming_bonus"]
+    __slots__ = ["hand", "ming", "hu_tile", "seat", "zimo", "qinjia", "liqi", "doras", "li_doras", "yiman", "count", "fans", "fu", "title", "point_rong", "point_zimo_qin", "point_zimo_xian", "title_id", "point_sum", "dadian", "baopai", "baopai_seats", "lines", "tianming_bonus", "baida_changed", "hu_tile_baiDa_changed"]
     HAND_FIELD_NUMBER: _ClassVar[int]
     MING_FIELD_NUMBER: _ClassVar[int]
     HU_TILE_FIELD_NUMBER: _ClassVar[int]
@@ -7947,6 +11794,8 @@ class HuleInfo(_message.Message):
     BAOPAI_SEATS_FIELD_NUMBER: _ClassVar[int]
     LINES_FIELD_NUMBER: _ClassVar[int]
     TIANMING_BONUS_FIELD_NUMBER: _ClassVar[int]
+    BAIDA_CHANGED_FIELD_NUMBER: _ClassVar[int]
+    HU_TILE_BAIDA_CHANGED_FIELD_NUMBER: _ClassVar[int]
     hand: _containers.RepeatedScalarFieldContainer[str]
     ming: _containers.RepeatedScalarFieldContainer[str]
     hu_tile: str
@@ -7971,7 +11820,9 @@ class HuleInfo(_message.Message):
     baopai_seats: _containers.RepeatedScalarFieldContainer[int]
     lines: _containers.RepeatedScalarFieldContainer[str]
     tianming_bonus: int
-    def __init__(self, hand: _Optional[_Iterable[str]] = ..., ming: _Optional[_Iterable[str]] = ..., hu_tile: _Optional[str] = ..., seat: _Optional[int] = ..., zimo: bool = ..., qinjia: bool = ..., liqi: bool = ..., doras: _Optional[_Iterable[str]] = ..., li_doras: _Optional[_Iterable[str]] = ..., yiman: bool = ..., count: _Optional[int] = ..., fans: _Optional[_Iterable[_Union[FanInfo, _Mapping]]] = ..., fu: _Optional[int] = ..., title: _Optional[str] = ..., point_rong: _Optional[int] = ..., point_zimo_qin: _Optional[int] = ..., point_zimo_xian: _Optional[int] = ..., title_id: _Optional[int] = ..., point_sum: _Optional[int] = ..., dadian: _Optional[int] = ..., baopai: _Optional[int] = ..., baopai_seats: _Optional[_Iterable[int]] = ..., lines: _Optional[_Iterable[str]] = ..., tianming_bonus: _Optional[int] = ...) -> None: ...
+    baida_changed: _containers.RepeatedScalarFieldContainer[str]
+    hu_tile_baiDa_changed: str
+    def __init__(self, hand: _Optional[_Iterable[str]] = ..., ming: _Optional[_Iterable[str]] = ..., hu_tile: _Optional[str] = ..., seat: _Optional[int] = ..., zimo: bool = ..., qinjia: bool = ..., liqi: bool = ..., doras: _Optional[_Iterable[str]] = ..., li_doras: _Optional[_Iterable[str]] = ..., yiman: bool = ..., count: _Optional[int] = ..., fans: _Optional[_Iterable[_Union[FanInfo, _Mapping]]] = ..., fu: _Optional[int] = ..., title: _Optional[str] = ..., point_rong: _Optional[int] = ..., point_zimo_qin: _Optional[int] = ..., point_zimo_xian: _Optional[int] = ..., title_id: _Optional[int] = ..., point_sum: _Optional[int] = ..., dadian: _Optional[int] = ..., baopai: _Optional[int] = ..., baopai_seats: _Optional[_Iterable[int]] = ..., lines: _Optional[_Iterable[str]] = ..., tianming_bonus: _Optional[int] = ..., baida_changed: _Optional[_Iterable[str]] = ..., hu_tile_baiDa_changed: _Optional[str] = ...) -> None: ...
 
 class TingPaiInfo(_message.Message):
     __slots__ = ["tile", "haveyi", "yiman", "count", "fu", "biao_dora_count", "yiman_zimo", "count_zimo", "fu_zimo"]
@@ -8004,6 +11855,16 @@ class TingPaiDiscardInfo(_message.Message):
     zhenting: bool
     infos: _containers.RepeatedCompositeFieldContainer[TingPaiInfo]
     def __init__(self, tile: _Optional[str] = ..., zhenting: bool = ..., infos: _Optional[_Iterable[_Union[TingPaiInfo, _Mapping]]] = ...) -> None: ...
+
+class HunZhiYiJiBuffInfo(_message.Message):
+    __slots__ = ["seat", "continue_deal_count", "overload"]
+    SEAT_FIELD_NUMBER: _ClassVar[int]
+    CONTINUE_DEAL_COUNT_FIELD_NUMBER: _ClassVar[int]
+    OVERLOAD_FIELD_NUMBER: _ClassVar[int]
+    seat: int
+    continue_deal_count: int
+    overload: bool
+    def __init__(self, seat: _Optional[int] = ..., continue_deal_count: _Optional[int] = ..., overload: bool = ...) -> None: ...
 
 class GameEnd(_message.Message):
     __slots__ = ["scores"]
@@ -8213,7 +12074,7 @@ class RecordLockTile(_message.Message):
     def __init__(self, seat: _Optional[int] = ..., scores: _Optional[_Iterable[int]] = ..., liqibang: _Optional[int] = ..., tile: _Optional[str] = ..., operation: _Optional[_Iterable[_Union[OptionalOperationList, _Mapping]]] = ..., zhentings: _Optional[_Iterable[bool]] = ..., tingpais: _Optional[_Iterable[_Union[TingPaiInfo, _Mapping]]] = ..., doras: _Optional[_Iterable[str]] = ..., lock_state: _Optional[int] = ...) -> None: ...
 
 class ActionDiscardTile(_message.Message):
-    __slots__ = ["seat", "tile", "is_liqi", "operation", "moqie", "zhenting", "tingpais", "doras", "is_wliqi", "tile_state", "muyu", "revealed", "scores", "liqibang", "yongchang"]
+    __slots__ = ["seat", "tile", "is_liqi", "operation", "moqie", "zhenting", "tingpais", "doras", "is_wliqi", "tile_state", "muyu", "revealed", "scores", "liqibang", "yongchang", "hun_zhi_yi_ji_info", "liqi_type_beishuizhizhan"]
     SEAT_FIELD_NUMBER: _ClassVar[int]
     TILE_FIELD_NUMBER: _ClassVar[int]
     IS_LIQI_FIELD_NUMBER: _ClassVar[int]
@@ -8229,6 +12090,8 @@ class ActionDiscardTile(_message.Message):
     SCORES_FIELD_NUMBER: _ClassVar[int]
     LIQIBANG_FIELD_NUMBER: _ClassVar[int]
     YONGCHANG_FIELD_NUMBER: _ClassVar[int]
+    HUN_ZHI_YI_JI_INFO_FIELD_NUMBER: _ClassVar[int]
+    LIQI_TYPE_BEISHUIZHIZHAN_FIELD_NUMBER: _ClassVar[int]
     seat: int
     tile: str
     is_liqi: bool
@@ -8244,10 +12107,12 @@ class ActionDiscardTile(_message.Message):
     scores: _containers.RepeatedScalarFieldContainer[int]
     liqibang: int
     yongchang: YongchangInfo
-    def __init__(self, seat: _Optional[int] = ..., tile: _Optional[str] = ..., is_liqi: bool = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., moqie: bool = ..., zhenting: bool = ..., tingpais: _Optional[_Iterable[_Union[TingPaiInfo, _Mapping]]] = ..., doras: _Optional[_Iterable[str]] = ..., is_wliqi: bool = ..., tile_state: _Optional[int] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., revealed: bool = ..., scores: _Optional[_Iterable[int]] = ..., liqibang: _Optional[int] = ..., yongchang: _Optional[_Union[YongchangInfo, _Mapping]] = ...) -> None: ...
+    hun_zhi_yi_ji_info: HunZhiYiJiBuffInfo
+    liqi_type_beishuizhizhan: int
+    def __init__(self, seat: _Optional[int] = ..., tile: _Optional[str] = ..., is_liqi: bool = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., moqie: bool = ..., zhenting: bool = ..., tingpais: _Optional[_Iterable[_Union[TingPaiInfo, _Mapping]]] = ..., doras: _Optional[_Iterable[str]] = ..., is_wliqi: bool = ..., tile_state: _Optional[int] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., revealed: bool = ..., scores: _Optional[_Iterable[int]] = ..., liqibang: _Optional[int] = ..., yongchang: _Optional[_Union[YongchangInfo, _Mapping]] = ..., hun_zhi_yi_ji_info: _Optional[_Union[HunZhiYiJiBuffInfo, _Mapping]] = ..., liqi_type_beishuizhizhan: _Optional[int] = ...) -> None: ...
 
 class RecordDiscardTile(_message.Message):
-    __slots__ = ["seat", "tile", "is_liqi", "moqie", "zhenting", "tingpais", "doras", "is_wliqi", "operations", "tile_state", "muyu", "yongchang"]
+    __slots__ = ["seat", "tile", "is_liqi", "moqie", "zhenting", "tingpais", "doras", "is_wliqi", "operations", "tile_state", "muyu", "yongchang", "hun_zhi_yi_ji_info", "liqi_type_beishuizhizhan"]
     SEAT_FIELD_NUMBER: _ClassVar[int]
     TILE_FIELD_NUMBER: _ClassVar[int]
     IS_LIQI_FIELD_NUMBER: _ClassVar[int]
@@ -8260,6 +12125,8 @@ class RecordDiscardTile(_message.Message):
     TILE_STATE_FIELD_NUMBER: _ClassVar[int]
     MUYU_FIELD_NUMBER: _ClassVar[int]
     YONGCHANG_FIELD_NUMBER: _ClassVar[int]
+    HUN_ZHI_YI_JI_INFO_FIELD_NUMBER: _ClassVar[int]
+    LIQI_TYPE_BEISHUIZHIZHAN_FIELD_NUMBER: _ClassVar[int]
     seat: int
     tile: str
     is_liqi: bool
@@ -8272,10 +12139,12 @@ class RecordDiscardTile(_message.Message):
     tile_state: int
     muyu: MuyuInfo
     yongchang: YongchangInfo
-    def __init__(self, seat: _Optional[int] = ..., tile: _Optional[str] = ..., is_liqi: bool = ..., moqie: bool = ..., zhenting: _Optional[_Iterable[bool]] = ..., tingpais: _Optional[_Iterable[_Union[TingPaiInfo, _Mapping]]] = ..., doras: _Optional[_Iterable[str]] = ..., is_wliqi: bool = ..., operations: _Optional[_Iterable[_Union[OptionalOperationList, _Mapping]]] = ..., tile_state: _Optional[int] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., yongchang: _Optional[_Union[YongchangInfo, _Mapping]] = ...) -> None: ...
+    hun_zhi_yi_ji_info: HunZhiYiJiBuffInfo
+    liqi_type_beishuizhizhan: int
+    def __init__(self, seat: _Optional[int] = ..., tile: _Optional[str] = ..., is_liqi: bool = ..., moqie: bool = ..., zhenting: _Optional[_Iterable[bool]] = ..., tingpais: _Optional[_Iterable[_Union[TingPaiInfo, _Mapping]]] = ..., doras: _Optional[_Iterable[str]] = ..., is_wliqi: bool = ..., operations: _Optional[_Iterable[_Union[OptionalOperationList, _Mapping]]] = ..., tile_state: _Optional[int] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., yongchang: _Optional[_Union[YongchangInfo, _Mapping]] = ..., hun_zhi_yi_ji_info: _Optional[_Union[HunZhiYiJiBuffInfo, _Mapping]] = ..., liqi_type_beishuizhizhan: _Optional[int] = ...) -> None: ...
 
 class ActionDealTile(_message.Message):
-    __slots__ = ["seat", "tile", "left_tile_count", "operation", "liqi", "doras", "zhenting", "tingpais", "tile_state", "muyu", "tile_index"]
+    __slots__ = ["seat", "tile", "left_tile_count", "operation", "liqi", "doras", "zhenting", "tingpais", "tile_state", "muyu", "tile_index", "hun_zhi_yi_ji_info"]
     SEAT_FIELD_NUMBER: _ClassVar[int]
     TILE_FIELD_NUMBER: _ClassVar[int]
     LEFT_TILE_COUNT_FIELD_NUMBER: _ClassVar[int]
@@ -8287,6 +12156,7 @@ class ActionDealTile(_message.Message):
     TILE_STATE_FIELD_NUMBER: _ClassVar[int]
     MUYU_FIELD_NUMBER: _ClassVar[int]
     TILE_INDEX_FIELD_NUMBER: _ClassVar[int]
+    HUN_ZHI_YI_JI_INFO_FIELD_NUMBER: _ClassVar[int]
     seat: int
     tile: str
     left_tile_count: int
@@ -8298,10 +12168,11 @@ class ActionDealTile(_message.Message):
     tile_state: int
     muyu: MuyuInfo
     tile_index: int
-    def __init__(self, seat: _Optional[int] = ..., tile: _Optional[str] = ..., left_tile_count: _Optional[int] = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., liqi: _Optional[_Union[LiQiSuccess, _Mapping]] = ..., doras: _Optional[_Iterable[str]] = ..., zhenting: bool = ..., tingpais: _Optional[_Iterable[_Union[TingPaiDiscardInfo, _Mapping]]] = ..., tile_state: _Optional[int] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., tile_index: _Optional[int] = ...) -> None: ...
+    hun_zhi_yi_ji_info: HunZhiYiJiBuffInfo
+    def __init__(self, seat: _Optional[int] = ..., tile: _Optional[str] = ..., left_tile_count: _Optional[int] = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., liqi: _Optional[_Union[LiQiSuccess, _Mapping]] = ..., doras: _Optional[_Iterable[str]] = ..., zhenting: bool = ..., tingpais: _Optional[_Iterable[_Union[TingPaiDiscardInfo, _Mapping]]] = ..., tile_state: _Optional[int] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., tile_index: _Optional[int] = ..., hun_zhi_yi_ji_info: _Optional[_Union[HunZhiYiJiBuffInfo, _Mapping]] = ...) -> None: ...
 
 class RecordDealTile(_message.Message):
-    __slots__ = ["seat", "tile", "left_tile_count", "liqi", "doras", "zhenting", "operation", "tile_state", "muyu", "tile_index"]
+    __slots__ = ["seat", "tile", "left_tile_count", "liqi", "doras", "zhenting", "operation", "tile_state", "muyu", "tile_index", "hun_zhi_yi_ji_info"]
     SEAT_FIELD_NUMBER: _ClassVar[int]
     TILE_FIELD_NUMBER: _ClassVar[int]
     LEFT_TILE_COUNT_FIELD_NUMBER: _ClassVar[int]
@@ -8312,6 +12183,7 @@ class RecordDealTile(_message.Message):
     TILE_STATE_FIELD_NUMBER: _ClassVar[int]
     MUYU_FIELD_NUMBER: _ClassVar[int]
     TILE_INDEX_FIELD_NUMBER: _ClassVar[int]
+    HUN_ZHI_YI_JI_INFO_FIELD_NUMBER: _ClassVar[int]
     seat: int
     tile: str
     left_tile_count: int
@@ -8322,7 +12194,8 @@ class RecordDealTile(_message.Message):
     tile_state: int
     muyu: MuyuInfo
     tile_index: int
-    def __init__(self, seat: _Optional[int] = ..., tile: _Optional[str] = ..., left_tile_count: _Optional[int] = ..., liqi: _Optional[_Union[LiQiSuccess, _Mapping]] = ..., doras: _Optional[_Iterable[str]] = ..., zhenting: _Optional[_Iterable[bool]] = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., tile_state: _Optional[int] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., tile_index: _Optional[int] = ...) -> None: ...
+    hun_zhi_yi_ji_info: HunZhiYiJiBuffInfo
+    def __init__(self, seat: _Optional[int] = ..., tile: _Optional[str] = ..., left_tile_count: _Optional[int] = ..., liqi: _Optional[_Union[LiQiSuccess, _Mapping]] = ..., doras: _Optional[_Iterable[str]] = ..., zhenting: _Optional[_Iterable[bool]] = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., tile_state: _Optional[int] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., tile_index: _Optional[int] = ..., hun_zhi_yi_ji_info: _Optional[_Union[HunZhiYiJiBuffInfo, _Mapping]] = ...) -> None: ...
 
 class ActionFillAwaitingTiles(_message.Message):
     __slots__ = ["awaiting_tiles", "left_tile_count", "operation", "liqi"]
@@ -8349,7 +12222,7 @@ class RecordFillAwaitingTiles(_message.Message):
     def __init__(self, awaiting_tiles: _Optional[_Iterable[str]] = ..., left_tile_count: _Optional[int] = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., liqi: _Optional[_Union[LiQiSuccess, _Mapping]] = ...) -> None: ...
 
 class ActionChiPengGang(_message.Message):
-    __slots__ = ["seat", "type", "tiles", "froms", "liqi", "operation", "zhenting", "tingpais", "tile_states", "muyu", "scores", "liqibang", "yongchang"]
+    __slots__ = ["seat", "type", "tiles", "froms", "liqi", "operation", "zhenting", "tingpais", "tile_states", "muyu", "scores", "liqibang", "yongchang", "hun_zhi_yi_ji_info"]
     SEAT_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
     TILES_FIELD_NUMBER: _ClassVar[int]
@@ -8363,6 +12236,7 @@ class ActionChiPengGang(_message.Message):
     SCORES_FIELD_NUMBER: _ClassVar[int]
     LIQIBANG_FIELD_NUMBER: _ClassVar[int]
     YONGCHANG_FIELD_NUMBER: _ClassVar[int]
+    HUN_ZHI_YI_JI_INFO_FIELD_NUMBER: _ClassVar[int]
     seat: int
     type: int
     tiles: _containers.RepeatedScalarFieldContainer[str]
@@ -8376,10 +12250,11 @@ class ActionChiPengGang(_message.Message):
     scores: _containers.RepeatedScalarFieldContainer[int]
     liqibang: int
     yongchang: YongchangInfo
-    def __init__(self, seat: _Optional[int] = ..., type: _Optional[int] = ..., tiles: _Optional[_Iterable[str]] = ..., froms: _Optional[_Iterable[int]] = ..., liqi: _Optional[_Union[LiQiSuccess, _Mapping]] = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., zhenting: bool = ..., tingpais: _Optional[_Iterable[_Union[TingPaiDiscardInfo, _Mapping]]] = ..., tile_states: _Optional[_Iterable[int]] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., scores: _Optional[_Iterable[int]] = ..., liqibang: _Optional[int] = ..., yongchang: _Optional[_Union[YongchangInfo, _Mapping]] = ...) -> None: ...
+    hun_zhi_yi_ji_info: HunZhiYiJiBuffInfo
+    def __init__(self, seat: _Optional[int] = ..., type: _Optional[int] = ..., tiles: _Optional[_Iterable[str]] = ..., froms: _Optional[_Iterable[int]] = ..., liqi: _Optional[_Union[LiQiSuccess, _Mapping]] = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., zhenting: bool = ..., tingpais: _Optional[_Iterable[_Union[TingPaiDiscardInfo, _Mapping]]] = ..., tile_states: _Optional[_Iterable[int]] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., scores: _Optional[_Iterable[int]] = ..., liqibang: _Optional[int] = ..., yongchang: _Optional[_Union[YongchangInfo, _Mapping]] = ..., hun_zhi_yi_ji_info: _Optional[_Union[HunZhiYiJiBuffInfo, _Mapping]] = ...) -> None: ...
 
 class RecordChiPengGang(_message.Message):
-    __slots__ = ["seat", "type", "tiles", "froms", "liqi", "zhenting", "operation", "tile_states", "muyu", "scores", "liqibang", "yongchang"]
+    __slots__ = ["seat", "type", "tiles", "froms", "liqi", "zhenting", "operation", "tile_states", "muyu", "scores", "liqibang", "yongchang", "hun_zhi_yi_ji_info"]
     SEAT_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
     TILES_FIELD_NUMBER: _ClassVar[int]
@@ -8392,6 +12267,7 @@ class RecordChiPengGang(_message.Message):
     SCORES_FIELD_NUMBER: _ClassVar[int]
     LIQIBANG_FIELD_NUMBER: _ClassVar[int]
     YONGCHANG_FIELD_NUMBER: _ClassVar[int]
+    HUN_ZHI_YI_JI_INFO_FIELD_NUMBER: _ClassVar[int]
     seat: int
     type: int
     tiles: _containers.RepeatedScalarFieldContainer[str]
@@ -8404,7 +12280,8 @@ class RecordChiPengGang(_message.Message):
     scores: _containers.RepeatedScalarFieldContainer[int]
     liqibang: int
     yongchang: YongchangInfo
-    def __init__(self, seat: _Optional[int] = ..., type: _Optional[int] = ..., tiles: _Optional[_Iterable[str]] = ..., froms: _Optional[_Iterable[int]] = ..., liqi: _Optional[_Union[LiQiSuccess, _Mapping]] = ..., zhenting: _Optional[_Iterable[bool]] = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., tile_states: _Optional[_Iterable[int]] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., scores: _Optional[_Iterable[int]] = ..., liqibang: _Optional[int] = ..., yongchang: _Optional[_Union[YongchangInfo, _Mapping]] = ...) -> None: ...
+    hun_zhi_yi_ji_info: HunZhiYiJiBuffInfo
+    def __init__(self, seat: _Optional[int] = ..., type: _Optional[int] = ..., tiles: _Optional[_Iterable[str]] = ..., froms: _Optional[_Iterable[int]] = ..., liqi: _Optional[_Union[LiQiSuccess, _Mapping]] = ..., zhenting: _Optional[_Iterable[bool]] = ..., operation: _Optional[_Union[OptionalOperationList, _Mapping]] = ..., tile_states: _Optional[_Iterable[int]] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., scores: _Optional[_Iterable[int]] = ..., liqibang: _Optional[int] = ..., yongchang: _Optional[_Union[YongchangInfo, _Mapping]] = ..., hun_zhi_yi_ji_info: _Optional[_Union[HunZhiYiJiBuffInfo, _Mapping]] = ...) -> None: ...
 
 class ActionGangResult(_message.Message):
     __slots__ = ["gang_infos"]
@@ -8503,7 +12380,7 @@ class RecordBaBei(_message.Message):
     def __init__(self, seat: _Optional[int] = ..., doras: _Optional[_Iterable[str]] = ..., operations: _Optional[_Iterable[_Union[OptionalOperationList, _Mapping]]] = ..., moqie: bool = ..., tile_state: _Optional[int] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ...) -> None: ...
 
 class ActionHule(_message.Message):
-    __slots__ = ["hules", "old_scores", "delta_scores", "wait_timeout", "scores", "gameend", "doras", "muyu", "baopai"]
+    __slots__ = ["hules", "old_scores", "delta_scores", "wait_timeout", "scores", "gameend", "doras", "muyu", "baopai", "hun_zhi_yi_ji_info"]
     HULES_FIELD_NUMBER: _ClassVar[int]
     OLD_SCORES_FIELD_NUMBER: _ClassVar[int]
     DELTA_SCORES_FIELD_NUMBER: _ClassVar[int]
@@ -8513,6 +12390,7 @@ class ActionHule(_message.Message):
     DORAS_FIELD_NUMBER: _ClassVar[int]
     MUYU_FIELD_NUMBER: _ClassVar[int]
     BAOPAI_FIELD_NUMBER: _ClassVar[int]
+    HUN_ZHI_YI_JI_INFO_FIELD_NUMBER: _ClassVar[int]
     hules: _containers.RepeatedCompositeFieldContainer[HuleInfo]
     old_scores: _containers.RepeatedScalarFieldContainer[int]
     delta_scores: _containers.RepeatedScalarFieldContainer[int]
@@ -8522,10 +12400,11 @@ class ActionHule(_message.Message):
     doras: _containers.RepeatedScalarFieldContainer[str]
     muyu: MuyuInfo
     baopai: int
-    def __init__(self, hules: _Optional[_Iterable[_Union[HuleInfo, _Mapping]]] = ..., old_scores: _Optional[_Iterable[int]] = ..., delta_scores: _Optional[_Iterable[int]] = ..., wait_timeout: _Optional[int] = ..., scores: _Optional[_Iterable[int]] = ..., gameend: _Optional[_Union[GameEnd, _Mapping]] = ..., doras: _Optional[_Iterable[str]] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., baopai: _Optional[int] = ...) -> None: ...
+    hun_zhi_yi_ji_info: HunZhiYiJiBuffInfo
+    def __init__(self, hules: _Optional[_Iterable[_Union[HuleInfo, _Mapping]]] = ..., old_scores: _Optional[_Iterable[int]] = ..., delta_scores: _Optional[_Iterable[int]] = ..., wait_timeout: _Optional[int] = ..., scores: _Optional[_Iterable[int]] = ..., gameend: _Optional[_Union[GameEnd, _Mapping]] = ..., doras: _Optional[_Iterable[str]] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., baopai: _Optional[int] = ..., hun_zhi_yi_ji_info: _Optional[_Union[HunZhiYiJiBuffInfo, _Mapping]] = ...) -> None: ...
 
 class RecordHule(_message.Message):
-    __slots__ = ["hules", "old_scores", "delta_scores", "wait_timeout", "scores", "gameend", "doras", "muyu", "baopai"]
+    __slots__ = ["hules", "old_scores", "delta_scores", "wait_timeout", "scores", "gameend", "doras", "muyu", "baopai", "hun_zhi_yi_ji_info"]
     HULES_FIELD_NUMBER: _ClassVar[int]
     OLD_SCORES_FIELD_NUMBER: _ClassVar[int]
     DELTA_SCORES_FIELD_NUMBER: _ClassVar[int]
@@ -8535,6 +12414,7 @@ class RecordHule(_message.Message):
     DORAS_FIELD_NUMBER: _ClassVar[int]
     MUYU_FIELD_NUMBER: _ClassVar[int]
     BAOPAI_FIELD_NUMBER: _ClassVar[int]
+    HUN_ZHI_YI_JI_INFO_FIELD_NUMBER: _ClassVar[int]
     hules: _containers.RepeatedCompositeFieldContainer[HuleInfo]
     old_scores: _containers.RepeatedScalarFieldContainer[int]
     delta_scores: _containers.RepeatedScalarFieldContainer[int]
@@ -8544,7 +12424,8 @@ class RecordHule(_message.Message):
     doras: _containers.RepeatedScalarFieldContainer[str]
     muyu: MuyuInfo
     baopai: int
-    def __init__(self, hules: _Optional[_Iterable[_Union[HuleInfo, _Mapping]]] = ..., old_scores: _Optional[_Iterable[int]] = ..., delta_scores: _Optional[_Iterable[int]] = ..., wait_timeout: _Optional[int] = ..., scores: _Optional[_Iterable[int]] = ..., gameend: _Optional[_Union[GameEnd, _Mapping]] = ..., doras: _Optional[_Iterable[str]] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., baopai: _Optional[int] = ...) -> None: ...
+    hun_zhi_yi_ji_info: HunZhiYiJiBuffInfo
+    def __init__(self, hules: _Optional[_Iterable[_Union[HuleInfo, _Mapping]]] = ..., old_scores: _Optional[_Iterable[int]] = ..., delta_scores: _Optional[_Iterable[int]] = ..., wait_timeout: _Optional[int] = ..., scores: _Optional[_Iterable[int]] = ..., gameend: _Optional[_Union[GameEnd, _Mapping]] = ..., doras: _Optional[_Iterable[str]] = ..., muyu: _Optional[_Union[MuyuInfo, _Mapping]] = ..., baopai: _Optional[int] = ..., hun_zhi_yi_ji_info: _Optional[_Union[HunZhiYiJiBuffInfo, _Mapping]] = ...) -> None: ...
 
 class HuInfoXueZhanMid(_message.Message):
     __slots__ = ["seat", "hand_count", "hand", "ming", "hu_tile", "zimo", "yiman", "count", "fans", "fu", "title_id"]
@@ -8768,1030 +12649,58 @@ class PlayerLeaving(_message.Message):
     seat: int
     def __init__(self, seat: _Optional[int] = ...) -> None: ...
 
-class ReqAuthGame(_message.Message):
-    __slots__ = ["account_id", "token", "game_uuid", "session", "gift", "vs"]
-    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-    TOKEN_FIELD_NUMBER: _ClassVar[int]
-    GAME_UUID_FIELD_NUMBER: _ClassVar[int]
-    SESSION_FIELD_NUMBER: _ClassVar[int]
-    GIFT_FIELD_NUMBER: _ClassVar[int]
-    VS_FIELD_NUMBER: _ClassVar[int]
-    account_id: int
-    token: str
-    game_uuid: str
-    session: str
-    gift: str
-    vs: int
-    def __init__(self, account_id: _Optional[int] = ..., token: _Optional[str] = ..., game_uuid: _Optional[str] = ..., session: _Optional[str] = ..., gift: _Optional[str] = ..., vs: _Optional[int] = ...) -> None: ...
-
-class ResAuthGame(_message.Message):
-    __slots__ = ["error", "players", "seat_list", "is_game_start", "game_config", "ready_id_list"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    PLAYERS_FIELD_NUMBER: _ClassVar[int]
-    SEAT_LIST_FIELD_NUMBER: _ClassVar[int]
-    IS_GAME_START_FIELD_NUMBER: _ClassVar[int]
-    GAME_CONFIG_FIELD_NUMBER: _ClassVar[int]
-    READY_ID_LIST_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    players: _containers.RepeatedCompositeFieldContainer[PlayerGameView]
-    seat_list: _containers.RepeatedScalarFieldContainer[int]
-    is_game_start: bool
-    game_config: GameConfig
-    ready_id_list: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., players: _Optional[_Iterable[_Union[PlayerGameView, _Mapping]]] = ..., seat_list: _Optional[_Iterable[int]] = ..., is_game_start: bool = ..., game_config: _Optional[_Union[GameConfig, _Mapping]] = ..., ready_id_list: _Optional[_Iterable[int]] = ...) -> None: ...
-
-class GameRestore(_message.Message):
-    __slots__ = ["snapshot", "actions", "passed_waiting_time", "game_state", "start_time", "last_pause_time_ms"]
-    SNAPSHOT_FIELD_NUMBER: _ClassVar[int]
-    ACTIONS_FIELD_NUMBER: _ClassVar[int]
-    PASSED_WAITING_TIME_FIELD_NUMBER: _ClassVar[int]
-    GAME_STATE_FIELD_NUMBER: _ClassVar[int]
-    START_TIME_FIELD_NUMBER: _ClassVar[int]
-    LAST_PAUSE_TIME_MS_FIELD_NUMBER: _ClassVar[int]
-    snapshot: GameSnapshot
-    actions: _containers.RepeatedCompositeFieldContainer[ActionPrototype]
-    passed_waiting_time: int
-    game_state: int
-    start_time: int
-    last_pause_time_ms: int
-    def __init__(self, snapshot: _Optional[_Union[GameSnapshot, _Mapping]] = ..., actions: _Optional[_Iterable[_Union[ActionPrototype, _Mapping]]] = ..., passed_waiting_time: _Optional[int] = ..., game_state: _Optional[int] = ..., start_time: _Optional[int] = ..., last_pause_time_ms: _Optional[int] = ...) -> None: ...
-
-class ResEnterGame(_message.Message):
-    __slots__ = ["error", "is_end", "step", "game_restore"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    IS_END_FIELD_NUMBER: _ClassVar[int]
-    STEP_FIELD_NUMBER: _ClassVar[int]
-    GAME_RESTORE_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    is_end: bool
-    step: int
-    game_restore: GameRestore
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., is_end: bool = ..., step: _Optional[int] = ..., game_restore: _Optional[_Union[GameRestore, _Mapping]] = ...) -> None: ...
-
-class ReqSyncGame(_message.Message):
-    __slots__ = ["round_id", "step"]
-    ROUND_ID_FIELD_NUMBER: _ClassVar[int]
-    STEP_FIELD_NUMBER: _ClassVar[int]
-    round_id: str
-    step: int
-    def __init__(self, round_id: _Optional[str] = ..., step: _Optional[int] = ...) -> None: ...
-
-class ResSyncGame(_message.Message):
-    __slots__ = ["error", "is_end", "step", "game_restore"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    IS_END_FIELD_NUMBER: _ClassVar[int]
-    STEP_FIELD_NUMBER: _ClassVar[int]
-    GAME_RESTORE_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    is_end: bool
-    step: int
-    game_restore: GameRestore
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., is_end: bool = ..., step: _Optional[int] = ..., game_restore: _Optional[_Union[GameRestore, _Mapping]] = ...) -> None: ...
-
-class ReqSelfOperation(_message.Message):
-    __slots__ = ["type", "index", "tile", "cancel_operation", "moqie", "timeuse", "tile_state", "change_tiles", "tile_states", "gap_type"]
+class ReqRequestConnection(_message.Message):
+    __slots__ = ["type", "route_id", "timestamp"]
     TYPE_FIELD_NUMBER: _ClassVar[int]
-    INDEX_FIELD_NUMBER: _ClassVar[int]
-    TILE_FIELD_NUMBER: _ClassVar[int]
-    CANCEL_OPERATION_FIELD_NUMBER: _ClassVar[int]
-    MOQIE_FIELD_NUMBER: _ClassVar[int]
-    TIMEUSE_FIELD_NUMBER: _ClassVar[int]
-    TILE_STATE_FIELD_NUMBER: _ClassVar[int]
-    CHANGE_TILES_FIELD_NUMBER: _ClassVar[int]
-    TILE_STATES_FIELD_NUMBER: _ClassVar[int]
-    GAP_TYPE_FIELD_NUMBER: _ClassVar[int]
+    ROUTE_ID_FIELD_NUMBER: _ClassVar[int]
+    TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
     type: int
-    index: int
-    tile: str
-    cancel_operation: bool
-    moqie: bool
-    timeuse: int
-    tile_state: int
-    change_tiles: _containers.RepeatedScalarFieldContainer[str]
-    tile_states: _containers.RepeatedScalarFieldContainer[int]
-    gap_type: int
-    def __init__(self, type: _Optional[int] = ..., index: _Optional[int] = ..., tile: _Optional[str] = ..., cancel_operation: bool = ..., moqie: bool = ..., timeuse: _Optional[int] = ..., tile_state: _Optional[int] = ..., change_tiles: _Optional[_Iterable[str]] = ..., tile_states: _Optional[_Iterable[int]] = ..., gap_type: _Optional[int] = ...) -> None: ...
+    route_id: str
+    timestamp: int
+    def __init__(self, type: _Optional[int] = ..., route_id: _Optional[str] = ..., timestamp: _Optional[int] = ...) -> None: ...
 
-class ReqChiPengGang(_message.Message):
-    __slots__ = ["type", "index", "cancel_operation", "timeuse"]
-    TYPE_FIELD_NUMBER: _ClassVar[int]
-    INDEX_FIELD_NUMBER: _ClassVar[int]
-    CANCEL_OPERATION_FIELD_NUMBER: _ClassVar[int]
-    TIMEUSE_FIELD_NUMBER: _ClassVar[int]
-    type: int
-    index: int
-    cancel_operation: bool
-    timeuse: int
-    def __init__(self, type: _Optional[int] = ..., index: _Optional[int] = ..., cancel_operation: bool = ..., timeuse: _Optional[int] = ...) -> None: ...
-
-class ReqBroadcastInGame(_message.Message):
-    __slots__ = ["content", "except_self"]
-    CONTENT_FIELD_NUMBER: _ClassVar[int]
-    EXCEPT_SELF_FIELD_NUMBER: _ClassVar[int]
-    content: str
-    except_self: bool
-    def __init__(self, content: _Optional[str] = ..., except_self: bool = ...) -> None: ...
-
-class ReqGMCommandInGaming(_message.Message):
-    __slots__ = ["json_data"]
-    JSON_DATA_FIELD_NUMBER: _ClassVar[int]
-    json_data: str
-    def __init__(self, json_data: _Optional[str] = ...) -> None: ...
-
-class ResGamePlayerState(_message.Message):
-    __slots__ = ["error", "state_list"]
+class ResRequestConnection(_message.Message):
+    __slots__ = ["error", "timestamp", "result"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
-    STATE_LIST_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    state_list: _containers.RepeatedScalarFieldContainer[GamePlayerState]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., state_list: _Optional[_Iterable[_Union[GamePlayerState, str]]] = ...) -> None: ...
-
-class ReqVoteGameEnd(_message.Message):
-    __slots__ = ["yes"]
-    YES_FIELD_NUMBER: _ClassVar[int]
-    yes: bool
-    def __init__(self, yes: bool = ...) -> None: ...
-
-class ResGameEndVote(_message.Message):
-    __slots__ = ["success", "vote_cd_end_time", "error"]
-    SUCCESS_FIELD_NUMBER: _ClassVar[int]
-    VOTE_CD_END_TIME_FIELD_NUMBER: _ClassVar[int]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    success: bool
-    vote_cd_end_time: int
-    error: Error
-    def __init__(self, success: bool = ..., vote_cd_end_time: _Optional[int] = ..., error: _Optional[_Union[Error, _Mapping]] = ...) -> None: ...
-
-class ReqAuthObserve(_message.Message):
-    __slots__ = ["token"]
-    TOKEN_FIELD_NUMBER: _ClassVar[int]
-    token: str
-    def __init__(self, token: _Optional[str] = ...) -> None: ...
-
-class ResStartObserve(_message.Message):
-    __slots__ = ["head", "passed"]
-    HEAD_FIELD_NUMBER: _ClassVar[int]
-    PASSED_FIELD_NUMBER: _ClassVar[int]
-    head: GameLiveHead
-    passed: GameLiveSegment
-    def __init__(self, head: _Optional[_Union[GameLiveHead, _Mapping]] = ..., passed: _Optional[_Union[GameLiveSegment, _Mapping]] = ...) -> None: ...
-
-class NotifyNewGame(_message.Message):
-    __slots__ = ["game_uuid", "player_list"]
-    GAME_UUID_FIELD_NUMBER: _ClassVar[int]
-    PLAYER_LIST_FIELD_NUMBER: _ClassVar[int]
-    game_uuid: str
-    player_list: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, game_uuid: _Optional[str] = ..., player_list: _Optional[_Iterable[str]] = ...) -> None: ...
-
-class NotifyPlayerLoadGameReady(_message.Message):
-    __slots__ = ["ready_id_list"]
-    READY_ID_LIST_FIELD_NUMBER: _ClassVar[int]
-    ready_id_list: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, ready_id_list: _Optional[_Iterable[int]] = ...) -> None: ...
-
-class NotifyGameBroadcast(_message.Message):
-    __slots__ = ["seat", "content"]
-    SEAT_FIELD_NUMBER: _ClassVar[int]
-    CONTENT_FIELD_NUMBER: _ClassVar[int]
-    seat: int
-    content: str
-    def __init__(self, seat: _Optional[int] = ..., content: _Optional[str] = ...) -> None: ...
-
-class NotifyGameEndResult(_message.Message):
-    __slots__ = ["result"]
+    TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
     RESULT_FIELD_NUMBER: _ClassVar[int]
-    result: GameEndResult
-    def __init__(self, result: _Optional[_Union[GameEndResult, _Mapping]] = ...) -> None: ...
+    error: Error
+    timestamp: int
+    result: int
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., timestamp: _Optional[int] = ..., result: _Optional[int] = ...) -> None: ...
 
-class NotifyGameTerminate(_message.Message):
-    __slots__ = ["reason"]
-    REASON_FIELD_NUMBER: _ClassVar[int]
-    reason: str
-    def __init__(self, reason: _Optional[str] = ...) -> None: ...
-
-class NotifyPlayerConnectionState(_message.Message):
-    __slots__ = ["seat", "state"]
-    SEAT_FIELD_NUMBER: _ClassVar[int]
-    STATE_FIELD_NUMBER: _ClassVar[int]
-    seat: int
-    state: GamePlayerState
-    def __init__(self, seat: _Optional[int] = ..., state: _Optional[_Union[GamePlayerState, str]] = ...) -> None: ...
-
-class NotifyAccountLevelChange(_message.Message):
-    __slots__ = ["origin", "final", "type"]
-    ORIGIN_FIELD_NUMBER: _ClassVar[int]
-    FINAL_FIELD_NUMBER: _ClassVar[int]
+class ReqRequestRouteChange(_message.Message):
+    __slots__ = ["before", "route_id", "type"]
+    BEFORE_FIELD_NUMBER: _ClassVar[int]
+    ROUTE_ID_FIELD_NUMBER: _ClassVar[int]
     TYPE_FIELD_NUMBER: _ClassVar[int]
-    origin: AccountLevel
-    final: AccountLevel
+    before: str
+    route_id: str
     type: int
-    def __init__(self, origin: _Optional[_Union[AccountLevel, _Mapping]] = ..., final: _Optional[_Union[AccountLevel, _Mapping]] = ..., type: _Optional[int] = ...) -> None: ...
+    def __init__(self, before: _Optional[str] = ..., route_id: _Optional[str] = ..., type: _Optional[int] = ...) -> None: ...
 
-class NotifyGameFinishReward(_message.Message):
-    __slots__ = ["mode_id", "level_change", "match_chest", "main_character", "character_gift"]
-    class LevelChange(_message.Message):
-        __slots__ = ["origin", "final", "type"]
-        ORIGIN_FIELD_NUMBER: _ClassVar[int]
-        FINAL_FIELD_NUMBER: _ClassVar[int]
-        TYPE_FIELD_NUMBER: _ClassVar[int]
-        origin: AccountLevel
-        final: AccountLevel
-        type: int
-        def __init__(self, origin: _Optional[_Union[AccountLevel, _Mapping]] = ..., final: _Optional[_Union[AccountLevel, _Mapping]] = ..., type: _Optional[int] = ...) -> None: ...
-    class MatchChest(_message.Message):
-        __slots__ = ["chest_id", "origin", "final", "is_graded", "rewards"]
-        CHEST_ID_FIELD_NUMBER: _ClassVar[int]
-        ORIGIN_FIELD_NUMBER: _ClassVar[int]
-        FINAL_FIELD_NUMBER: _ClassVar[int]
-        IS_GRADED_FIELD_NUMBER: _ClassVar[int]
-        REWARDS_FIELD_NUMBER: _ClassVar[int]
-        chest_id: int
-        origin: int
-        final: int
-        is_graded: bool
-        rewards: _containers.RepeatedCompositeFieldContainer[RewardSlot]
-        def __init__(self, chest_id: _Optional[int] = ..., origin: _Optional[int] = ..., final: _Optional[int] = ..., is_graded: bool = ..., rewards: _Optional[_Iterable[_Union[RewardSlot, _Mapping]]] = ...) -> None: ...
-    class MainCharacter(_message.Message):
-        __slots__ = ["level", "exp", "add"]
-        LEVEL_FIELD_NUMBER: _ClassVar[int]
-        EXP_FIELD_NUMBER: _ClassVar[int]
-        ADD_FIELD_NUMBER: _ClassVar[int]
-        level: int
-        exp: int
-        add: int
-        def __init__(self, level: _Optional[int] = ..., exp: _Optional[int] = ..., add: _Optional[int] = ...) -> None: ...
-    class CharacterGift(_message.Message):
-        __slots__ = ["origin", "final", "add", "is_graded"]
-        ORIGIN_FIELD_NUMBER: _ClassVar[int]
-        FINAL_FIELD_NUMBER: _ClassVar[int]
-        ADD_FIELD_NUMBER: _ClassVar[int]
-        IS_GRADED_FIELD_NUMBER: _ClassVar[int]
-        origin: int
-        final: int
-        add: int
-        is_graded: bool
-        def __init__(self, origin: _Optional[int] = ..., final: _Optional[int] = ..., add: _Optional[int] = ..., is_graded: bool = ...) -> None: ...
-    MODE_ID_FIELD_NUMBER: _ClassVar[int]
-    LEVEL_CHANGE_FIELD_NUMBER: _ClassVar[int]
-    MATCH_CHEST_FIELD_NUMBER: _ClassVar[int]
-    MAIN_CHARACTER_FIELD_NUMBER: _ClassVar[int]
-    CHARACTER_GIFT_FIELD_NUMBER: _ClassVar[int]
-    mode_id: int
-    level_change: NotifyGameFinishReward.LevelChange
-    match_chest: NotifyGameFinishReward.MatchChest
-    main_character: NotifyGameFinishReward.MainCharacter
-    character_gift: NotifyGameFinishReward.CharacterGift
-    def __init__(self, mode_id: _Optional[int] = ..., level_change: _Optional[_Union[NotifyGameFinishReward.LevelChange, _Mapping]] = ..., match_chest: _Optional[_Union[NotifyGameFinishReward.MatchChest, _Mapping]] = ..., main_character: _Optional[_Union[NotifyGameFinishReward.MainCharacter, _Mapping]] = ..., character_gift: _Optional[_Union[NotifyGameFinishReward.CharacterGift, _Mapping]] = ...) -> None: ...
-
-class NotifyActivityReward(_message.Message):
-    __slots__ = ["activity_reward"]
-    class ActivityReward(_message.Message):
-        __slots__ = ["activity_id", "rewards"]
-        ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
-        REWARDS_FIELD_NUMBER: _ClassVar[int]
-        activity_id: int
-        rewards: _containers.RepeatedCompositeFieldContainer[RewardSlot]
-        def __init__(self, activity_id: _Optional[int] = ..., rewards: _Optional[_Iterable[_Union[RewardSlot, _Mapping]]] = ...) -> None: ...
-    ACTIVITY_REWARD_FIELD_NUMBER: _ClassVar[int]
-    activity_reward: _containers.RepeatedCompositeFieldContainer[NotifyActivityReward.ActivityReward]
-    def __init__(self, activity_reward: _Optional[_Iterable[_Union[NotifyActivityReward.ActivityReward, _Mapping]]] = ...) -> None: ...
-
-class NotifyActivityPoint(_message.Message):
-    __slots__ = ["activity_points"]
-    class ActivityPoint(_message.Message):
-        __slots__ = ["activity_id", "point"]
-        ACTIVITY_ID_FIELD_NUMBER: _ClassVar[int]
-        POINT_FIELD_NUMBER: _ClassVar[int]
-        activity_id: int
-        point: int
-        def __init__(self, activity_id: _Optional[int] = ..., point: _Optional[int] = ...) -> None: ...
-    ACTIVITY_POINTS_FIELD_NUMBER: _ClassVar[int]
-    activity_points: _containers.RepeatedCompositeFieldContainer[NotifyActivityPoint.ActivityPoint]
-    def __init__(self, activity_points: _Optional[_Iterable[_Union[NotifyActivityPoint.ActivityPoint, _Mapping]]] = ...) -> None: ...
-
-class NotifyLeaderboardPoint(_message.Message):
-    __slots__ = ["leaderboard_points"]
-    class LeaderboardPoint(_message.Message):
-        __slots__ = ["leaderboard_id", "point"]
-        LEADERBOARD_ID_FIELD_NUMBER: _ClassVar[int]
-        POINT_FIELD_NUMBER: _ClassVar[int]
-        leaderboard_id: int
-        point: int
-        def __init__(self, leaderboard_id: _Optional[int] = ..., point: _Optional[int] = ...) -> None: ...
-    LEADERBOARD_POINTS_FIELD_NUMBER: _ClassVar[int]
-    leaderboard_points: _containers.RepeatedCompositeFieldContainer[NotifyLeaderboardPoint.LeaderboardPoint]
-    def __init__(self, leaderboard_points: _Optional[_Iterable[_Union[NotifyLeaderboardPoint.LeaderboardPoint, _Mapping]]] = ...) -> None: ...
-
-class NotifyGamePause(_message.Message):
-    __slots__ = ["paused"]
-    PAUSED_FIELD_NUMBER: _ClassVar[int]
-    paused: bool
-    def __init__(self, paused: bool = ...) -> None: ...
-
-class NotifyEndGameVote(_message.Message):
-    __slots__ = ["results", "start_time", "duration_time"]
-    class VoteResult(_message.Message):
-        __slots__ = ["account_id", "yes"]
-        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-        YES_FIELD_NUMBER: _ClassVar[int]
-        account_id: int
-        yes: bool
-        def __init__(self, account_id: _Optional[int] = ..., yes: bool = ...) -> None: ...
-    RESULTS_FIELD_NUMBER: _ClassVar[int]
-    START_TIME_FIELD_NUMBER: _ClassVar[int]
-    DURATION_TIME_FIELD_NUMBER: _ClassVar[int]
-    results: _containers.RepeatedCompositeFieldContainer[NotifyEndGameVote.VoteResult]
-    start_time: int
-    duration_time: int
-    def __init__(self, results: _Optional[_Iterable[_Union[NotifyEndGameVote.VoteResult, _Mapping]]] = ..., start_time: _Optional[int] = ..., duration_time: _Optional[int] = ...) -> None: ...
-
-class NotifyObserveData(_message.Message):
-    __slots__ = ["unit"]
-    UNIT_FIELD_NUMBER: _ClassVar[int]
-    unit: GameLiveUnit
-    def __init__(self, unit: _Optional[_Union[GameLiveUnit, _Mapping]] = ...) -> None: ...
-
-class CustomizedContest(_message.Message):
-    __slots__ = ["unique_id", "creator_id", "contest_id", "contest_name", "state", "create_time", "start_time", "finish_time", "open", "rank_rule", "deadline", "auto_match", "auto_disable_end_chat", "contest_type", "hidden_zones", "banned_zones", "observer_switch", "emoji_switch", "player_roster_type", "disable_broadcast"]
-    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
-    CREATOR_ID_FIELD_NUMBER: _ClassVar[int]
-    CONTEST_ID_FIELD_NUMBER: _ClassVar[int]
-    CONTEST_NAME_FIELD_NUMBER: _ClassVar[int]
-    STATE_FIELD_NUMBER: _ClassVar[int]
-    CREATE_TIME_FIELD_NUMBER: _ClassVar[int]
-    START_TIME_FIELD_NUMBER: _ClassVar[int]
-    FINISH_TIME_FIELD_NUMBER: _ClassVar[int]
-    OPEN_FIELD_NUMBER: _ClassVar[int]
-    RANK_RULE_FIELD_NUMBER: _ClassVar[int]
-    DEADLINE_FIELD_NUMBER: _ClassVar[int]
-    AUTO_MATCH_FIELD_NUMBER: _ClassVar[int]
-    AUTO_DISABLE_END_CHAT_FIELD_NUMBER: _ClassVar[int]
-    CONTEST_TYPE_FIELD_NUMBER: _ClassVar[int]
-    HIDDEN_ZONES_FIELD_NUMBER: _ClassVar[int]
-    BANNED_ZONES_FIELD_NUMBER: _ClassVar[int]
-    OBSERVER_SWITCH_FIELD_NUMBER: _ClassVar[int]
-    EMOJI_SWITCH_FIELD_NUMBER: _ClassVar[int]
-    PLAYER_ROSTER_TYPE_FIELD_NUMBER: _ClassVar[int]
-    DISABLE_BROADCAST_FIELD_NUMBER: _ClassVar[int]
-    unique_id: int
-    creator_id: int
-    contest_id: int
-    contest_name: str
-    state: int
-    create_time: int
-    start_time: int
-    finish_time: int
-    open: bool
-    rank_rule: int
-    deadline: int
-    auto_match: bool
-    auto_disable_end_chat: bool
-    contest_type: int
-    hidden_zones: _containers.RepeatedScalarFieldContainer[int]
-    banned_zones: _containers.RepeatedScalarFieldContainer[int]
-    observer_switch: int
-    emoji_switch: int
-    player_roster_type: int
-    disable_broadcast: int
-    def __init__(self, unique_id: _Optional[int] = ..., creator_id: _Optional[int] = ..., contest_id: _Optional[int] = ..., contest_name: _Optional[str] = ..., state: _Optional[int] = ..., create_time: _Optional[int] = ..., start_time: _Optional[int] = ..., finish_time: _Optional[int] = ..., open: bool = ..., rank_rule: _Optional[int] = ..., deadline: _Optional[int] = ..., auto_match: bool = ..., auto_disable_end_chat: bool = ..., contest_type: _Optional[int] = ..., hidden_zones: _Optional[_Iterable[int]] = ..., banned_zones: _Optional[_Iterable[int]] = ..., observer_switch: _Optional[int] = ..., emoji_switch: _Optional[int] = ..., player_roster_type: _Optional[int] = ..., disable_broadcast: _Optional[int] = ...) -> None: ...
-
-class ContestGameInfo(_message.Message):
-    __slots__ = ["game_uuid", "players", "start_time", "end_time"]
-    class Player(_message.Message):
-        __slots__ = ["account_id", "nickname"]
-        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-        NICKNAME_FIELD_NUMBER: _ClassVar[int]
-        account_id: int
-        nickname: str
-        def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ...) -> None: ...
-    GAME_UUID_FIELD_NUMBER: _ClassVar[int]
-    PLAYERS_FIELD_NUMBER: _ClassVar[int]
-    START_TIME_FIELD_NUMBER: _ClassVar[int]
-    END_TIME_FIELD_NUMBER: _ClassVar[int]
-    game_uuid: str
-    players: _containers.RepeatedCompositeFieldContainer[ContestGameInfo.Player]
-    start_time: int
-    end_time: int
-    def __init__(self, game_uuid: _Optional[str] = ..., players: _Optional[_Iterable[_Union[ContestGameInfo.Player, _Mapping]]] = ..., start_time: _Optional[int] = ..., end_time: _Optional[int] = ...) -> None: ...
-
-class ContestPlayerInfo(_message.Message):
-    __slots__ = ["account_id", "nickname"]
-    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-    NICKNAME_FIELD_NUMBER: _ClassVar[int]
-    account_id: int
-    nickname: str
-    def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ...) -> None: ...
-
-class ContestMatchingPlayer(_message.Message):
-    __slots__ = ["account_id", "nickname", "controller"]
-    class Controller(_message.Message):
-        __slots__ = ["account_id", "nickname"]
-        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-        NICKNAME_FIELD_NUMBER: _ClassVar[int]
-        account_id: int
-        nickname: str
-        def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ...) -> None: ...
-    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-    NICKNAME_FIELD_NUMBER: _ClassVar[int]
-    CONTROLLER_FIELD_NUMBER: _ClassVar[int]
-    account_id: int
-    nickname: str
-    controller: ContestMatchingPlayer.Controller
-    def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ..., controller: _Optional[_Union[ContestMatchingPlayer.Controller, _Mapping]] = ...) -> None: ...
-
-class ReqContestManageLogin(_message.Message):
-    __slots__ = ["account", "password", "gen_access_token", "type"]
-    ACCOUNT_FIELD_NUMBER: _ClassVar[int]
-    PASSWORD_FIELD_NUMBER: _ClassVar[int]
-    GEN_ACCESS_TOKEN_FIELD_NUMBER: _ClassVar[int]
-    TYPE_FIELD_NUMBER: _ClassVar[int]
-    account: str
-    password: str
-    gen_access_token: bool
-    type: int
-    def __init__(self, account: _Optional[str] = ..., password: _Optional[str] = ..., gen_access_token: bool = ..., type: _Optional[int] = ...) -> None: ...
-
-class ResContestManageLogin(_message.Message):
-    __slots__ = ["error", "account_id", "nickname", "access_token", "diamond", "last_create_time"]
+class ResRequestRouteChange(_message.Message):
+    __slots__ = ["error", "result"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
-    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-    NICKNAME_FIELD_NUMBER: _ClassVar[int]
-    ACCESS_TOKEN_FIELD_NUMBER: _ClassVar[int]
-    DIAMOND_FIELD_NUMBER: _ClassVar[int]
-    LAST_CREATE_TIME_FIELD_NUMBER: _ClassVar[int]
+    RESULT_FIELD_NUMBER: _ClassVar[int]
     error: Error
-    account_id: int
-    nickname: str
-    access_token: str
-    diamond: int
-    last_create_time: int
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., account_id: _Optional[int] = ..., nickname: _Optional[str] = ..., access_token: _Optional[str] = ..., diamond: _Optional[int] = ..., last_create_time: _Optional[int] = ...) -> None: ...
+    result: int
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., result: _Optional[int] = ...) -> None: ...
 
-class ReqContestManageOauth2Auth(_message.Message):
-    __slots__ = ["type", "code", "uid"]
-    TYPE_FIELD_NUMBER: _ClassVar[int]
-    CODE_FIELD_NUMBER: _ClassVar[int]
-    UID_FIELD_NUMBER: _ClassVar[int]
-    type: int
-    code: str
-    uid: str
-    def __init__(self, type: _Optional[int] = ..., code: _Optional[str] = ..., uid: _Optional[str] = ...) -> None: ...
+class ReqHeartbeat(_message.Message):
+    __slots__ = ["delay", "no_operation_counter", "platform", "network_quality"]
+    DELAY_FIELD_NUMBER: _ClassVar[int]
+    NO_OPERATION_COUNTER_FIELD_NUMBER: _ClassVar[int]
+    PLATFORM_FIELD_NUMBER: _ClassVar[int]
+    NETWORK_QUALITY_FIELD_NUMBER: _ClassVar[int]
+    delay: int
+    no_operation_counter: int
+    platform: int
+    network_quality: int
+    def __init__(self, delay: _Optional[int] = ..., no_operation_counter: _Optional[int] = ..., platform: _Optional[int] = ..., network_quality: _Optional[int] = ...) -> None: ...
 
-class ResContestManageOauth2Auth(_message.Message):
-    __slots__ = ["error", "access_token"]
+class ResHeartbeat(_message.Message):
+    __slots__ = ["error"]
     ERROR_FIELD_NUMBER: _ClassVar[int]
-    ACCESS_TOKEN_FIELD_NUMBER: _ClassVar[int]
     error: Error
-    access_token: str
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., access_token: _Optional[str] = ...) -> None: ...
-
-class ReqContestManageOauth2Login(_message.Message):
-    __slots__ = ["type", "access_token", "reconnect"]
-    TYPE_FIELD_NUMBER: _ClassVar[int]
-    ACCESS_TOKEN_FIELD_NUMBER: _ClassVar[int]
-    RECONNECT_FIELD_NUMBER: _ClassVar[int]
-    type: int
-    access_token: str
-    reconnect: bool
-    def __init__(self, type: _Optional[int] = ..., access_token: _Optional[str] = ..., reconnect: bool = ...) -> None: ...
-
-class ResContestManageOauth2Login(_message.Message):
-    __slots__ = ["error", "account_id", "nickname", "access_token", "diamond", "last_create_time"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-    NICKNAME_FIELD_NUMBER: _ClassVar[int]
-    ACCESS_TOKEN_FIELD_NUMBER: _ClassVar[int]
-    DIAMOND_FIELD_NUMBER: _ClassVar[int]
-    LAST_CREATE_TIME_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    account_id: int
-    nickname: str
-    access_token: str
-    diamond: int
-    last_create_time: int
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., account_id: _Optional[int] = ..., nickname: _Optional[str] = ..., access_token: _Optional[str] = ..., diamond: _Optional[int] = ..., last_create_time: _Optional[int] = ...) -> None: ...
-
-class ResFetchRelatedContestList(_message.Message):
-    __slots__ = ["error", "contests"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    CONTESTS_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    contests: _containers.RepeatedCompositeFieldContainer[CustomizedContest]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., contests: _Optional[_Iterable[_Union[CustomizedContest, _Mapping]]] = ...) -> None: ...
-
-class ReqCreateCustomizedContest(_message.Message):
-    __slots__ = ["contest_name", "start_time", "finish_time", "open", "rank_rule", "game_rule_setting"]
-    CONTEST_NAME_FIELD_NUMBER: _ClassVar[int]
-    START_TIME_FIELD_NUMBER: _ClassVar[int]
-    FINISH_TIME_FIELD_NUMBER: _ClassVar[int]
-    OPEN_FIELD_NUMBER: _ClassVar[int]
-    RANK_RULE_FIELD_NUMBER: _ClassVar[int]
-    GAME_RULE_SETTING_FIELD_NUMBER: _ClassVar[int]
-    contest_name: str
-    start_time: int
-    finish_time: int
-    open: bool
-    rank_rule: int
-    game_rule_setting: GameRuleSetting
-    def __init__(self, contest_name: _Optional[str] = ..., start_time: _Optional[int] = ..., finish_time: _Optional[int] = ..., open: bool = ..., rank_rule: _Optional[int] = ..., game_rule_setting: _Optional[_Union[GameRuleSetting, _Mapping]] = ...) -> None: ...
-
-class ResCreateCustomizedContest(_message.Message):
-    __slots__ = ["error", "contest", "diamond"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    CONTEST_FIELD_NUMBER: _ClassVar[int]
-    DIAMOND_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    contest: CustomizedContest
-    diamond: int
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., contest: _Optional[_Union[CustomizedContest, _Mapping]] = ..., diamond: _Optional[int] = ...) -> None: ...
-
-class ReqDeleteCustomizedContest(_message.Message):
-    __slots__ = ["unique_id"]
-    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
-    unique_id: int
-    def __init__(self, unique_id: _Optional[int] = ...) -> None: ...
-
-class ReqProlongContest(_message.Message):
-    __slots__ = ["unique_id"]
-    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
-    unique_id: int
-    def __init__(self, unique_id: _Optional[int] = ...) -> None: ...
-
-class ResProlongContest(_message.Message):
-    __slots__ = ["error", "deadline"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    DEADLINE_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    deadline: int
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., deadline: _Optional[int] = ...) -> None: ...
-
-class ReqManageContest(_message.Message):
-    __slots__ = ["unique_id"]
-    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
-    unique_id: int
-    def __init__(self, unique_id: _Optional[int] = ...) -> None: ...
-
-class ResManageContest(_message.Message):
-    __slots__ = ["error", "contest"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    CONTEST_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    contest: CustomizedContest
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., contest: _Optional[_Union[CustomizedContest, _Mapping]] = ...) -> None: ...
-
-class ResFetchContestGameRule(_message.Message):
-    __slots__ = ["error", "game_rule_setting"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    GAME_RULE_SETTING_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    game_rule_setting: GameRuleSetting
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., game_rule_setting: _Optional[_Union[GameRuleSetting, _Mapping]] = ...) -> None: ...
-
-class ReqUpdateContestGameRule(_message.Message):
-    __slots__ = ["contest_name", "start_time", "finish_time", "open", "rank_rule", "game_rule_setting", "auto_match", "auto_disable_end_chat", "contest_type", "banned_zones", "hidden_zones", "emoji_switch", "player_roster_type", "disable_broadcast"]
-    CONTEST_NAME_FIELD_NUMBER: _ClassVar[int]
-    START_TIME_FIELD_NUMBER: _ClassVar[int]
-    FINISH_TIME_FIELD_NUMBER: _ClassVar[int]
-    OPEN_FIELD_NUMBER: _ClassVar[int]
-    RANK_RULE_FIELD_NUMBER: _ClassVar[int]
-    GAME_RULE_SETTING_FIELD_NUMBER: _ClassVar[int]
-    AUTO_MATCH_FIELD_NUMBER: _ClassVar[int]
-    AUTO_DISABLE_END_CHAT_FIELD_NUMBER: _ClassVar[int]
-    CONTEST_TYPE_FIELD_NUMBER: _ClassVar[int]
-    BANNED_ZONES_FIELD_NUMBER: _ClassVar[int]
-    HIDDEN_ZONES_FIELD_NUMBER: _ClassVar[int]
-    EMOJI_SWITCH_FIELD_NUMBER: _ClassVar[int]
-    PLAYER_ROSTER_TYPE_FIELD_NUMBER: _ClassVar[int]
-    DISABLE_BROADCAST_FIELD_NUMBER: _ClassVar[int]
-    contest_name: str
-    start_time: int
-    finish_time: int
-    open: bool
-    rank_rule: int
-    game_rule_setting: GameRuleSetting
-    auto_match: bool
-    auto_disable_end_chat: bool
-    contest_type: int
-    banned_zones: str
-    hidden_zones: str
-    emoji_switch: bool
-    player_roster_type: int
-    disable_broadcast: int
-    def __init__(self, contest_name: _Optional[str] = ..., start_time: _Optional[int] = ..., finish_time: _Optional[int] = ..., open: bool = ..., rank_rule: _Optional[int] = ..., game_rule_setting: _Optional[_Union[GameRuleSetting, _Mapping]] = ..., auto_match: bool = ..., auto_disable_end_chat: bool = ..., contest_type: _Optional[int] = ..., banned_zones: _Optional[str] = ..., hidden_zones: _Optional[str] = ..., emoji_switch: bool = ..., player_roster_type: _Optional[int] = ..., disable_broadcast: _Optional[int] = ...) -> None: ...
-
-class ReqSearchAccountByNickname(_message.Message):
-    __slots__ = ["query_nicknames"]
-    QUERY_NICKNAMES_FIELD_NUMBER: _ClassVar[int]
-    query_nicknames: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, query_nicknames: _Optional[_Iterable[str]] = ...) -> None: ...
-
-class ResSearchAccountByNickname(_message.Message):
-    __slots__ = ["error", "search_result"]
-    class Item(_message.Message):
-        __slots__ = ["account_id", "nickname"]
-        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-        NICKNAME_FIELD_NUMBER: _ClassVar[int]
-        account_id: int
-        nickname: str
-        def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ...) -> None: ...
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    SEARCH_RESULT_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    search_result: _containers.RepeatedCompositeFieldContainer[ResSearchAccountByNickname.Item]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., search_result: _Optional[_Iterable[_Union[ResSearchAccountByNickname.Item, _Mapping]]] = ...) -> None: ...
-
-class ReqSearchAccountByEid(_message.Message):
-    __slots__ = ["eids"]
-    EIDS_FIELD_NUMBER: _ClassVar[int]
-    eids: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, eids: _Optional[_Iterable[int]] = ...) -> None: ...
-
-class ResSearchAccountByEid(_message.Message):
-    __slots__ = ["error", "search_result"]
-    class Item(_message.Message):
-        __slots__ = ["account_id", "nickname"]
-        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-        NICKNAME_FIELD_NUMBER: _ClassVar[int]
-        account_id: int
-        nickname: str
-        def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ...) -> None: ...
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    SEARCH_RESULT_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    search_result: _containers.RepeatedCompositeFieldContainer[ResSearchAccountByEid.Item]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., search_result: _Optional[_Iterable[_Union[ResSearchAccountByEid.Item, _Mapping]]] = ...) -> None: ...
-
-class ResFetchCustomizedContestPlayer(_message.Message):
-    __slots__ = ["error", "players"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    PLAYERS_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    players: _containers.RepeatedCompositeFieldContainer[ContestPlayerInfo]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., players: _Optional[_Iterable[_Union[ContestPlayerInfo, _Mapping]]] = ...) -> None: ...
-
-class ReqUpdateCustomizedContestPlayer(_message.Message):
-    __slots__ = ["setting_type", "nicknames", "account_ids"]
-    SETTING_TYPE_FIELD_NUMBER: _ClassVar[int]
-    NICKNAMES_FIELD_NUMBER: _ClassVar[int]
-    ACCOUNT_IDS_FIELD_NUMBER: _ClassVar[int]
-    setting_type: int
-    nicknames: _containers.RepeatedScalarFieldContainer[str]
-    account_ids: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, setting_type: _Optional[int] = ..., nicknames: _Optional[_Iterable[str]] = ..., account_ids: _Optional[_Iterable[int]] = ...) -> None: ...
-
-class ResUpdateCustomizedContestPlayer(_message.Message):
-    __slots__ = ["error", "failed_index"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    FAILED_INDEX_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    failed_index: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., failed_index: _Optional[_Iterable[int]] = ...) -> None: ...
-
-class ResStartManageGame(_message.Message):
-    __slots__ = ["error", "players", "games"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    PLAYERS_FIELD_NUMBER: _ClassVar[int]
-    GAMES_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    players: _containers.RepeatedCompositeFieldContainer[ContestMatchingPlayer]
-    games: _containers.RepeatedCompositeFieldContainer[ContestGameInfo]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., players: _Optional[_Iterable[_Union[ContestMatchingPlayer, _Mapping]]] = ..., games: _Optional[_Iterable[_Union[ContestGameInfo, _Mapping]]] = ...) -> None: ...
-
-class ReqLockGamePlayer(_message.Message):
-    __slots__ = ["account_id"]
-    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-    account_id: int
-    def __init__(self, account_id: _Optional[int] = ...) -> None: ...
-
-class ReqUnlockGamePlayer(_message.Message):
-    __slots__ = ["account_id"]
-    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-    account_id: int
-    def __init__(self, account_id: _Optional[int] = ...) -> None: ...
-
-class ReqCreateContestGame(_message.Message):
-    __slots__ = ["slots", "tag", "random_position", "open_live", "chat_broadcast_for_end", "ai_level"]
-    class Slot(_message.Message):
-        __slots__ = ["account_id", "start_point", "seat"]
-        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-        START_POINT_FIELD_NUMBER: _ClassVar[int]
-        SEAT_FIELD_NUMBER: _ClassVar[int]
-        account_id: int
-        start_point: int
-        seat: int
-        def __init__(self, account_id: _Optional[int] = ..., start_point: _Optional[int] = ..., seat: _Optional[int] = ...) -> None: ...
-    SLOTS_FIELD_NUMBER: _ClassVar[int]
-    TAG_FIELD_NUMBER: _ClassVar[int]
-    RANDOM_POSITION_FIELD_NUMBER: _ClassVar[int]
-    OPEN_LIVE_FIELD_NUMBER: _ClassVar[int]
-    CHAT_BROADCAST_FOR_END_FIELD_NUMBER: _ClassVar[int]
-    AI_LEVEL_FIELD_NUMBER: _ClassVar[int]
-    slots: _containers.RepeatedCompositeFieldContainer[ReqCreateContestGame.Slot]
-    tag: str
-    random_position: bool
-    open_live: bool
-    chat_broadcast_for_end: bool
-    ai_level: int
-    def __init__(self, slots: _Optional[_Iterable[_Union[ReqCreateContestGame.Slot, _Mapping]]] = ..., tag: _Optional[str] = ..., random_position: bool = ..., open_live: bool = ..., chat_broadcast_for_end: bool = ..., ai_level: _Optional[int] = ...) -> None: ...
-
-class ResCreateContestGame(_message.Message):
-    __slots__ = ["error", "game_uuid"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    GAME_UUID_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    game_uuid: str
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., game_uuid: _Optional[str] = ...) -> None: ...
-
-class ReqFetchCustomizedContestGameRecordList(_message.Message):
-    __slots__ = ["last_index"]
-    LAST_INDEX_FIELD_NUMBER: _ClassVar[int]
-    last_index: int
-    def __init__(self, last_index: _Optional[int] = ...) -> None: ...
-
-class ResFetchCustomizedContestGameRecordList(_message.Message):
-    __slots__ = ["error", "next_index", "record_list"]
-    class Item(_message.Message):
-        __slots__ = ["record", "tag"]
-        RECORD_FIELD_NUMBER: _ClassVar[int]
-        TAG_FIELD_NUMBER: _ClassVar[int]
-        record: RecordGame
-        tag: str
-        def __init__(self, record: _Optional[_Union[RecordGame, _Mapping]] = ..., tag: _Optional[str] = ...) -> None: ...
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    NEXT_INDEX_FIELD_NUMBER: _ClassVar[int]
-    RECORD_LIST_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    next_index: int
-    record_list: _containers.RepeatedCompositeFieldContainer[ResFetchCustomizedContestGameRecordList.Item]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., next_index: _Optional[int] = ..., record_list: _Optional[_Iterable[_Union[ResFetchCustomizedContestGameRecordList.Item, _Mapping]]] = ...) -> None: ...
-
-class ReqRemoveContestGameRecord(_message.Message):
-    __slots__ = ["uuid"]
-    UUID_FIELD_NUMBER: _ClassVar[int]
-    uuid: str
-    def __init__(self, uuid: _Optional[str] = ...) -> None: ...
-
-class ReqFetchContestNotice(_message.Message):
-    __slots__ = ["notice_types"]
-    NOTICE_TYPES_FIELD_NUMBER: _ClassVar[int]
-    notice_types: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, notice_types: _Optional[_Iterable[int]] = ...) -> None: ...
-
-class ResFetchContestNotice(_message.Message):
-    __slots__ = ["error", "notices"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    NOTICES_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    notices: _containers.RepeatedScalarFieldContainer[str]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., notices: _Optional[_Iterable[str]] = ...) -> None: ...
-
-class ReqUpdateCustomizedContestNotice(_message.Message):
-    __slots__ = ["notice_type", "content"]
-    NOTICE_TYPE_FIELD_NUMBER: _ClassVar[int]
-    CONTENT_FIELD_NUMBER: _ClassVar[int]
-    notice_type: int
-    content: str
-    def __init__(self, notice_type: _Optional[int] = ..., content: _Optional[str] = ...) -> None: ...
-
-class ResFetchCustomizedContestManager(_message.Message):
-    __slots__ = ["error", "players"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    PLAYERS_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    players: _containers.RepeatedCompositeFieldContainer[ContestPlayerInfo]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., players: _Optional[_Iterable[_Union[ContestPlayerInfo, _Mapping]]] = ...) -> None: ...
-
-class ReqUpdateCustomizedContestManager(_message.Message):
-    __slots__ = ["setting_type", "nicknames", "account_ids"]
-    SETTING_TYPE_FIELD_NUMBER: _ClassVar[int]
-    NICKNAMES_FIELD_NUMBER: _ClassVar[int]
-    ACCOUNT_IDS_FIELD_NUMBER: _ClassVar[int]
-    setting_type: int
-    nicknames: _containers.RepeatedScalarFieldContainer[str]
-    account_ids: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, setting_type: _Optional[int] = ..., nicknames: _Optional[_Iterable[str]] = ..., account_ids: _Optional[_Iterable[int]] = ...) -> None: ...
-
-class ResCustomizedContestChatInfo(_message.Message):
-    __slots__ = ["error", "chat_limit_type", "chat_limit_roster"]
-    class Item(_message.Message):
-        __slots__ = ["account_id", "nickname"]
-        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-        NICKNAME_FIELD_NUMBER: _ClassVar[int]
-        account_id: int
-        nickname: str
-        def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ...) -> None: ...
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    CHAT_LIMIT_TYPE_FIELD_NUMBER: _ClassVar[int]
-    CHAT_LIMIT_ROSTER_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    chat_limit_type: int
-    chat_limit_roster: _containers.RepeatedCompositeFieldContainer[ResCustomizedContestChatInfo.Item]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., chat_limit_type: _Optional[int] = ..., chat_limit_roster: _Optional[_Iterable[_Union[ResCustomizedContestChatInfo.Item, _Mapping]]] = ...) -> None: ...
-
-class ReqUpdateCustomizedContestChatSetting(_message.Message):
-    __slots__ = ["setting_type", "nicknames", "account_ids", "chat_limit_type"]
-    SETTING_TYPE_FIELD_NUMBER: _ClassVar[int]
-    NICKNAMES_FIELD_NUMBER: _ClassVar[int]
-    ACCOUNT_IDS_FIELD_NUMBER: _ClassVar[int]
-    CHAT_LIMIT_TYPE_FIELD_NUMBER: _ClassVar[int]
-    setting_type: int
-    nicknames: _containers.RepeatedScalarFieldContainer[str]
-    account_ids: _containers.RepeatedScalarFieldContainer[int]
-    chat_limit_type: int
-    def __init__(self, setting_type: _Optional[int] = ..., nicknames: _Optional[_Iterable[str]] = ..., account_ids: _Optional[_Iterable[int]] = ..., chat_limit_type: _Optional[int] = ...) -> None: ...
-
-class ResUpdateCustomizedContestChatSetting(_message.Message):
-    __slots__ = ["error", "failed_index"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    FAILED_INDEX_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    failed_index: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., failed_index: _Optional[_Iterable[int]] = ...) -> None: ...
-
-class ReqUpdateGameTag(_message.Message):
-    __slots__ = ["uuid", "tag"]
-    UUID_FIELD_NUMBER: _ClassVar[int]
-    TAG_FIELD_NUMBER: _ClassVar[int]
-    uuid: str
-    tag: str
-    def __init__(self, uuid: _Optional[str] = ..., tag: _Optional[str] = ...) -> None: ...
-
-class ReqTerminateContestGame(_message.Message):
-    __slots__ = ["uuid"]
-    UUID_FIELD_NUMBER: _ClassVar[int]
-    uuid: str
-    def __init__(self, uuid: _Optional[str] = ...) -> None: ...
-
-class ReqPauseContestGame(_message.Message):
-    __slots__ = ["uuid"]
-    UUID_FIELD_NUMBER: _ClassVar[int]
-    uuid: str
-    def __init__(self, uuid: _Optional[str] = ...) -> None: ...
-
-class ReqResumeContestGame(_message.Message):
-    __slots__ = ["uuid"]
-    UUID_FIELD_NUMBER: _ClassVar[int]
-    uuid: str
-    def __init__(self, uuid: _Optional[str] = ...) -> None: ...
-
-class ResFetchCurrentRankList(_message.Message):
-    __slots__ = ["error", "rank_list", "rank_rule"]
-    class AccountRankData(_message.Message):
-        __slots__ = ["account_id", "nickname", "total_point", "total_count"]
-        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-        NICKNAME_FIELD_NUMBER: _ClassVar[int]
-        TOTAL_POINT_FIELD_NUMBER: _ClassVar[int]
-        TOTAL_COUNT_FIELD_NUMBER: _ClassVar[int]
-        account_id: int
-        nickname: str
-        total_point: int
-        total_count: int
-        def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ..., total_point: _Optional[int] = ..., total_count: _Optional[int] = ...) -> None: ...
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    RANK_LIST_FIELD_NUMBER: _ClassVar[int]
-    RANK_RULE_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    rank_list: _containers.RepeatedCompositeFieldContainer[ResFetchCurrentRankList.AccountRankData]
-    rank_rule: int
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., rank_list: _Optional[_Iterable[_Union[ResFetchCurrentRankList.AccountRankData, _Mapping]]] = ..., rank_rule: _Optional[int] = ...) -> None: ...
-
-class ResFetchContestLastModify(_message.Message):
-    __slots__ = ["modify"]
-    class ContestLastModify(_message.Message):
-        __slots__ = ["contest_name", "external_notice", "internal_notice", "manager_notice", "reason", "status"]
-        CONTEST_NAME_FIELD_NUMBER: _ClassVar[int]
-        EXTERNAL_NOTICE_FIELD_NUMBER: _ClassVar[int]
-        INTERNAL_NOTICE_FIELD_NUMBER: _ClassVar[int]
-        MANAGER_NOTICE_FIELD_NUMBER: _ClassVar[int]
-        REASON_FIELD_NUMBER: _ClassVar[int]
-        STATUS_FIELD_NUMBER: _ClassVar[int]
-        contest_name: str
-        external_notice: str
-        internal_notice: str
-        manager_notice: str
-        reason: str
-        status: int
-        def __init__(self, contest_name: _Optional[str] = ..., external_notice: _Optional[str] = ..., internal_notice: _Optional[str] = ..., manager_notice: _Optional[str] = ..., reason: _Optional[str] = ..., status: _Optional[int] = ...) -> None: ...
-    MODIFY_FIELD_NUMBER: _ClassVar[int]
-    modify: ResFetchContestLastModify.ContestLastModify
-    def __init__(self, modify: _Optional[_Union[ResFetchContestLastModify.ContestLastModify, _Mapping]] = ...) -> None: ...
-
-class ResFetchContestObserver(_message.Message):
-    __slots__ = ["error", "observers"]
-    class Observer(_message.Message):
-        __slots__ = ["account_id", "nickname"]
-        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-        NICKNAME_FIELD_NUMBER: _ClassVar[int]
-        account_id: int
-        nickname: str
-        def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ...) -> None: ...
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    OBSERVERS_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    observers: _containers.RepeatedCompositeFieldContainer[ResFetchContestObserver.Observer]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., observers: _Optional[_Iterable[_Union[ResFetchContestObserver.Observer, _Mapping]]] = ...) -> None: ...
-
-class ReqAddContestObserver(_message.Message):
-    __slots__ = ["observers"]
-    class Observer(_message.Message):
-        __slots__ = ["account_id", "nickname"]
-        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-        NICKNAME_FIELD_NUMBER: _ClassVar[int]
-        account_id: int
-        nickname: str
-        def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ...) -> None: ...
-    OBSERVERS_FIELD_NUMBER: _ClassVar[int]
-    observers: _containers.RepeatedCompositeFieldContainer[ReqAddContestObserver.Observer]
-    def __init__(self, observers: _Optional[_Iterable[_Union[ReqAddContestObserver.Observer, _Mapping]]] = ...) -> None: ...
-
-class ResAddContestObserver(_message.Message):
-    __slots__ = ["error", "success"]
-    class Observer(_message.Message):
-        __slots__ = ["account_id", "nickname"]
-        ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-        NICKNAME_FIELD_NUMBER: _ClassVar[int]
-        account_id: int
-        nickname: str
-        def __init__(self, account_id: _Optional[int] = ..., nickname: _Optional[str] = ...) -> None: ...
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    SUCCESS_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    success: _containers.RepeatedCompositeFieldContainer[ResAddContestObserver.Observer]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., success: _Optional[_Iterable[_Union[ResAddContestObserver.Observer, _Mapping]]] = ...) -> None: ...
-
-class ReqRemoveContestObserver(_message.Message):
-    __slots__ = ["observers"]
-    OBSERVERS_FIELD_NUMBER: _ClassVar[int]
-    observers: _containers.RepeatedScalarFieldContainer[int]
-    def __init__(self, observers: _Optional[_Iterable[int]] = ...) -> None: ...
-
-class ResFetchContestChatHistory(_message.Message):
-    __slots__ = ["error", "chat_history"]
-    ERROR_FIELD_NUMBER: _ClassVar[int]
-    CHAT_HISTORY_FIELD_NUMBER: _ClassVar[int]
-    error: Error
-    chat_history: _containers.RepeatedScalarFieldContainer[bytes]
-    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ..., chat_history: _Optional[_Iterable[bytes]] = ...) -> None: ...
-
-class ReqClearChatHistory(_message.Message):
-    __slots__ = ["unique_id"]
-    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
-    unique_id: int
-    def __init__(self, unique_id: _Optional[int] = ...) -> None: ...
-
-class NotifyContestMatchingPlayer(_message.Message):
-    __slots__ = ["unique_id", "type", "account_id", "nickname"]
-    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
-    TYPE_FIELD_NUMBER: _ClassVar[int]
-    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-    NICKNAME_FIELD_NUMBER: _ClassVar[int]
-    unique_id: int
-    type: int
-    account_id: int
-    nickname: str
-    def __init__(self, unique_id: _Optional[int] = ..., type: _Optional[int] = ..., account_id: _Optional[int] = ..., nickname: _Optional[str] = ...) -> None: ...
-
-class NotifyContestMatchingPlayerLock(_message.Message):
-    __slots__ = ["unique_id", "type", "account_id", "manager_id"]
-    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
-    TYPE_FIELD_NUMBER: _ClassVar[int]
-    ACCOUNT_ID_FIELD_NUMBER: _ClassVar[int]
-    MANAGER_ID_FIELD_NUMBER: _ClassVar[int]
-    unique_id: int
-    type: int
-    account_id: int
-    manager_id: int
-    def __init__(self, unique_id: _Optional[int] = ..., type: _Optional[int] = ..., account_id: _Optional[int] = ..., manager_id: _Optional[int] = ...) -> None: ...
-
-class NotifyContestGameStart(_message.Message):
-    __slots__ = ["unique_id", "game_info"]
-    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
-    GAME_INFO_FIELD_NUMBER: _ClassVar[int]
-    unique_id: int
-    game_info: ContestGameInfo
-    def __init__(self, unique_id: _Optional[int] = ..., game_info: _Optional[_Union[ContestGameInfo, _Mapping]] = ...) -> None: ...
-
-class NotifyContestGameEnd(_message.Message):
-    __slots__ = ["unique_id", "game_uuid"]
-    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
-    GAME_UUID_FIELD_NUMBER: _ClassVar[int]
-    unique_id: int
-    game_uuid: str
-    def __init__(self, unique_id: _Optional[int] = ..., game_uuid: _Optional[str] = ...) -> None: ...
-
-class NotifyContestNoticeUpdate(_message.Message):
-    __slots__ = ["unique_id", "notice_type", "content"]
-    UNIQUE_ID_FIELD_NUMBER: _ClassVar[int]
-    NOTICE_TYPE_FIELD_NUMBER: _ClassVar[int]
-    CONTENT_FIELD_NUMBER: _ClassVar[int]
-    unique_id: int
-    notice_type: int
-    content: str
-    def __init__(self, unique_id: _Optional[int] = ..., notice_type: _Optional[int] = ..., content: _Optional[str] = ...) -> None: ...
-
-class NotifyContestManagerKick(_message.Message):
-    __slots__ = ["reason"]
-    REASON_FIELD_NUMBER: _ClassVar[int]
-    reason: int
-    def __init__(self, reason: _Optional[int] = ...) -> None: ...
+    def __init__(self, error: _Optional[_Union[Error, _Mapping]] = ...) -> None: ...
