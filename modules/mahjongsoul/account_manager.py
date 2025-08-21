@@ -50,15 +50,15 @@ class AccountManager(MajsoulChannel):
         TOKEN = self.mjs_token
         MS_VERSION = requests.get(url="https://mahjongsoul.game.yo-star.com/version.json").json()["version"][:-2]
         self.client_version_string = f"web-{MS_VERSION}"
-        self.logger.info("Calling heatbeat...")
-        await super().call("heatbeat")
+        self.logger.info("Calling heartbeat...")
+        await super().call("heartbeat")
         self.logger.info("Requesting initial access token...")
         USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:109.0) Gecko/20100101 Firefox/110.0"
         access_token = requests.post(url="https://passport.mahjongsoul.com/user/login", headers={"User-Agent": USER_AGENT, "Referer": "https://mahjongsoul.game.yo-star.com/"}, data={"uid":UID,"token":TOKEN,"deviceId":f"web|{UID}"}).json()["accessToken"]
         self.logger.info("Requesting oauth access token...")
         oauth_token = (await super().call("oauth2Auth", type=7, code=access_token, uid=UID, client_version_string=self.client_version_string)).access_token
-        self.logger.info("Calling heatbeat...")
-        await super().call("heatbeat")
+        self.logger.info("Calling heartbeat...")
+        await super().call("heartbeat")
         self.logger.info("Calling oauth2Check...")
         assert (await super().call("oauth2Check", type=7, access_token=oauth_token)).has_account, "couldn't find account with oauth2Check"
         self.logger.info("Calling oauth2Login...")
@@ -94,13 +94,13 @@ class AccountManager(MajsoulChannel):
 
     async def huge_ping(self, huge_ping_interval=14400):
         """
-        this task tries to call `heatbeat` every 4 hours so we know when
+        this task tries to call `heartbeat` every 4 hours so we know when
         we need to attempt reconnection (via the wrapped `call()`)
         """
         try:
             while True:
                 try:
-                    await self.call("heatbeat")
+                    await self.call("heartbeat")
                     self.logger.info(f"huge_ping'd.")
                 except GeneralMajsoulError:
                     # ignore mahjong soul errors not caught in wrapped `call()`
