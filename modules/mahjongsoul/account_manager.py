@@ -9,7 +9,7 @@ from modules.pymjsoul.proto import liqi_combined_pb2
 from websockets.exceptions import ConnectionClosed, ConnectionClosedError, InvalidStatusCode
 
 MS_CHINESE_WSS_ENDPOINT = "wss://gateway-hw.maj-soul.com:443/gateway"
-MS_ENGLISH_WSS_ENDPOINT = "wss://engame.mahjongsoul.com:443/gateway"
+MS_ENGLISH_WSS_ENDPOINT = "wss://engs.mahjongsoul.com:443/gateway"
 
 class AccountManager(MajsoulChannel):
     """
