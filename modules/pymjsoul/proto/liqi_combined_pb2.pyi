@@ -12650,14 +12650,16 @@ class PlayerLeaving(_message.Message):
     def __init__(self, seat: _Optional[int] = ...) -> None: ...
 
 class ReqRequestConnection(_message.Message):
-    __slots__ = ["type", "route_id", "timestamp"]
+    __slots__ = ["type", "route_id", "timestamp", "platform"]
     TYPE_FIELD_NUMBER: _ClassVar[int]
     ROUTE_ID_FIELD_NUMBER: _ClassVar[int]
     TIMESTAMP_FIELD_NUMBER: _ClassVar[int]
+    PLATFORM_FIELD_NUMBER: _ClassVar[int]
     type: int
     route_id: str
     timestamp: int
-    def __init__(self, type: _Optional[int] = ..., route_id: _Optional[str] = ..., timestamp: _Optional[int] = ...) -> None: ...
+    platform: str
+    def __init__(self, type: _Optional[int] = ..., route_id: _Optional[str] = ..., timestamp: _Optional[int] = ..., platform: _Optional[str] = ...) -> None: ...
 
 class ResRequestConnection(_message.Message):
     __slots__ = ["error", "timestamp", "result"]

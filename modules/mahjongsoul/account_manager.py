@@ -3,6 +3,7 @@ import hashlib
 import requests
 import uuid
 import asyncio
+import time
 from typing import *
 from modules.pymjsoul.channel import MajsoulChannel, GeneralMajsoulError
 from modules.pymjsoul.proto import liqi_combined_pb2
@@ -48,8 +49,10 @@ class AccountManager(MajsoulChannel):
     async def login_en(self):
         UID = self.mjs_uid
         TOKEN = self.mjs_token
-        MS_VERSION = requests.get(url="https://mahjongsoul.game.yo-star.com/version.json").json()["version"][:-2]
-        self.client_version_string = f"web-{MS_VERSION}"
+        MS_VERSION = "0.16.213"
+        self.client_version_string = f"WebGL_2022-{MS_VERSION}"
+        # print("Calling requestConnection...")
+        await self.call("requestConnection", type=1, route_id="en-2", timestamp=int(time.time()), platform="Web")
         self.logger.info("Calling heartbeat...")
         await super().call("heartbeat")
         self.logger.info("Requesting initial access token...")
