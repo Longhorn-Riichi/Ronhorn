@@ -49,7 +49,7 @@ class AccountManager(MajsoulChannel):
     async def login_en(self):
         UID = self.mjs_uid
         TOKEN = self.mjs_token
-        MS_VERSION = "0.16.213"
+        MS_VERSION = "0.16.233"
         self.client_version_string = f"WebGL_2022-{MS_VERSION}"
         # print("Calling requestConnection...")
         await self.call("requestConnection", type=1, route_id="en-2", timestamp=int(time.time()), platform="Web")
